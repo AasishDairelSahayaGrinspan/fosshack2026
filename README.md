@@ -1,6 +1,6 @@
-# Serenity
+# Unravel 
 
-Serenity is a community-driven mental wellness companion that blends mood tracking, guided practices, and supportive nudges to help users build sustainable habits. The repository is currently focused on planning and documenting the feature set while the implementation is bootstrapped.
+Unravel is a community-driven mental wellness companion that blends mood tracking, guided practices, and supportive nudges to help users build sustainable habits. The repository is currently focused on planning and documenting the feature set while the implementation is bootstrapped.
 
 ## Project Status
 - 🚧 The app is still in ideation and design; no mobile or backend code exists yet.

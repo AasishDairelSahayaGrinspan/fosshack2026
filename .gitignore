@@ -1,0 +1,16 @@
+node_modules/
+.dart_tool/
+build/
+dist/
+*.iml
+.idea/
+.vscode/
+*.env
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+*.g.dart
+*.freezed.dart
+.DS_Store
+pubspec.lock
+*.log

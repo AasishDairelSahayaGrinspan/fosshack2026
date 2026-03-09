@@ -59,9 +59,9 @@ class _QuickActionButtonState extends State<QuickActionButton>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: AppColors.card(context),
             borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-            border: Border.all(color: AppColors.divider, width: 0.8),
+            border: Border.all(color: AppColors.dividerColor(context), width: 0.8),
             boxShadow: AppColors.subtleShadow,
           ),
           child: Column(
@@ -79,7 +79,7 @@ class _QuickActionButtonState extends State<QuickActionButton>
               const SizedBox(height: 10),
               Text(
                 widget.label,
-                style: AppTypography.caption(color: AppColors.textSecondary),
+                style: AppTypography.caption(color: AppColors.secondary(context)),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

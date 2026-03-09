@@ -31,7 +31,7 @@ class _DailyCheckinState extends State<DailyCheckin> {
           padding: const EdgeInsets.only(left: 4, bottom: 16),
           child: Text(
             'What do you need today?',
-            style: AppTypography.sectionHeading(),
+            style: AppTypography.sectionHeadingC(context),
           ),
         ),
         Wrap(
@@ -51,12 +51,12 @@ class _DailyCheckinState extends State<DailyCheckin> {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? color.withValues(alpha: 0.12)
-                      : AppColors.cardBackground,
+                      : AppColors.card(context),
                   borderRadius: BorderRadius.circular(AppTheme.radiusCard),
                   border: Border.all(
                     color: isSelected
                         ? color.withValues(alpha: 0.5)
-                        : AppColors.divider,
+                        : AppColors.dividerColor(context),
                     width: isSelected ? 1.5 : 0.8,
                   ),
                   boxShadow: isSelected
@@ -83,7 +83,7 @@ class _DailyCheckinState extends State<DailyCheckin> {
                       ),
                       child: Icon(
                         option['icon'] as IconData,
-                        color: isSelected ? color : AppColors.textTertiary,
+                        color: isSelected ? color : AppColors.tertiary(context),
                         size: 18,
                       ),
                     ),
@@ -91,7 +91,7 @@ class _DailyCheckinState extends State<DailyCheckin> {
                     Text(
                       option['label'] as String,
                       style: AppTypography.uiLabel(
-                        color: isSelected ? color : AppColors.textSecondary,
+                        color: isSelected ? color : AppColors.secondary(context),
                       ).copyWith(
                         fontWeight: isSelected ? FontWeight.w400 : FontWeight.w300,
                       ),
@@ -102,13 +102,7 @@ class _DailyCheckinState extends State<DailyCheckin> {
             )
                 .animate()
                 .fadeIn(
-                  duration: Duration(milliseconds: 300 + index * 60),
-                  curve: AppTheme.gentleCurve,
-                )
-                .slideY(
-                  begin: 0.08,
-                  end: 0,
-                  duration: Duration(milliseconds: 300 + index * 60),
+                  duration: const Duration(milliseconds: 250),
                   curve: AppTheme.gentleCurve,
                 );
           }),

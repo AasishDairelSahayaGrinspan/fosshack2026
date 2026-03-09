@@ -30,6 +30,7 @@ class CommunityService {
         caption:
             'Today I chose rest over guilt. It felt like a small revolution.',
         moodTag: 'Healing',
+        postType: 'Victories',
         timestamp: DateTime.now().subtract(const Duration(hours: 2)),
         likesCount: 14,
       ),
@@ -40,6 +41,7 @@ class CommunityService {
         caption:
             'Three months sober. Not counting days to brag — counting them to remind myself I can do hard things.',
         moodTag: 'Progress',
+        postType: 'Achievements',
         timestamp: DateTime.now().subtract(const Duration(hours: 5)),
         likesCount: 42,
         comments: [
@@ -67,6 +69,7 @@ class CommunityService {
         caption:
             'I sat with my sadness today instead of running from it. That felt like progress.',
         moodTag: 'Grateful',
+        postType: 'Victories',
         timestamp: DateTime.now().subtract(const Duration(hours: 8)),
         likesCount: 23,
       ),
@@ -77,6 +80,7 @@ class CommunityService {
         caption:
             'Went for a walk without my phone. The world felt quieter and kinder.',
         moodTag: 'Healing',
+        postType: 'Heartbreak',
         timestamp: DateTime.now().subtract(const Duration(hours: 12)),
         likesCount: 31,
         comments: [
@@ -96,6 +100,7 @@ class CommunityService {
         caption:
             'Some days the bravest thing you do is simply get through it. Today was one of those days.',
         moodTag: 'Struggling',
+        postType: 'Struggles',
         timestamp: DateTime.now().subtract(const Duration(days: 1)),
         likesCount: 56,
       ),

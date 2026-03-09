@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:share_plus/share_plus.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -9,6 +10,7 @@ import '../widgets/gradient_background.dart';
 import '../widgets/doodle_refresh.dart';
 import 'create_post_screen.dart';
 import 'comments_sheet.dart';
+import 'community_chat_screen.dart';
 
 /// Community Feed — Instagram-style calm social feed.
 class CommunityFeedScreen extends StatefulWidget {
@@ -21,6 +23,19 @@ class CommunityFeedScreen extends StatefulWidget {
 class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   final CommunityService _service = CommunityService();
   final Map<String, bool> _showHeart = {};
+  String _selectedFilter = 'All';
+  static const List<String> _filters = [
+    'All',
+    'Achievements',
+    'Heartbreak',
+    'Struggles',
+    'Victories',
+  ];
+
+  List<Post> get _filteredPosts {
+    if (_selectedFilter == 'All') return _service.posts;
+    return _service.posts.where((p) => p.postType == _selectedFilter).toList();
+  }
 
   @override
   void initState() {
@@ -45,10 +60,8 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CommentsSheet(
-        post: post,
-        onCommentAdded: () => setState(() {}),
-      ),
+      builder: (context) =>
+          CommentsSheet(post: post, onCommentAdded: () => setState(() {})),
     );
   }
 
@@ -82,13 +95,16 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               curve: AppTheme.gentleCurve,
             ),
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.05),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: AppTheme.gentleCurve,
-              )),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0.05),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: AppTheme.gentleCurve,
+                    ),
+                  ),
               child: child,
             ),
           );
@@ -112,6 +128,9 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             // ─── Top Bar ───
             _buildTopBar(),
 
+            // ─── Filter Chips ───
+            _buildFilterChips(),
+
             // ─── Moderation Banner ───
             _buildModerationBanner(),
 
@@ -123,9 +142,9 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                     parent: BouncingScrollPhysics(),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _service.posts.length,
+                  itemCount: _filteredPosts.length,
                   itemBuilder: (context, index) {
-                    return _buildPostCard(_service.posts[index], index);
+                    return _buildPostCard(_filteredPosts[index], index);
                   },
                 ),
               ),
@@ -143,30 +162,112 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text('Community', style: AppTypography.sectionHeadingC(context)),
-          GestureDetector(
-            onTap: _openCreatePost,
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: AppColors.softIndigo.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    PageRouteBuilder(
+                      transitionDuration: const Duration(milliseconds: 400),
+                      pageBuilder: (context, a1, a2) =>
+                          const CommunityChatScreen(),
+                      transitionsBuilder: (context, animation, a2, child) {
+                        return FadeTransition(
+                          opacity: CurvedAnimation(
+                            parent: animation,
+                            curve: AppTheme.gentleCurve,
+                          ),
+                          child: child,
+                        );
+                      },
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.softIndigo.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    color: AppColors.softIndigo,
+                    size: 20,
+                  ),
+                ),
               ),
-              child: const Icon(
-                Icons.add_rounded,
-                color: AppColors.softIndigo,
-                size: 22,
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _openCreatePost,
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.softIndigo.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.add_rounded,
+                    color: AppColors.softIndigo,
+                    size: 22,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(
-          duration: const Duration(milliseconds: 500),
-          curve: AppTheme.gentleCurve,
-        );
+    );
+  }
+
+  Widget _buildFilterChips() {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _filters.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final isSelected = _selectedFilter == _filters[i];
+          return GestureDetector(
+            onTap: () => setState(() => _selectedFilter = _filters[i]),
+            child: AnimatedContainer(
+              duration: AppTheme.fadeInDuration,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.softIndigo.withValues(alpha: 0.15)
+                    : AppColors.card(context),
+                borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.softIndigo.withValues(alpha: 0.4)
+                      : AppColors.dividerColor(context),
+                  width: 1,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  _filters[i],
+                  style:
+                      AppTypography.caption(
+                        color: isSelected
+                            ? AppColors.softIndigo
+                            : AppColors.secondary(context),
+                      ).copyWith(
+                        fontWeight: isSelected
+                            ? FontWeight.w500
+                            : FontWeight.w300,
+                      ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildModerationBanner() {
@@ -197,101 +298,139 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(
-          delay: const Duration(milliseconds: 200),
-          duration: const Duration(milliseconds: 400),
-          curve: AppTheme.gentleCurve,
-        );
+    );
   }
 
   Widget _buildPostCard(Post post, int index) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: AppColors.card(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        border: Border.all(color: AppColors.cardBorder(context), width: 0.8),
-        boxShadow: AppColors.cardShadow(context),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ─── Post Header (avatar, username, timestamp) ───
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Row(
-              children: [
-                _buildAvatar(post.avatar, 36),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post.username,
-                        style: AppTypography.uiLabelC(context).copyWith(
-                          fontWeight: FontWeight.w500,
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: AppColors.card(context),
+          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+          border: Border.all(color: AppColors.cardBorder(context), width: 0.8),
+          boxShadow: AppColors.cardShadow(context),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ─── Post Header (avatar, username, timestamp) ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Row(
+                children: [
+                  _buildAvatar(post.avatar, 36),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          post.username,
+                          style: AppTypography.uiLabelC(
+                            context,
+                          ).copyWith(fontWeight: FontWeight.w500),
+                        ),
+                        Text(
+                          _service.formatTimeAgo(post.timestamp),
+                          style: AppTypography.captionC(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (post.moodTag != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.softIndigo.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusButton,
                         ),
                       ),
-                      Text(
-                        _service.formatTimeAgo(post.timestamp),
-                        style: AppTypography.captionC(context),
-                      ),
-                    ],
-                  ),
-                ),
-                if (post.moodTag != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.softIndigo.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(
-                        AppTheme.radiusButton,
+                      child: Text(
+                        post.moodTag!,
+                        style: AppTypography.caption(
+                          color: AppColors.softIndigo,
+                        ).copyWith(fontSize: 10),
                       ),
                     ),
-                    child: Text(
-                      post.moodTag!,
-                      style: AppTypography.caption(color: AppColors.softIndigo)
-                          .copyWith(fontSize: 10),
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // ─── Post Image (if exists) ───
-          if (post.imagePath != null)
+            // ─── Post Image (if exists) ───
+            if (post.imagePath != null)
+              GestureDetector(
+                onDoubleTap: () => _onDoubleTap(post),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    ClipRRect(
+                      child: Container(
+                        width: double.infinity,
+                        height: 240,
+                        color: AppColors.dividerColor(
+                          context,
+                        ).withValues(alpha: 0.3),
+                        child: Center(
+                          child: Icon(
+                            Icons.image_outlined,
+                            color: AppColors.tertiary(context),
+                            size: 48,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Heart animation on double tap
+                    if (_showHeart[post.id] == true)
+                      const Icon(
+                            Icons.favorite_rounded,
+                            color: AppColors.warmCoral,
+                            size: 64,
+                          )
+                          .animate()
+                          .scale(
+                            begin: const Offset(0.5, 0.5),
+                            end: const Offset(1.2, 1.2),
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.elasticOut,
+                          )
+                          .fadeOut(
+                            delay: const Duration(milliseconds: 400),
+                            duration: const Duration(milliseconds: 300),
+                          ),
+                  ],
+                ),
+              ),
+
+            // ─── Caption ───
             GestureDetector(
               onDoubleTap: () => _onDoubleTap(post),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  ClipRRect(
-                    child: Container(
-                      width: double.infinity,
-                      height: 240,
-                      color: AppColors.dividerColor(context).withValues(alpha: 0.3),
-                      child: Center(
-                        child: Icon(
-                          Icons.image_outlined,
-                          color: AppColors.tertiary(context),
-                          size: 48,
-                        ),
-                      ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      post.imagePath != null ? 12 : 0,
+                      16,
+                      4,
+                    ),
+                    child: Text(
+                      post.caption,
+                      style: AppTypography.journalBodyC(context),
                     ),
                   ),
-                  // Heart animation on double tap
-                  if (_showHeart[post.id] == true)
+                  // Heart animation on double tap (for text-only posts)
+                  if (post.imagePath == null && _showHeart[post.id] == true)
                     const Icon(
-                      Icons.favorite_rounded,
-                      color: AppColors.warmCoral,
-                      size: 64,
-                    )
+                          Icons.favorite_rounded,
+                          color: AppColors.warmCoral,
+                          size: 56,
+                        )
                         .animate()
                         .scale(
                           begin: const Offset(0.5, 0.5),
@@ -307,120 +446,51 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               ),
             ),
 
-          // ─── Caption ───
-          GestureDetector(
-            onDoubleTap: () => _onDoubleTap(post),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    post.imagePath != null ? 12 : 0,
-                    16,
-                    4,
+            // ─── Action Row (like, comment, share) ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: Row(
+                children: [
+                  // Like
+                  _buildActionButton(
+                    icon: post.isLiked
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_outline_rounded,
+                    color: post.isLiked
+                        ? AppColors.warmCoral
+                        : AppColors.tertiary(context),
+                    label: post.likesCount > 0 ? '${post.likesCount}' : '',
+                    onTap: () {
+                      setState(() => _service.toggleLike(post.id));
+                    },
                   ),
-                  child: Text(
-                    post.caption,
-                    style: AppTypography.journalBodyC(context),
+                  const SizedBox(width: 4),
+                  // Comment
+                  _buildActionButton(
+                    icon: Icons.chat_bubble_outline_rounded,
+                    color: AppColors.tertiary(context),
+                    label: post.comments.isNotEmpty
+                        ? '${post.comments.length}'
+                        : '',
+                    onTap: () => _openComments(post),
                   ),
-                ),
-                // Heart animation on double tap (for text-only posts)
-                if (post.imagePath == null && _showHeart[post.id] == true)
-                  const Icon(
-                    Icons.favorite_rounded,
-                    color: AppColors.warmCoral,
-                    size: 56,
-                  )
-                      .animate()
-                      .scale(
-                        begin: const Offset(0.5, 0.5),
-                        end: const Offset(1.2, 1.2),
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.elasticOut,
-                      )
-                      .fadeOut(
-                        delay: const Duration(milliseconds: 400),
-                        duration: const Duration(milliseconds: 300),
-                      ),
-              ],
+                  const SizedBox(width: 4),
+                  // Share
+                  _buildActionButton(
+                    icon: Icons.share_outlined,
+                    color: AppColors.tertiary(context),
+                    label: '',
+                    onTap: () {
+                      Share.share('${post.caption}\n\n— shared from Unravel');
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-
-          // ─── Action Row (like, comment, share) ───
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-            child: Row(
-              children: [
-                // Like
-                _buildActionButton(
-                  icon: post.isLiked
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_outline_rounded,
-                  color: post.isLiked
-                      ? AppColors.warmCoral
-                      : AppColors.tertiary(context),
-                  label: post.likesCount > 0
-                      ? '${post.likesCount}'
-                      : '',
-                  onTap: () {
-                    setState(() => _service.toggleLike(post.id));
-                  },
-                ),
-                const SizedBox(width: 4),
-                // Comment
-                _buildActionButton(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  color: AppColors.tertiary(context),
-                  label: post.comments.isNotEmpty
-                      ? '${post.comments.length}'
-                      : '',
-                  onTap: () => _openComments(post),
-                ),
-                const SizedBox(width: 4),
-                // Share
-                _buildActionButton(
-                  icon: Icons.share_outlined,
-                  color: AppColors.tertiary(context),
-                  label: '',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Link copied. Share kindly.',
-                          style: AppTypography.body(color: Colors.white),
-                        ),
-                        backgroundColor: AppColors.softIndigo,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radiusSmall,
-                          ),
-                        ),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
-    )
-        .animate()
-        .fadeIn(
-          delay: Duration(milliseconds: 100 + index * 80),
-          duration: const Duration(milliseconds: 500),
-          curve: AppTheme.gentleCurve,
-        )
-        .slideY(
-          begin: 0.04,
-          end: 0,
-          delay: Duration(milliseconds: 100 + index * 80),
-          duration: const Duration(milliseconds: 500),
-          curve: AppTheme.gentleCurve,
-        );
+    );
   }
 
   Widget _buildActionButton({
@@ -440,10 +510,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             Icon(icon, color: color, size: 20),
             if (label.isNotEmpty) ...[
               const SizedBox(width: 4),
-              Text(
-                label,
-                style: AppTypography.caption(color: color),
-              ),
+              Text(label, style: AppTypography.caption(color: color)),
             ],
           ],
         ),
@@ -465,18 +532,14 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             AppColors.paleLilac.withValues(alpha: 0.4),
           ],
         ),
-        border: Border.all(
-          color: AppColors.frostedBorder(context),
-          width: 1.5,
-        ),
+        border: Border.all(color: AppColors.frostedBorder(context), width: 1.5),
       ),
       child: Center(
         child: Text(
           initial.toUpperCase(),
-          style: AppTypography.uiLabel(color: AppColors.softIndigo).copyWith(
-            fontSize: size * 0.38,
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppTypography.uiLabel(
+            color: AppColors.softIndigo,
+          ).copyWith(fontSize: size * 0.38, fontWeight: FontWeight.w500),
         ),
       ),
     );

@@ -87,7 +87,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _themeProvider.toggleTheme();
                     setState(() {});
                   },
-                  activeColor: AppColors.softIndigo,
+                  activeTrackColor: AppColors.softIndigo,
+                  activeThumbColor: Colors.white,
                   inactiveThumbColor: AppColors.softIndigo.withValues(alpha: 0.6),
                   inactiveTrackColor: AppColors.dividerColor(context),
                 ),

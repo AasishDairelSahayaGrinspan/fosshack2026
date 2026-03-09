@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -12,6 +11,7 @@ import '../widgets/streak_indicator.dart';
 import '../widgets/mood_chart.dart';
 import '../widgets/community_activity_card.dart';
 import '../widgets/doodle_refresh.dart';
+import '../services/user_preferences_service.dart';
 import 'breathing_screen.dart';
 import 'sleep_tracker_screen.dart';
 import 'journal_screen.dart';
@@ -25,9 +25,13 @@ class HomeScreen extends StatelessWidget {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning.';
-    if (hour < 17) return 'Good afternoon.';
-    return 'Good evening.';
+    final name = UserPreferencesService().displayName;
+    final prefix = hour < 12
+        ? 'Good morning'
+        : hour < 17
+        ? 'Good afternoon'
+        : 'Good evening';
+    return '$prefix, $name.';
   }
 
   void _navigate(BuildContext context, Widget screen) {
@@ -43,13 +47,16 @@ class HomeScreen extends StatelessWidget {
               curve: AppTheme.gentleCurve,
             ),
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.04),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: AppTheme.gentleCurve,
-              )),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0.04),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: AppTheme.gentleCurve,
+                    ),
+                  ),
               child: child,
             ),
           );
@@ -70,75 +77,36 @@ class HomeScreen extends StatelessWidget {
               parent: BouncingScrollPhysics(),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
 
-              // ─── Greeting Header with Avatar ───
-              _buildGreetingHeader(context)
-                  .animate()
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 600),
-                    curve: AppTheme.gentleCurve,
-                  )
-                  .slideY(
-                    begin: 0.08,
-                    end: 0,
-                    duration: const Duration(milliseconds: 600),
-                    curve: AppTheme.gentleCurve,
-                  ),
+                // ─── Greeting Header with Avatar ───
+                RepaintBoundary(child: _buildGreetingHeader(context)),
 
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // ─── Mood Selector ───
-              const MoodSelector()
-                  .animate(delay: const Duration(milliseconds: 150))
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
-                  ),
+                // ─── Mood Selector ───
+                RepaintBoundary(child: const MoodSelector()),
 
-              const SizedBox(height: 28),
+                const SizedBox(height: 28),
 
-              // ─── Recovery Score with Quote ───
-              const RecoveryScoreCard(score: 0.78)
-                  .animate(delay: const Duration(milliseconds: 250))
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
-                  )
-                  .slideY(
-                    begin: 0.05,
-                    end: 0,
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
-                  ),
+                // ─── Recovery Score with Quote ───
+                RepaintBoundary(child: const RecoveryScoreCard(score: 0.78)),
 
-              const SizedBox(height: 28),
+                const SizedBox(height: 28),
 
-              // ─── Daily Check-in ───
-              const DailyCheckin()
-                  .animate(delay: const Duration(milliseconds: 350))
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
-                  )
-                  .slideY(
-                    begin: 0.05,
-                    end: 0,
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
-                  ),
+                // ─── Daily Check-in ───
+                RepaintBoundary(child: const DailyCheckin()),
 
-              const SizedBox(height: 28),
+                const SizedBox(height: 28),
 
-              // ─── Quick Actions (links to Phase 4 modules) ───
-              Text('Explore', style: AppTypography.sectionHeadingC(context))
-                  .animate(delay: const Duration(milliseconds: 400))
-                  .fadeIn(duration: const Duration(milliseconds: 400)),
-              const SizedBox(height: 14),
-              GridView.count(
+                // ─── Quick Actions (links to Phase 4 modules) ───
+                Text('Explore', style: AppTypography.sectionHeadingC(context)),
+                const SizedBox(height: 14),
+                RepaintBoundary(
+                  child: GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -150,105 +118,62 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.air_rounded,
                         label: 'Breathing',
                         iconColor: AppColors.softIndigo,
-                        onTap: () => _navigate(
-                          context,
-                          const BreathingScreen(),
-                        ),
+                        onTap: () =>
+                            _navigate(context, const BreathingScreen()),
                       ),
                       QuickActionButton(
                         icon: Icons.timer_outlined,
                         label: 'Timer',
                         iconColor: AppColors.sageGreen,
-                        onTap: () => _navigate(
-                          context,
-                          const TimerScreen(),
-                        ),
+                        onTap: () => _navigate(context, const TimerScreen()),
                       ),
                       QuickActionButton(
                         icon: Icons.nightlight_outlined,
                         label: 'Sleep Tracker',
                         iconColor: AppColors.warmCoral,
-                        onTap: () => _navigate(
-                          context,
-                          const SleepTrackerScreen(),
-                        ),
+                        onTap: () =>
+                            _navigate(context, const SleepTrackerScreen()),
                       ),
                       QuickActionButton(
                         icon: Icons.edit_note_rounded,
                         label: 'Journal',
                         iconColor: const Color(0xFFB8A9C9),
-                        onTap: () => _navigate(
-                          context,
-                          const JournalScreen(),
-                        ),
+                        onTap: () => _navigate(context, const JournalScreen()),
                       ),
                     ],
-                  )
-                  .animate(delay: const Duration(milliseconds: 450))
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
                   ),
+                ),
 
-              const SizedBox(height: 28),
+                const SizedBox(height: 28),
 
-              // ─── Weekly Mood Chart ───
-              const MoodChart(
+                // ─── Weekly Mood Chart ───
+                RepaintBoundary(
+                  child: const MoodChart(
                     moodData: [0.4, 0.55, 0.6, 0.45, 0.7, 0.8, 0.65],
-                  )
-                  .animate(delay: const Duration(milliseconds: 500))
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
-                  )
-                  .slideY(
-                    begin: 0.05,
-                    end: 0,
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
                   ),
+                ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // ─── Community Activity Card ───
-              CommunityActivityCard(
+                // ─── Community Activity Card ───
+                RepaintBoundary(
+                  child: CommunityActivityCard(
                     onTap: () {
                       // Navigate to community tab (index 2) via MainShell
                       // For now this is a gentle invite
                     },
-                  )
-                  .animate(delay: const Duration(milliseconds: 550))
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
-                  )
-                  .slideY(
-                    begin: 0.05,
-                    end: 0,
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
                   ),
+                ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // ─── Streak Indicator ───
-              const StreakIndicator(streakDays: 7)
-                  .animate(delay: const Duration(milliseconds: 650))
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
-                  )
-                  .slideY(
-                    begin: 0.05,
-                    end: 0,
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
-                  ),
+                // ─── Streak Indicator ───
+                RepaintBoundary(child: const StreakIndicator(streakDays: 7)),
 
-              const SizedBox(height: 36),
-            ],
+                const SizedBox(height: 36),
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -263,10 +188,7 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                _getGreeting(),
-                style: AppTypography.heroHeadingC(context),
-              ),
+              Text(_getGreeting(), style: AppTypography.heroHeadingC(context)),
               const SizedBox(height: 6),
               Text(
                 'How is your mind today?',
@@ -290,10 +212,7 @@ class HomeScreen extends StatelessWidget {
                 AppColors.paleLilac.withValues(alpha: 0.5),
               ],
             ),
-            border: Border.all(
-              color: AppColors.frostedGlassBorder,
-              width: 2,
-            ),
+            border: Border.all(color: AppColors.frostedGlassBorder, width: 2),
             boxShadow: [
               BoxShadow(
                 color: AppColors.softIndigo.withValues(alpha: 0.2),

@@ -15,9 +15,9 @@ class CommunityActivityCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        border: Border.all(color: AppColors.divider, width: 0.8),
+        border: Border.all(color: AppColors.dividerColor(context), width: 0.8),
         boxShadow: AppColors.subtleShadow,
       ),
       child: Row(
@@ -43,7 +43,7 @@ class CommunityActivityCard extends StatelessWidget {
               children: [
                 Text(
                   'Someone shared a story today.',
-                  style: AppTypography.body(),
+                  style: AppTypography.bodyC(context),
                 ),
                 const SizedBox(height: 6),
                 GestureDetector(

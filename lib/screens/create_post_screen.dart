@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:image_picker/image_picker.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -29,47 +31,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     {'label': 'Progress', 'color': Color(0xFFB8A9C9)},
   ];
 
-  void _selectImage(String source) {
-    // Placeholder for image_picker integration
-    // Show a friendly permission message
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.card(context),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        ),
-        title: Text(
-          source == 'camera' ? 'Camera Access' : 'Gallery Access',
-          style: AppTypography.sectionHeadingC(context),
-        ),
-        content: Text(
-          source == 'camera'
-              ? 'Unravel needs access to your camera so you can share moments with the community.'
-              : 'Unravel needs access to your photos so you can share moments with the community.',
-          style: AppTypography.bodyC(context),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Not now',
-              style: AppTypography.uiLabel(color: AppColors.tertiary(context)),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              setState(() => _imagePath = 'placeholder_$source');
-            },
-            child: Text(
-              'Allow',
-              style: AppTypography.uiLabel(color: AppColors.softIndigo),
-            ),
-          ),
-        ],
-      ),
+  Future<void> _selectImage(String source) async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
+      maxWidth: 1080,
+      imageQuality: 85,
     );
+    if (image != null && mounted) {
+      setState(() => _imagePath = image.path);
+    }
   }
 
   Future<void> _submitPost() async {
@@ -105,11 +76,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.cream, AppColors.lightBlush],
+            colors: AppColors.bgGradient(context),
           ),
         ),
         child: SafeArea(
@@ -235,7 +206,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       return Container(
         height: 200,
         decoration: BoxDecoration(
-          color: AppColors.softIndigo.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(AppTheme.radiusCard),
           border: Border.all(
             color: AppColors.softIndigo.withValues(alpha: 0.2),
@@ -244,21 +214,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
         child: Stack(
           children: [
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.image_rounded,
-                    color: AppColors.softIndigo.withValues(alpha: 0.5),
-                    size: 48,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Image selected',
-                    style: AppTypography.caption(color: AppColors.softIndigo),
-                  ),
-                ],
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+              child: Image.file(
+                File(_imagePath!),
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
               ),
             ),
             Positioned(
@@ -362,7 +324,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       constraints: const BoxConstraints(minHeight: 120),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusCard),
         border: Border.all(
           color: AppColors.dividerColor(context).withValues(alpha: 0.5),

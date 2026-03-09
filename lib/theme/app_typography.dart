@@ -3,13 +3,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 /// Unravel Typography System
-/// Premium editorial style with generous line heights.
-/// All methods accept optional color; defaults use high-contrast values.
+/// Cached base styles — GoogleFonts called once, then copyWith for colors.
 class AppTypography {
   AppTypography._();
 
-  // ─── Hero Heading (Playfair Display SemiBold) ───
-  static TextStyle heroHeading({Color? color}) => GoogleFonts.playfairDisplay(
+  // ─── Cached base styles (created once) ───
+  static final TextStyle _playfairBase = GoogleFonts.playfairDisplay();
+  static final TextStyle _loraBase = GoogleFonts.lora();
+  static final TextStyle _interBase = GoogleFonts.inter();
+
+  // ─── Hero Heading ───
+  static TextStyle heroHeading({Color? color}) => _playfairBase.copyWith(
     fontSize: 32,
     fontWeight: FontWeight.w600,
     color: color ?? AppColors.textPrimary,
@@ -18,16 +22,15 @@ class AppTypography {
   );
 
   // ─── Section Heading ───
-  static TextStyle sectionHeading({Color? color}) =>
-      GoogleFonts.playfairDisplay(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        color: color ?? AppColors.textPrimary,
-        height: 1.4,
-      );
+  static TextStyle sectionHeading({Color? color}) => _playfairBase.copyWith(
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    color: color ?? AppColors.textPrimary,
+    height: 1.4,
+  );
 
-  // ─── Emotional / Quote Text (Playfair Italic) ───
-  static TextStyle emotionalText({Color? color}) => GoogleFonts.playfairDisplay(
+  // ─── Emotional / Quote Text ───
+  static TextStyle emotionalText({Color? color}) => _playfairBase.copyWith(
     fontSize: 20,
     fontWeight: FontWeight.w400,
     fontStyle: FontStyle.italic,
@@ -35,32 +38,32 @@ class AppTypography {
     height: 1.6,
   );
 
-  // ─── Subtitle (Lora) ───
-  static TextStyle subtitle({Color? color}) => GoogleFonts.lora(
+  // ─── Subtitle ───
+  static TextStyle subtitle({Color? color}) => _loraBase.copyWith(
     fontSize: 16,
     fontWeight: FontWeight.w400,
     color: color ?? AppColors.textSecondary,
     height: 1.5,
   );
 
-  // ─── Journal Body (Lora) ───
-  static TextStyle journalBody({Color? color}) => GoogleFonts.lora(
+  // ─── Journal Body ───
+  static TextStyle journalBody({Color? color}) => _loraBase.copyWith(
     fontSize: 16,
     fontWeight: FontWeight.w400,
     color: color ?? AppColors.textPrimary,
     height: 1.6,
   );
 
-  // ─── Body Text (Lora) ───
-  static TextStyle body({Color? color}) => GoogleFonts.lora(
+  // ─── Body Text ───
+  static TextStyle body({Color? color}) => _loraBase.copyWith(
     fontSize: 14,
     fontWeight: FontWeight.w400,
     color: color ?? AppColors.textPrimary,
     height: 1.5,
   );
 
-  // ─── UI Label (Inter Light) ───
-  static TextStyle uiLabel({Color? color}) => GoogleFonts.inter(
+  // ─── UI Label ───
+  static TextStyle uiLabel({Color? color}) => _interBase.copyWith(
     fontSize: 14,
     fontWeight: FontWeight.w300,
     color: color ?? AppColors.textPrimary,
@@ -68,7 +71,7 @@ class AppTypography {
   );
 
   // ─── Button Text ───
-  static TextStyle buttonText({Color? color}) => GoogleFonts.inter(
+  static TextStyle buttonText({Color? color}) => _interBase.copyWith(
     fontSize: 15,
     fontWeight: FontWeight.w400,
     color: color ?? AppColors.textPrimary,
@@ -76,8 +79,8 @@ class AppTypography {
     letterSpacing: 0.3,
   );
 
-  // ─── Caption / Small Text ───
-  static TextStyle caption({Color? color}) => GoogleFonts.inter(
+  // ─── Caption ───
+  static TextStyle caption({Color? color}) => _interBase.copyWith(
     fontSize: 12,
     fontWeight: FontWeight.w300,
     color: color ?? AppColors.textTertiary,
@@ -85,7 +88,7 @@ class AppTypography {
   );
 
   // ─── OTP Digit ───
-  static TextStyle otpDigit({Color? color}) => GoogleFonts.inter(
+  static TextStyle otpDigit({Color? color}) => _interBase.copyWith(
     fontSize: 24,
     fontWeight: FontWeight.w400,
     color: color ?? AppColors.textPrimary,
@@ -93,7 +96,7 @@ class AppTypography {
     letterSpacing: 2,
   );
 
-  // ─── Context-aware versions (use in dark-mode-aware widgets) ───
+  // ─── Context-aware versions ───
   static TextStyle heroHeadingC(BuildContext context) =>
       heroHeading(color: AppColors.primary(context));
 

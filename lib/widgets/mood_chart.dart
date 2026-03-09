@@ -51,17 +51,17 @@ class _MoodChartState extends State<MoodChart>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        border: Border.all(color: AppColors.divider, width: 0.8),
+        border: Border.all(color: AppColors.dividerColor(context), width: 0.8),
         boxShadow: AppColors.subtleShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Weekly Mood', style: AppTypography.sectionHeading()),
+          Text('Weekly Mood', style: AppTypography.sectionHeadingC(context)),
           const SizedBox(height: 4),
-          Text('Your emotional rhythm', style: AppTypography.caption()),
+          Text('Your emotional rhythm', style: AppTypography.captionC(context)),
           const SizedBox(height: 20),
           SizedBox(
             height: 160,
@@ -76,7 +76,8 @@ class _MoodChartState extends State<MoodChart>
                     lineColor: AppColors.softIndigo,
                     fillColor: AppColors.softIndigo.withValues(alpha: 0.08),
                     dotColor: AppColors.softIndigo,
-                    gridColor: AppColors.divider.withValues(alpha: 0.4),
+                    gridColor: AppColors.dividerColor(context).withValues(alpha: 0.4),
+                    dotInnerColor: AppColors.card(context),
                   ),
                 );
               },
@@ -86,7 +87,7 @@ class _MoodChartState extends State<MoodChart>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _days
-                .map((day) => Text(day, style: AppTypography.caption()))
+                .map((day) => Text(day, style: AppTypography.captionC(context)))
                 .toList(),
           ),
         ],
@@ -103,6 +104,7 @@ class _MoodChartPainter extends CustomPainter {
   final Color fillColor;
   final Color dotColor;
   final Color gridColor;
+  final Color dotInnerColor;
 
   _MoodChartPainter({
     required this.data,
@@ -111,6 +113,7 @@ class _MoodChartPainter extends CustomPainter {
     required this.fillColor,
     required this.dotColor,
     required this.gridColor,
+    required this.dotInnerColor,
   });
 
   @override
@@ -176,7 +179,7 @@ class _MoodChartPainter extends CustomPainter {
 
     // Draw dots
     final dotPaintOuter = Paint()..color = lineColor;
-    final dotPaintInner = Paint()..color = Colors.white;
+    final dotPaintInner = Paint()..color = dotInnerColor;
     for (final point in points) {
       canvas.drawCircle(point, 5 * progress, dotPaintOuter);
       canvas.drawCircle(point, 3 * progress, dotPaintInner);

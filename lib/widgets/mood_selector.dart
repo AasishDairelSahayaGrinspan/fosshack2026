@@ -32,7 +32,7 @@ class _MoodSelectorState extends State<MoodSelector> {
           padding: const EdgeInsets.only(left: 4, bottom: 14),
           child: Text(
             'How is your mind today?',
-            style: AppTypography.sectionHeading(),
+            style: AppTypography.sectionHeadingC(context),
           ),
         ),
         SizedBox(
@@ -54,14 +54,14 @@ class _MoodSelectorState extends State<MoodSelector> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? moodColor.withValues(alpha: 0.12)
-                            : AppColors.cardBackground,
+                            : AppColors.card(context),
                         borderRadius: BorderRadius.circular(
                           AppTheme.radiusCard,
                         ),
                         border: Border.all(
                           color: isSelected
                               ? moodColor.withValues(alpha: 0.5)
-                              : AppColors.divider,
+                              : AppColors.dividerColor(context),
                           width: isSelected ? 1.8 : 1,
                         ),
                         boxShadow: isSelected
@@ -93,7 +93,7 @@ class _MoodSelectorState extends State<MoodSelector> {
                             style: AppTypography.caption(
                               color: isSelected
                                   ? moodColor
-                                  : AppColors.textTertiary,
+                                  : AppColors.tertiary(context),
                             ).copyWith(
                               fontWeight:
                                   isSelected ? FontWeight.w500 : FontWeight.w300,
@@ -106,13 +106,7 @@ class _MoodSelectorState extends State<MoodSelector> {
                   )
                   .animate()
                   .fadeIn(
-                    duration: Duration(milliseconds: 300 + index * 80),
-                    curve: AppTheme.gentleCurve,
-                  )
-                  .slideX(
-                    begin: 0.15,
-                    end: 0,
-                    duration: Duration(milliseconds: 300 + index * 80),
+                    duration: const Duration(milliseconds: 250),
                     curve: AppTheme.gentleCurve,
                   );
             },

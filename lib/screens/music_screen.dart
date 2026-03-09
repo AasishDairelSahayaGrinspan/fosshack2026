@@ -18,8 +18,15 @@ class _MusicScreenState extends State<MusicScreen> {
   final Set<String> _selectedLanguages = {};
 
   static const List<String> _languages = [
-    'English', 'Tamil', 'Hindi', 'Telugu',
-    'Malayalam', 'Korean', 'Japanese', 'Instrumental', 'Others',
+    'English',
+    'Tamil',
+    'Hindi',
+    'Telugu',
+    'Malayalam',
+    'Korean',
+    'Japanese',
+    'Instrumental',
+    'Others',
   ];
 
   // Tamil playlists data
@@ -104,10 +111,30 @@ class _MusicScreenState extends State<MusicScreen> {
 
   // Smart playlists
   static const List<Map<String, dynamic>> _smartPlaylists = [
-    {'title': 'Daily Reset', 'subtitle': 'Morning energy', 'icon': Icons.wb_sunny_outlined, 'color': Color(0xFFE8A598)},
-    {'title': 'Sleep Mode', 'subtitle': 'Slow ambient', 'icon': Icons.nightlight_outlined, 'color': Color(0xFF9BA4CC)},
-    {'title': 'Focus Mode', 'subtitle': 'Concentration', 'icon': Icons.center_focus_strong_outlined, 'color': Color(0xFF9CB5A0)},
-    {'title': 'Deep Calm', 'subtitle': 'Meditation', 'icon': Icons.self_improvement_outlined, 'color': Color(0xFFB8A9C9)},
+    {
+      'title': 'Daily Reset',
+      'subtitle': 'Morning energy',
+      'icon': Icons.wb_sunny_outlined,
+      'color': Color(0xFFE8A598),
+    },
+    {
+      'title': 'Sleep Mode',
+      'subtitle': 'Slow ambient',
+      'icon': Icons.nightlight_outlined,
+      'color': Color(0xFF9BA4CC),
+    },
+    {
+      'title': 'Focus Mode',
+      'subtitle': 'Concentration',
+      'icon': Icons.center_focus_strong_outlined,
+      'color': Color(0xFF9CB5A0),
+    },
+    {
+      'title': 'Deep Calm',
+      'subtitle': 'Meditation',
+      'icon': Icons.self_improvement_outlined,
+      'color': Color(0xFFB8A9C9),
+    },
   ];
 
   void _completeSetup() {
@@ -143,74 +170,79 @@ class _MusicScreenState extends State<MusicScreen> {
                 Text(
                   'Music can shift\nthe mind.',
                   style: AppTypography.heroHeadingC(context),
-                )
-                    .animate()
-                    .fadeIn(duration: const Duration(milliseconds: 700)),
+                ).animate().fadeIn(duration: const Duration(milliseconds: 700)),
 
                 const SizedBox(height: 12),
                 Text(
-                  'Choose the languages you enjoy listening to.',
-                  style: AppTypography.subtitleC(context),
-                )
+                      'Choose the languages you enjoy listening to.',
+                      style: AppTypography.subtitleC(context),
+                    )
                     .animate(delay: const Duration(milliseconds: 200))
                     .fadeIn(duration: const Duration(milliseconds: 500)),
 
                 const SizedBox(height: 32),
 
                 Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: _languages.map((lang) {
-                    final isSelected = _selectedLanguages.contains(lang);
-                    return GestureDetector(
-                      onTap: () => setState(() {
-                        isSelected
-                            ? _selectedLanguages.remove(lang)
-                            : _selectedLanguages.add(lang);
-                      }),
-                      child: AnimatedContainer(
-                        duration: AppTheme.fadeInDuration,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.softIndigo.withValues(alpha: 0.15)
-                              : AppColors.card(context),
-                          borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.softIndigo.withValues(alpha: 0.5)
-                                : AppColors.cardBorder(context),
-                            width: isSelected ? 1.5 : 1,
-                          ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.softIndigo
-                                        .withValues(alpha: 0.15),
-                                    blurRadius: 12,
-                                    spreadRadius: 1,
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: _languages.map((lang) {
+                        final isSelected = _selectedLanguages.contains(lang);
+                        return GestureDetector(
+                          onTap: () => setState(() {
+                            isSelected
+                                ? _selectedLanguages.remove(lang)
+                                : _selectedLanguages.add(lang);
+                          }),
+                          child: AnimatedContainer(
+                            duration: AppTheme.fadeInDuration,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.softIndigo.withValues(alpha: 0.15)
+                                  : AppColors.card(context),
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusButton,
+                              ),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.softIndigo.withValues(
+                                        alpha: 0.5,
+                                      )
+                                    : AppColors.cardBorder(context),
+                                width: isSelected ? 1.5 : 1,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.softIndigo.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        blurRadius: 12,
+                                        spreadRadius: 1,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Text(
+                              lang,
+                              style:
+                                  AppTypography.uiLabel(
+                                    color: isSelected
+                                        ? AppColors.softIndigo
+                                        : AppColors.secondary(context),
+                                  ).copyWith(
+                                    fontWeight: isSelected
+                                        ? FontWeight.w400
+                                        : FontWeight.w300,
                                   ),
-                                ]
-                              : null,
-                        ),
-                        child: Text(
-                          lang,
-                          style: AppTypography.uiLabel(
-                            color: isSelected
-                                ? AppColors.softIndigo
-                                : AppColors.secondary(context),
-                          ).copyWith(
-                            fontWeight:
-                                isSelected ? FontWeight.w400 : FontWeight.w300,
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                )
+                        );
+                      }).toList(),
+                    )
                     .animate(delay: const Duration(milliseconds: 300))
                     .fadeIn(duration: const Duration(milliseconds: 500)),
 
@@ -226,7 +258,9 @@ class _MusicScreenState extends State<MusicScreen> {
                       color: _selectedLanguages.isNotEmpty
                           ? AppColors.softIndigo.withValues(alpha: 0.85)
                           : AppColors.dividerColor(context),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                      borderRadius: BorderRadius.circular(
+                        AppTheme.radiusButton,
+                      ),
                     ),
                     child: Center(
                       child: Text(
@@ -263,118 +297,135 @@ class _MusicScreenState extends State<MusicScreen> {
         ),
         child: SafeArea(
           child: DoodleRefresh(
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
 
-                Text(
-                  'Music',
-                  style: AppTypography.heroHeading(color: Colors.white),
-                )
-                    .animate()
-                    .fadeIn(duration: const Duration(milliseconds: 600)),
-
-                const SizedBox(height: 4),
-                Text(
-                  'Playlists for your mood.',
-                  style: AppTypography.subtitle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                  Text(
+                    'Music',
+                    style: AppTypography.heroHeading(color: Colors.white),
+                  ).animate().fadeIn(
+                    duration: const Duration(milliseconds: 600),
                   ),
-                )
-                    .animate()
-                    .fadeIn(duration: const Duration(milliseconds: 600)),
 
-                const SizedBox(height: 28),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Playlists for your mood.',
+                    style: AppTypography.subtitle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ).animate().fadeIn(
+                    duration: const Duration(milliseconds: 600),
+                  ),
 
-                // ─── Smart Playlists Row ───
-                Text(
-                  'Quick Listen',
-                  style: AppTypography.sectionHeading(color: Colors.white),
-                )
-                    .animate(delay: const Duration(milliseconds: 150))
-                    .fadeIn(duration: const Duration(milliseconds: 400)),
+                  const SizedBox(height: 28),
 
-                const SizedBox(height: 14),
-
-                SizedBox(
-                  height: 90,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: _smartPlaylists.length,
-                    separatorBuilder: (_, _i) => const SizedBox(width: 12),
-                    itemBuilder: (context, i) {
-                      final sp = _smartPlaylists[i];
-                      return Container(
-                        width: 140,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.08),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              sp['icon'] as IconData,
-                              color: sp['color'] as Color,
-                              size: 20,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              sp['title'] as String,
-                              style: AppTypography.uiLabel(color: Colors.white)
-                                  .copyWith(fontSize: 12, fontWeight: FontWeight.w400),
-                            ),
-                            Text(
-                              sp['subtitle'] as String,
-                              style: AppTypography.caption(
-                                color: Colors.white.withValues(alpha: 0.5),
-                              ).copyWith(fontSize: 10),
-                            ),
-                          ],
+                  // ─── Smart Playlists Row ───
+                  Text(
+                        'Quick Listen',
+                        style: AppTypography.sectionHeading(
+                          color: Colors.white,
                         ),
                       )
-                          .animate(delay: Duration(milliseconds: 200 + i * 60))
-                          .fadeIn(duration: const Duration(milliseconds: 400))
-                          .slideX(begin: 0.1, end: 0, duration: const Duration(milliseconds: 400));
-                    },
+                      .animate(delay: const Duration(milliseconds: 150))
+                      .fadeIn(duration: const Duration(milliseconds: 400)),
+
+                  const SizedBox(height: 14),
+
+                  SizedBox(
+                        height: 90,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: _smartPlaylists.length,
+                          separatorBuilder: (_, i) => const SizedBox(width: 12),
+                          itemBuilder: (context, i) {
+                            final sp = _smartPlaylists[i];
+                            return Container(
+                              width: 140,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radiusCard,
+                                ),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    sp['icon'] as IconData,
+                                    color: sp['color'] as Color,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    sp['title'] as String,
+                                    style:
+                                        AppTypography.uiLabel(
+                                          color: Colors.white,
+                                        ).copyWith(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                  ),
+                                  Text(
+                                    sp['subtitle'] as String,
+                                    style: AppTypography.caption(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ).copyWith(fontSize: 10),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                      .animate(delay: const Duration(milliseconds: 200))
+                      .fadeIn(duration: const Duration(milliseconds: 400)),
+
+                  const SizedBox(height: 28),
+
+                  // ─── Mood Playlists ───
+                  Text(
+                    'For Your Mood',
+                    style: AppTypography.sectionHeading(color: Colors.white),
                   ),
-                )
-                    .animate(delay: const Duration(milliseconds: 200))
-                    .fadeIn(duration: const Duration(milliseconds: 400)),
 
-                const SizedBox(height: 28),
+                  const SizedBox(height: 14),
 
-                // ─── Mood Playlists ───
-                Text(
-                  'For Your Mood',
-                  style: AppTypography.sectionHeading(color: Colors.white),
-                )
-                    .animate(delay: const Duration(milliseconds: 300))
-                    .fadeIn(duration: const Duration(milliseconds: 400)),
+                  RepaintBoundary(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: _playlists.length * 110.0,
+                      ),
+                      child: ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _playlists.length,
+                        itemBuilder: (context, i) {
+                          final pl = _playlists[i];
+                          return _buildPlaylistCard(pl, i);
+                        },
+                      ),
+                    ),
+                  ),
 
-                const SizedBox(height: 14),
-
-                ...List.generate(_playlists.length, (i) {
-                  final pl = _playlists[i];
-                  return _buildPlaylistCard(pl, i);
-                }),
-
-                const SizedBox(height: 32),
-              ],
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
-          ),
           ),
         ),
       ),
@@ -390,9 +441,7 @@ class _MusicScreenState extends State<MusicScreen> {
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
-          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: Row(
           children: [
@@ -430,7 +479,9 @@ class _MusicScreenState extends State<MusicScreen> {
                   Text(
                     '${(playlist['songs'] as List).length} tracks',
                     style: AppTypography.caption(
-                      color: (playlist['color'] as Color).withValues(alpha: 0.8),
+                      color: (playlist['color'] as Color).withValues(
+                        alpha: 0.8,
+                      ),
                     ).copyWith(fontSize: 10),
                   ),
                 ],
@@ -444,10 +495,7 @@ class _MusicScreenState extends State<MusicScreen> {
           ],
         ),
       ),
-    )
-        .animate(delay: Duration(milliseconds: 350 + index * 80))
-        .fadeIn(duration: const Duration(milliseconds: 500), curve: AppTheme.gentleCurve)
-        .slideY(begin: 0.04, end: 0, duration: const Duration(milliseconds: 500));
+    );
   }
 
   void _openPlaylistDetail(Map<String, dynamic> playlist) {
@@ -457,7 +505,10 @@ class _MusicScreenState extends State<MusicScreen> {
         pageBuilder: (ctx, a1, a2) => _PlaylistDetailScreen(playlist: playlist),
         transitionsBuilder: (ctx, animation, a2, child) {
           return FadeTransition(
-            opacity: CurvedAnimation(parent: animation, curve: AppTheme.gentleCurve),
+            opacity: CurvedAnimation(
+              parent: animation,
+              curve: AppTheme.gentleCurve,
+            ),
             child: child,
           );
         },
@@ -491,13 +542,17 @@ class _PlaylistDetailScreen extends StatelessWidget {
             children: [
               // Top bar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
                       child: Container(
-                        width: 42, height: 42,
+                        width: 42,
+                        height: 42,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(14),
@@ -516,7 +571,9 @@ class _PlaylistDetailScreen extends StatelessWidget {
                         children: [
                           Text(
                             playlist['title'] as String,
-                            style: AppTypography.sectionHeading(color: Colors.white),
+                            style: AppTypography.sectionHeading(
+                              color: Colors.white,
+                            ),
                           ),
                           Text(
                             '${songs.length} tracks',
@@ -535,55 +592,63 @@ class _PlaylistDetailScreen extends StatelessWidget {
               Expanded(
                 child: ListView.builder(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   itemCount: songs.length,
                   itemBuilder: (context, i) {
                     final song = songs[i] as Map<String, String>;
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            '${i + 1}',
-                            style: AppTypography.caption(
-                              color: color.withValues(alpha: 0.7),
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusSmall,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  song['title']!,
-                                  style: AppTypography.uiLabel(color: Colors.white)
-                                      .copyWith(fontWeight: FontWeight.w400),
+                          child: Row(
+                            children: [
+                              Text(
+                                '${i + 1}',
+                                style: AppTypography.caption(
+                                  color: color.withValues(alpha: 0.7),
                                 ),
-                                Text(
-                                  song['artist']!,
-                                  style: AppTypography.caption(
-                                    color: Colors.white.withValues(alpha: 0.4),
-                                  ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      song['title']!,
+                                      style: AppTypography.uiLabel(
+                                        color: Colors.white,
+                                      ).copyWith(fontWeight: FontWeight.w400),
+                                    ),
+                                    Text(
+                                      song['artist']!,
+                                      style: AppTypography.caption(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.4,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                              Icon(
+                                Icons.play_circle_outline_rounded,
+                                color: Colors.white.withValues(alpha: 0.2),
+                                size: 22,
+                              ),
+                            ],
                           ),
-                          Icon(
-                            Icons.play_circle_outline_rounded,
-                            color: Colors.white.withValues(alpha: 0.2),
-                            size: 22,
-                          ),
-                        ],
-                      ),
-                    )
+                        )
                         .animate(delay: Duration(milliseconds: i * 50))
                         .fadeIn(duration: const Duration(milliseconds: 300));
                   },

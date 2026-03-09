@@ -41,9 +41,9 @@ class _StreakIndicatorState extends State<StreakIndicator>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        border: Border.all(color: AppColors.divider, width: 0.8),
+        border: Border.all(color: AppColors.dividerColor(context), width: 0.8),
         boxShadow: AppColors.subtleShadow,
       ),
       child: Row(
@@ -89,12 +89,12 @@ class _StreakIndicatorState extends State<StreakIndicator>
               children: [
                 Text(
                   '${widget.streakDays} days of showing up.',
-                  style: AppTypography.buttonText(),
+                  style: AppTypography.buttonTextC(context),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'You\'re building something beautiful.',
-                  style: AppTypography.caption(),
+                  style: AppTypography.captionC(context),
                 ),
               ],
             ),

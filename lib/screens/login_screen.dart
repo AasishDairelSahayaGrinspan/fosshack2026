@@ -7,7 +7,7 @@ import '../theme/app_typography.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/frosted_glass_card.dart';
 import '../widgets/pill_button.dart';
-import 'community_onboarding_screen.dart';
+import 'onboarding_screen.dart';
 
 /// Unravel Login Screen
 /// "Welcome back." — spa-like entry experience.
@@ -24,6 +24,7 @@ class _LoginScreenState extends State<LoginScreen>
   // ─── State ───
   bool _showOtp = false;
   bool _isVerifying = false;
+  bool _showSuccess = false;
   final _phoneController = TextEditingController();
   final List<TextEditingController> _otpControllers = List.generate(
     6,
@@ -75,7 +76,12 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isVerifying = true);
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    setState(() => _isVerifying = false);
+    setState(() {
+      _isVerifying = false;
+      _showSuccess = true;
+    });
+    await Future.delayed(const Duration(milliseconds: 900));
+    if (!mounted) return;
     _navigateToHome();
   }
 
@@ -83,7 +89,12 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isVerifying = true);
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    setState(() => _isVerifying = false);
+    setState(() {
+      _isVerifying = false;
+      _showSuccess = true;
+    });
+    await Future.delayed(const Duration(milliseconds: 900));
+    if (!mounted) return;
     _navigateToHome();
   }
 
@@ -92,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen>
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const CommunityOnboardingScreen(),
+            const OnboardingScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: CurvedAnimation(
@@ -338,8 +349,8 @@ class _LoginScreenState extends State<LoginScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(6, (index) {
-            return Container(
-              width: 44,
+            return Expanded(
+              child: Container(
               height: 52,
               margin: EdgeInsets.only(right: index < 5 ? 8 : 0),
               child: KeyboardListener(
@@ -383,20 +394,40 @@ class _LoginScreenState extends State<LoginScreen>
                   onChanged: (value) => _onOtpChanged(index, value),
                 ),
               ),
+            ),
             );
           }),
         ),
 
         const SizedBox(height: 24),
 
-        // Verify / Loading button
-        PillButton(
-          label: 'Verify',
-          width: double.infinity,
-          backgroundColor: AppColors.softIndigo.withValues(alpha: 0.85),
-          textColor: Colors.white,
-          isLoading: _isVerifying,
-          onTap: _verifyOtp,
+        // Verify / Loading / Success
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _showSuccess
+              ? const Icon(
+                  Icons.check_circle_rounded,
+                  key: ValueKey('success'),
+                  color: AppColors.sageGreen,
+                  size: 48,
+                )
+                    .animate()
+                    .scale(
+                      begin: const Offset(0.5, 0.5),
+                      end: const Offset(1, 1),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.elasticOut,
+                    )
+                    .fadeIn(duration: const Duration(milliseconds: 300))
+              : PillButton(
+                  key: const ValueKey('verify'),
+                  label: 'Verify',
+                  width: double.infinity,
+                  backgroundColor: AppColors.softIndigo.withValues(alpha: 0.85),
+                  textColor: Colors.white,
+                  isLoading: _isVerifying,
+                  onTap: _verifyOtp,
+                ),
         ),
 
         const SizedBox(height: 16),

@@ -80,12 +80,12 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
                   children: [
                     Text(
                       'Recovery Score',
-                      style: AppTypography.sectionHeading(),
+                      style: AppTypography.sectionHeadingC(context),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'You\'re doing beautifully.',
-                      style: AppTypography.subtitle(),
+                      style: AppTypography.subtitleC(context),
                     ),
                   ],
                 ),
@@ -100,7 +100,7 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
                     child: CustomPaint(
                       painter: _ScoreRingPainter(
                         progress: _progressAnimation.value,
-                        trackColor: AppColors.divider,
+                        trackColor: AppColors.dividerColor(context),
                         progressColor: AppColors.softIndigo,
                       ),
                       child: Center(
@@ -127,7 +127,7 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
                 return LinearProgressIndicator(
                   value: _progressAnimation.value,
                   minHeight: 6,
-                  backgroundColor: AppColors.divider.withValues(alpha: 0.5),
+                  backgroundColor: AppColors.dividerColor(context).withValues(alpha: 0.5),
                   valueColor: const AlwaysStoppedAnimation<Color>(
                     AppColors.softIndigo,
                   ),
@@ -139,7 +139,7 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
           // Inspirational quote — Playfair italic
           Text(
             '"$_displayQuote"',
-            style: AppTypography.emotionalText(),
+            style: AppTypography.emotionalTextC(context),
             textAlign: TextAlign.center,
           ),
         ],

@@ -1,24 +1,38 @@
-import 'package:dio/dio.dart';
+import 'package:appwrite/appwrite.dart';
+import '../../../../core/constants/appwrite_constants.dart';
 import '../../domain/models/journal_entry.dart';
 
 class JournalRepository {
-  final Dio _dio;
-  JournalRepository(this._dio);
+  final Databases _databases;
+  JournalRepository(this._databases);
 
   Future<JournalEntry> createEntry(Map<String, dynamic> data) async {
-    final response = await _dio.post('/journal', data: data);
-    return JournalEntry.fromJson(response.data);
+    final doc = await _databases.createDocument(
+      databaseId: AppwriteConstants.databaseId,
+      collectionId: AppwriteConstants.journalEntriesCollection,
+      documentId: ID.unique(),
+      data: data,
+    );
+    return JournalEntry.fromJson(doc.data);
   }
 
   Future<List<JournalEntry>> getEntries() async {
-    final response = await _dio.get('/journal');
-    final list = response.data as List;
-    return list.map((e) => JournalEntry.fromJson(e)).toList();
+    final result = await _databases.listDocuments(
+      databaseId: AppwriteConstants.databaseId,
+      collectionId: AppwriteConstants.journalEntriesCollection,
+      queries: [Query.orderDesc('timestamp'), Query.limit(100)],
+    );
+    return result.documents.map((d) => JournalEntry.fromJson(d.data)).toList();
   }
 
   Future<void> syncUnsynced(List<JournalEntry> entries) async {
-    await _dio.post('/journal/sync', data: {
-      'entries': entries.map((e) => e.toJson()).toList(),
-    });
+    for (final entry in entries) {
+      await _databases.createDocument(
+        databaseId: AppwriteConstants.databaseId,
+        collectionId: AppwriteConstants.journalEntriesCollection,
+        documentId: ID.unique(),
+        data: entry.toJson(),
+      );
+    }
   }
 }

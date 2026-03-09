@@ -1,16 +1,23 @@
-import 'package:dio/dio.dart';
+import 'dart:convert';
+
+import 'package:appwrite/appwrite.dart';
+import '../../../../core/constants/appwrite_constants.dart';
 import '../../domain/models/playlist.dart';
 
 class MusicRepository {
-  final Dio _dio;
-  MusicRepository(this._dio);
+  final Functions _functions;
+  MusicRepository(this._functions);
 
   Future<MoodPlaylist> generatePlaylist(
       String quadrant, String? spotifyToken) async {
-    final response = await _dio.post('/music/playlist', data: {
-      'quadrant': quadrant,
-      if (spotifyToken != null) 'spotifyToken': spotifyToken,
-    });
-    return MoodPlaylist.fromJson(response.data);
+    final execution = await _functions.createExecution(
+      functionId: AppwriteConstants.generatePlaylistFunction,
+      body: jsonEncode({
+        'quadrant': quadrant,
+        if (spotifyToken != null) 'spotifyToken': spotifyToken,
+      }),
+    );
+    final data = jsonDecode(execution.responseBody) as Map<String, dynamic>;
+    return MoodPlaylist.fromJson(data);
   }
 }

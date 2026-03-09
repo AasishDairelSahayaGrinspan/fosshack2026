@@ -1,7 +1,9 @@
+import 'package:appwrite/appwrite.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/constants/appwrite_constants.dart';
 import '../../../../core/constants/circumplex_data.dart';
 import '../models/mood_entry.dart';
 import '../models/circumplex_position.dart';
@@ -73,16 +75,22 @@ class MoodHistoryNotifier extends AsyncNotifier<List<MoodEntry>> {
     // Update current mood
     ref.read(currentMoodProvider.notifier).state = entry;
 
-    // Try sync to backend
+    // Try sync to Appwrite
     try {
-      final dio = ref.read(dioProvider);
-      await dio.post('/mood', data: {
-        'valence': entry.valence,
-        'arousal': entry.arousal,
-        'emotionWord': entry.emotionWord,
-        'quadrant': entry.quadrant,
-        'note': entry.note,
-      });
+      final databases = ref.read(appwriteDatabasesProvider);
+      await databases.createDocument(
+        databaseId: AppwriteConstants.databaseId,
+        collectionId: AppwriteConstants.moodLogsCollection,
+        documentId: ID.unique(),
+        data: {
+          'valence': entry.valence,
+          'arousal': entry.arousal,
+          'emotionWord': entry.emotionWord,
+          'quadrant': entry.quadrant,
+          'note': entry.note,
+          'timestamp': entry.timestamp.toIso8601String(),
+        },
+      );
     } catch (_) {
       // Will sync later
     }

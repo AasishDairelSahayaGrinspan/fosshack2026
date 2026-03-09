@@ -1,19 +1,26 @@
+import 'package:appwrite/appwrite.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../models/user.dart';
+
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AuthRepository(ref.read(appwriteAccountProvider));
+});
 
 class AuthNotifier extends AsyncNotifier<User?> {
   @override
   Future<User?> build() async {
-    final storage = ref.read(secureStorageProvider);
-    final token = await storage.read(key: 'jwt');
-    if (token == null) return null;
     try {
-      final dio = ref.read(dioProvider);
-      final response = await dio.get('/auth/me');
-      return User.fromJson(response.data);
+      final account = ref.read(appwriteAccountProvider);
+      final user = await account.get();
+      return User(
+        id: user.$id,
+        email: user.email,
+        displayName: user.name,
+        createdAt: DateTime.parse(user.$createdAt),
+      );
     } catch (_) {
-      await storage.delete(key: 'jwt');
       return null;
     }
   }
@@ -21,12 +28,17 @@ class AuthNotifier extends AsyncNotifier<User?> {
   Future<void> login(String email, String password) async {
     state = const AsyncLoading();
     try {
-      final dio = ref.read(dioProvider);
-      final response = await dio.post('/auth/login', data: {'email': email, 'password': password});
-      final token = response.data['accessToken'] as String;
-      await ref.read(secureStorageProvider).write(key: 'jwt', value: token);
-      final userResponse = await dio.get('/auth/me');
-      state = AsyncData(User.fromJson(userResponse.data));
+      final repo = ref.read(authRepositoryProvider);
+      await repo.login(email, password);
+      final user = await repo.getCurrentUser();
+      state = AsyncData(User(
+        id: user.$id,
+        email: user.email,
+        displayName: user.name,
+        createdAt: DateTime.parse(user.$createdAt),
+      ));
+    } on AppwriteException catch (e) {
+      state = AsyncError(e.message ?? 'Login failed', StackTrace.current);
     } catch (e) {
       state = AsyncError(e, StackTrace.current);
     }
@@ -35,21 +47,26 @@ class AuthNotifier extends AsyncNotifier<User?> {
   Future<void> register(String email, String password, String displayName) async {
     state = const AsyncLoading();
     try {
-      final dio = ref.read(dioProvider);
-      final response = await dio.post('/auth/register', data: {
-        'email': email, 'password': password, 'displayName': displayName,
-      });
-      final token = response.data['accessToken'] as String;
-      await ref.read(secureStorageProvider).write(key: 'jwt', value: token);
-      final userResponse = await dio.get('/auth/me');
-      state = AsyncData(User.fromJson(userResponse.data));
+      final repo = ref.read(authRepositoryProvider);
+      final user = await repo.register(email, password, displayName);
+      state = AsyncData(User(
+        id: user.$id,
+        email: user.email,
+        displayName: user.name,
+        createdAt: DateTime.parse(user.$createdAt),
+      ));
+    } on AppwriteException catch (e) {
+      state = AsyncError(e.message ?? 'Registration failed', StackTrace.current);
     } catch (e) {
       state = AsyncError(e, StackTrace.current);
     }
   }
 
   Future<void> logout() async {
-    await ref.read(secureStorageProvider).delete(key: 'jwt');
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      await repo.logout();
+    } catch (_) {}
     state = const AsyncData(null);
   }
 }

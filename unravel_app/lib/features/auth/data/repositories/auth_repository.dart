@@ -1,24 +1,37 @@
-import 'package:dio/dio.dart';
+import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/models.dart' as models;
 
 class AuthRepository {
-  final Dio _dio;
-  AuthRepository(this._dio);
+  final Account _account;
+  AuthRepository(this._account);
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
-    final response = await _dio.post('/auth/login', data: {
-      'email': email,
-      'password': password,
-    });
-    return response.data;
+  Future<models.Session> login(String email, String password) async {
+    return await _account.createEmailPasswordSession(
+      email: email,
+      password: password,
+    );
   }
 
-  Future<Map<String, dynamic>> register(
+  Future<models.User> register(
       String email, String password, String displayName) async {
-    final response = await _dio.post('/auth/register', data: {
-      'email': email,
-      'password': password,
-      'displayName': displayName,
-    });
-    return response.data;
+    await _account.create(
+      userId: ID.unique(),
+      email: email,
+      password: password,
+      name: displayName,
+    );
+    await _account.createEmailPasswordSession(
+      email: email,
+      password: password,
+    );
+    return await _account.get();
+  }
+
+  Future<models.User> getCurrentUser() async {
+    return await _account.get();
+  }
+
+  Future<void> logout() async {
+    await _account.deleteSession(sessionId: 'current');
   }
 }

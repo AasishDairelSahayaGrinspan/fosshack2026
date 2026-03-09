@@ -1,6 +1,8 @@
+import 'package:appwrite/appwrite.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/constants/appwrite_constants.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../models/journal_entry.dart';
 
@@ -34,12 +36,18 @@ class JournalNotifier extends AsyncNotifier<List<JournalEntry>> {
     await box.put(entry.id, entry.toJson());
 
     try {
-      final dio = ref.read(dioProvider);
-      await dio.post('/journal', data: {
-        'content': entry.content,
-        'tags': entry.tags,
-        'moodLogId': entry.moodEntryId,
-      });
+      final databases = ref.read(appwriteDatabasesProvider);
+      await databases.createDocument(
+        databaseId: AppwriteConstants.databaseId,
+        collectionId: AppwriteConstants.journalEntriesCollection,
+        documentId: entry.id,
+        data: {
+          'content': entry.content,
+          'tags': entry.tags,
+          'moodLogId': entry.moodEntryId,
+          'timestamp': entry.timestamp.toIso8601String(),
+        },
+      );
     } catch (_) {}
 
     final current = state.value ?? [];

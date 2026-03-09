@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/constants/appwrite_constants.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../models/playlist.dart';
 
@@ -12,15 +15,19 @@ class MusicNotifier extends AsyncNotifier<MoodPlaylist?> {
   }) async {
     state = const AsyncLoading();
     try {
-      final dio = ref.read(dioProvider);
-      final response = await dio.post('/music/playlist', data: {
-        'quadrant': quadrant,
-        'spotifyAccessToken': spotifyAccessToken,
-      });
+      final functions = ref.read(appwriteFunctionsProvider);
+      final execution = await functions.createExecution(
+        functionId: AppwriteConstants.generatePlaylistFunction,
+        body: jsonEncode({
+          'quadrant': quadrant,
+          'spotifyAccessToken': spotifyAccessToken,
+        }),
+      );
+      final responseData = jsonDecode(execution.responseBody) as Map<String, dynamic>;
       final playlist = MoodPlaylist(
-        id: response.data['playlistId'] ?? '',
+        id: responseData['playlistId'] ?? '',
         name: 'Unravel: $quadrant',
-        spotifyUrl: response.data['playlistUrl'] as String,
+        spotifyUrl: responseData['playlistUrl'] as String,
         quadrant: quadrant,
         createdAt: DateTime.now(),
       );

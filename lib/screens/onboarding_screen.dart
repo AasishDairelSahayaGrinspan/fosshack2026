@@ -6,6 +6,7 @@ import '../theme/app_typography.dart';
 import '../widgets/gradient_background.dart';
 import '../services/user_preferences_service.dart';
 import '../services/auth_service.dart';
+import '../services/avatar_service.dart';
 import 'community_onboarding_screen.dart';
 
 /// Multi-step onboarding — 7 pages via PageView.
@@ -77,34 +78,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // Page 5 — mood baseline
   double _moodBaseline = 0.5;
 
-  // Page 6 — avatar
-  int _hairStyle = 0;
-  int _skinTone = 0;
-  int _outfitColor = 0;
-
-  static const List<Color> _skinTones = [
-    Color(0xFFFDE7C8),
-    Color(0xFFE8C49A),
-    Color(0xFFCBA075),
-    Color(0xFFA0714F),
-    Color(0xFF6B4226),
-  ];
-
-  static const List<Color> _outfitColors = [
-    Color(0xFF9BA4CC),
-    Color(0xFF9CB5A0),
-    Color(0xFFE8A598),
-    Color(0xFFB8A9C9),
-    Color(0xFFF5E0D3),
-  ];
-
-  static const List<IconData> _hairIcons = [
-    Icons.face_rounded,
-    Icons.face_2_rounded,
-    Icons.face_3_rounded,
-    Icons.face_4_rounded,
-    Icons.face_5_rounded,
-  ];
+  // Page 6 — avatar (DiceBear)
+  late String _avatarStyle = AvatarService.getRecommendedStyles()[0];
+  late String _avatarSeed = AvatarService().generateRandomSeed();
+  bool _isLoadingAvatar = false;
 
   void _nextPage() {
     if (_currentPage < 6) {
@@ -123,9 +100,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         .toList();
     _prefs.sleepSchedule = _selectedSleep == 0 ? 'morning' : 'night';
     _prefs.moodBaseline = _moodBaseline;
-    _prefs.hairStyle = _hairStyle;
-    _prefs.skinTone = _skinTone;
-    _prefs.outfitColor = _outfitColor;
+    _prefs.avatarStyle = _avatarStyle;
+    _prefs.avatarSeed = _avatarSeed;
 
     // Save preferences to Appwrite (fire and forget)
     _prefs.saveToRemote();
@@ -285,10 +261,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           // Big age number
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
-            transitionBuilder: (child, animation) => ScaleTransition(
-              scale: animation,
-              child: child,
-            ),
+            transitionBuilder: (child, animation) =>
+                ScaleTransition(scale: animation, child: child),
             child: Text(
               '$age',
               key: ValueKey(age),
@@ -298,10 +272,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            'years old',
-            style: AppTypography.captionC(context),
-          ),
+          Text('years old', style: AppTypography.captionC(context)),
 
           const SizedBox(height: 8),
 
@@ -314,12 +285,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          milestone['emoji']!,
-                          style: const TextStyle(fontSize: 28),
-                        )
-                            .animate(
-                              key: ValueKey('emoji_$age'),
+                              milestone['emoji']!,
+                              style: const TextStyle(fontSize: 28),
                             )
+                            .animate(key: ValueKey('emoji_$age'))
                             .scale(
                               begin: const Offset(0.3, 0.3),
                               end: const Offset(1, 1),
@@ -328,14 +297,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                         const SizedBox(width: 8),
                         Text(
-                          milestone['label']!,
-                          style: AppTypography.uiLabel(
-                            color: AppColors.softIndigo,
-                          ).copyWith(fontWeight: FontWeight.w500),
-                        )
-                            .animate(
-                              key: ValueKey('label_$age'),
+                              milestone['label']!,
+                              style: AppTypography.uiLabel(
+                                color: AppColors.softIndigo,
+                              ).copyWith(fontWeight: FontWeight.w500),
                             )
+                            .animate(key: ValueKey('label_$age'))
                             .fadeIn(duration: const Duration(milliseconds: 300))
                             .slideX(
                               begin: -0.1,
@@ -352,21 +319,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           if (_milestoneEmoji != null)
             SizedBox(
               height: 40,
-              child: Text(
-                _milestoneEmoji!,
-                style: const TextStyle(fontSize: 32),
-              )
-                  .animate()
-                  .slideY(
-                    begin: 0,
-                    end: -1.5,
-                    duration: const Duration(milliseconds: 1000),
-                    curve: Curves.easeOut,
-                  )
-                  .fadeOut(
-                    delay: const Duration(milliseconds: 600),
-                    duration: const Duration(milliseconds: 400),
-                  ),
+              child:
+                  Text(_milestoneEmoji!, style: const TextStyle(fontSize: 32))
+                      .animate()
+                      .slideY(
+                        begin: 0,
+                        end: -1.5,
+                        duration: const Duration(milliseconds: 1000),
+                        curve: Curves.easeOut,
+                      )
+                      .fadeOut(
+                        delay: const Duration(milliseconds: 600),
+                        duration: const Duration(milliseconds: 400),
+                      ),
             ),
 
           const SizedBox(height: 16),
@@ -426,9 +391,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     color: isReached
                         ? AppColors.softIndigo.withValues(alpha: 0.1)
                         : AppColors.card(context),
-                    borderRadius: BorderRadius.circular(
-                      AppTheme.radiusButton,
-                    ),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusButton),
                     border: Border.all(
                       color: isReached
                           ? AppColors.softIndigo.withValues(alpha: 0.3)
@@ -438,13 +401,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   child: Text(
                     '${e.value['emoji']} ${e.key}',
-                    style: AppTypography.caption(
-                      color: isReached
-                          ? AppColors.softIndigo
-                          : AppColors.tertiary(context),
-                    ).copyWith(
-                      fontWeight: isReached ? FontWeight.w500 : FontWeight.w300,
-                    ),
+                    style:
+                        AppTypography.caption(
+                          color: isReached
+                              ? AppColors.softIndigo
+                              : AppColors.tertiary(context),
+                        ).copyWith(
+                          fontWeight: isReached
+                              ? FontWeight.w500
+                              : FontWeight.w300,
+                        ),
                   ),
                 );
               }).toList(),
@@ -612,137 +578,216 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ─── Page 6: Avatar Creation ───
+  // ─── Page 6: Avatar Creation (DiceBear) ───
   Widget _buildAvatarPage() {
+    final avatarUrl = AvatarService().getAvatarUrl(
+      seed: _avatarSeed,
+      style: _avatarStyle,
+    );
+
     return _pageWrapper(
       heading: 'Create your\navatar.',
       subtitle: 'A little you for this space.',
-      child: Column(
-        children: [
-          // Preview
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _skinTones[_skinTone],
-              border: Border.all(
-                color: _outfitColors[_outfitColor],
-                width: 4,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Avatar Preview
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.card(context),
+                border: Border.all(
+                  color: AppColors.softIndigo.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.softIndigo.withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    spreadRadius: 4,
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: _outfitColors[_outfitColor].withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  spreadRadius: 4,
+              child: ClipOval(
+                child: _isLoadingAvatar
+                    ? Center(
+                        child: SizedBox(
+                          width: 30,
+                          height: 30,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(
+                              AppColors.softIndigo.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ),
+                      )
+                    : Image.network(
+                        avatarUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.person_outline_rounded,
+                            size: 50,
+                            color: AppColors.softIndigo.withValues(alpha: 0.5),
+                          );
+                        },
+                      ),
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // Action Buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Regenerate Button
+                GestureDetector(
+                  onTap: _isLoadingAvatar
+                      ? null
+                      : () {
+                          setState(() {
+                            _isLoadingAvatar = true;
+                            _avatarSeed = AvatarService().generateRandomSeed();
+                          });
+                          Future.delayed(const Duration(milliseconds: 600), () {
+                            if (mounted) {
+                              setState(() => _isLoadingAvatar = false);
+                            }
+                          });
+                        },
+                  child: AnimatedContainer(
+                    duration: AppTheme.fadeInDuration,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _isLoadingAvatar
+                          ? AppColors.softIndigo.withValues(alpha: 0.08)
+                          : AppColors.softIndigo.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.softIndigo.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.refresh_rounded,
+                          size: 16,
+                          color: _isLoadingAvatar
+                              ? AppColors.softIndigo.withValues(alpha: 0.5)
+                              : AppColors.softIndigo,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Regenerate',
+                          style: AppTypography.caption(
+                            color: _isLoadingAvatar
+                                ? AppColors.softIndigo.withValues(alpha: 0.5)
+                                : AppColors.softIndigo,
+                          ).copyWith(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
-            child: Icon(
-              _hairIcons[_hairStyle],
-              size: 48,
-              color: AppColors.primary(context).withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 28),
+            const SizedBox(height: 28),
 
-          // Hair style
-          _buildAvatarRow(
-            'Style',
-            5,
-            _hairStyle,
-            (i) => setState(() => _hairStyle = i),
-            itemBuilder: (i, isSelected) => Icon(
-              _hairIcons[i],
-              size: 24,
-              color: isSelected
-                  ? AppColors.softIndigo
-                  : AppColors.tertiary(context),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Skin tone
-          _buildAvatarRow(
-            'Skin',
-            _skinTones.length,
-            _skinTone,
-            (i) => setState(() => _skinTone = i),
-            itemBuilder: (i, isSelected) => Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _skinTones[i],
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.softIndigo
-                      : Colors.transparent,
-                  width: 2,
+            // Style Selection
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Avatar Style', style: AppTypography.captionC(context)),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: AvatarService.getRecommendedStyles().map((style) {
+                    final isSelected = _avatarStyle == style;
+                    return GestureDetector(
+                      onTap: () => setState(() => _avatarStyle = style),
+                      child: AnimatedContainer(
+                        duration: AppTheme.fadeInDuration,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.softIndigo.withValues(alpha: 0.15)
+                              : AppColors.card(context),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.softIndigo.withValues(alpha: 0.4)
+                                : AppColors.dividerColor(context),
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Text(
+                          style.replaceAll('-', ' ').toUpperCase(),
+                          style:
+                              AppTypography.caption(
+                                color: isSelected
+                                    ? AppColors.softIndigo
+                                    : AppColors.tertiary(context),
+                              ).copyWith(
+                                fontSize: 10,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
 
-          // Outfit color
-          _buildAvatarRow(
-            'Color',
-            _outfitColors.length,
-            _outfitColor,
-            (i) => setState(() => _outfitColor = i),
-            itemBuilder: (i, isSelected) => Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _outfitColors[i],
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primary(context).withValues(alpha: 0.4)
-                      : Colors.transparent,
-                  width: 2,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+            const SizedBox(height: 20),
 
-  Widget _buildAvatarRow(
-    String label,
-    int count,
-    int selected,
-    ValueChanged<int> onSelect, {
-    required Widget Function(int index, bool isSelected) itemBuilder,
-  }) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 48,
-          child: Text(label, style: AppTypography.captionC(context)),
-        ),
-        ...List.generate(count, (i) {
-          return GestureDetector(
-            onTap: () => onSelect(i),
-            child: AnimatedContainer(
-              duration: AppTheme.fadeInDuration,
-              width: 44,
-              height: 44,
-              margin: const EdgeInsets.only(right: 8),
+            // Info text
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: selected == i
-                    ? AppColors.softIndigo.withValues(alpha: 0.08)
-                    : Colors.transparent,
+                color: AppColors.softIndigo.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.softIndigo.withValues(alpha: 0.1),
+                  width: 1,
+                ),
               ),
-              child: Center(child: itemBuilder(i, selected == i)),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline_rounded,
+                    size: 16,
+                    color: AppColors.softIndigo.withValues(alpha: 0.6),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Tap Regenerate to create new\navatar variations',
+                      style: AppTypography.caption(
+                        color: AppColors.softIndigo.withValues(alpha: 0.7),
+                      ).copyWith(fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        }),
-      ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -754,10 +799,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.spa_outlined,
-            size: 56,
-            color: AppColors.softIndigo.withValues(alpha: 0.6),
-          )
+                Icons.spa_outlined,
+                size: 56,
+                color: AppColors.softIndigo.withValues(alpha: 0.6),
+              )
               .animate()
               .fadeIn(duration: const Duration(milliseconds: 800))
               .scale(
@@ -768,39 +813,39 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
           const SizedBox(height: 24),
           Text(
-            'Your space\nis ready.',
-            textAlign: TextAlign.center,
-            style: AppTypography.heroHeadingC(context),
-          )
+                'Your space\nis ready.',
+                textAlign: TextAlign.center,
+                style: AppTypography.heroHeadingC(context),
+              )
               .animate(delay: const Duration(milliseconds: 300))
               .fadeIn(duration: const Duration(milliseconds: 700)),
           const SizedBox(height: 12),
           Text(
-            'Take a breath. You belong here.',
-            textAlign: TextAlign.center,
-            style: AppTypography.subtitleC(context),
-          )
+                'Take a breath. You belong here.',
+                textAlign: TextAlign.center,
+                style: AppTypography.subtitleC(context),
+              )
               .animate(delay: const Duration(milliseconds: 600))
               .fadeIn(duration: const Duration(milliseconds: 500)),
           const SizedBox(height: 48),
           GestureDetector(
-            onTap: _finish,
-            child: AnimatedContainer(
-              duration: AppTheme.fadeInDuration,
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: AppColors.softIndigo.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-              ),
-              child: Center(
-                child: Text(
-                  'Continue',
-                  style: AppTypography.buttonText(color: Colors.white),
+                onTap: _finish,
+                child: AnimatedContainer(
+                  duration: AppTheme.fadeInDuration,
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.softIndigo.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Continue',
+                      style: AppTypography.buttonText(color: Colors.white),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          )
+              )
               .animate(delay: const Duration(milliseconds: 900))
               .fadeIn(duration: const Duration(milliseconds: 400)),
         ],
@@ -844,29 +889,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 48),
           // Continue button
           GestureDetector(
-            onTap: _canProceed ? _nextPage : null,
-            child: AnimatedContainer(
-              duration: AppTheme.fadeInDuration,
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: _canProceed
-                    ? AppColors.softIndigo.withValues(alpha: 0.85)
-                    : AppColors.dividerColor(context).withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-              ),
-              child: Center(
-                child: Text(
-                  'Continue',
-                  style: AppTypography.buttonText(
+                onTap: _canProceed ? _nextPage : null,
+                child: AnimatedContainer(
+                  duration: AppTheme.fadeInDuration,
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
                     color: _canProceed
-                        ? Colors.white
-                        : AppColors.tertiary(context),
+                        ? AppColors.softIndigo.withValues(alpha: 0.85)
+                        : AppColors.dividerColor(
+                            context,
+                          ).withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Continue',
+                      style: AppTypography.buttonText(
+                        color: _canProceed
+                            ? Colors.white
+                            : AppColors.tertiary(context),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          )
+              )
               .animate(delay: const Duration(milliseconds: 500))
               .fadeIn(duration: const Duration(milliseconds: 400)),
           const SizedBox(height: 32),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/enums.dart' as enums;
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -125,8 +125,8 @@ class _LoginScreenState extends State<LoginScreen>
     });
     try {
       final oauthProvider = provider == 'google'
-          ? OAuthProvider.google
-          : OAuthProvider.apple;
+          ? enums.OAuthProvider.google
+          : enums.OAuthProvider.apple;
       await AuthService().oAuthLogin(oauthProvider);
       if (!mounted) return;
       setState(() {

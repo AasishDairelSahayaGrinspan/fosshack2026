@@ -1,4 +1,5 @@
 import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/enums.dart' as enums;
 import 'package:appwrite/models.dart' as models;
 import 'appwrite_service.dart';
 
@@ -52,7 +53,7 @@ class AuthService {
 
   /// Launch OAuth flow for the given provider.
   /// [provider] should be 'google' or 'apple'.
-  Future<void> oAuthLogin(OAuthProvider provider) async {
+  Future<void> oAuthLogin(enums.OAuthProvider provider) async {
     await _account.createOAuth2Session(provider: provider);
     _currentUser = await _account.get();
   }

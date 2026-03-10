@@ -28,171 +28,174 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return GradientBackground(
       child: SafeArea(
         child: DoodleRefresh(
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
 
-              // ─── Header ───
-              Text('Your Space', style: AppTypography.heroHeadingC(context))
-                  .animate()
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 600),
-                    curve: AppTheme.gentleCurve,
-                  ),
+                // ─── Header ───
+                Text(
+                  'Your Space',
+                  style: AppTypography.heroHeadingC(context),
+                ).animate().fadeIn(
+                  duration: const Duration(milliseconds: 600),
+                  curve: AppTheme.gentleCurve,
+                ),
 
-              const SizedBox(height: 6),
-              Text(
-                'Settings & preferences',
-                style: AppTypography.subtitleC(context),
-              )
-                  .animate()
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 600),
-                    curve: AppTheme.gentleCurve,
-                  ),
+                const SizedBox(height: 6),
+                Text(
+                  'Settings & preferences',
+                  style: AppTypography.subtitleC(context),
+                ).animate().fadeIn(
+                  duration: const Duration(milliseconds: 600),
+                  curve: AppTheme.gentleCurve,
+                ),
 
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // ─── Avatar Card ───
-              _buildProfileCard(context)
-                  .animate(delay: const Duration(milliseconds: 150))
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 500),
-                    curve: AppTheme.gentleCurve,
-                  ),
+                // ─── Avatar Card ───
+                _buildProfileCard(context)
+                    .animate(delay: const Duration(milliseconds: 150))
+                    .fadeIn(
+                      duration: const Duration(milliseconds: 500),
+                      curve: AppTheme.gentleCurve,
+                    ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // ─── Settings Section ───
-              Text('Settings', style: AppTypography.sectionHeadingC(context))
-                  .animate(delay: const Duration(milliseconds: 250))
-                  .fadeIn(duration: const Duration(milliseconds: 400)),
+                // ─── Settings Section ───
+                Text('Settings', style: AppTypography.sectionHeadingC(context))
+                    .animate(delay: const Duration(milliseconds: 250))
+                    .fadeIn(duration: const Duration(milliseconds: 400)),
 
-              const SizedBox(height: 14),
+                const SizedBox(height: 14),
 
-              // Theme toggle
-              _buildSettingsTile(
-                context,
-                icon: isDark
-                    ? Icons.dark_mode_rounded
-                    : Icons.light_mode_rounded,
-                title: 'Appearance',
-                subtitle: isDark ? 'Dark mode' : 'Light mode',
-                trailing: Switch.adaptive(
-                  value: isDark,
-                  onChanged: (_) {
-                    _themeProvider.toggleTheme();
-                    setState(() {});
+                // Theme toggle
+                _buildSettingsTile(
+                      context,
+                      icon: isDark
+                          ? Icons.dark_mode_rounded
+                          : Icons.light_mode_rounded,
+                      title: 'Appearance',
+                      subtitle: isDark ? 'Dark mode' : 'Light mode',
+                      trailing: Switch.adaptive(
+                        value: isDark,
+                        onChanged: (_) {
+                          _themeProvider.toggleTheme();
+                          setState(() {});
+                        },
+                        activeTrackColor: AppColors.softIndigo,
+                        activeThumbColor: Colors.white,
+                        inactiveThumbColor: AppColors.softIndigo.withValues(
+                          alpha: 0.6,
+                        ),
+                        inactiveTrackColor: AppColors.dividerColor(context),
+                      ),
+                    )
+                    .animate(delay: const Duration(milliseconds: 300))
+                    .fadeIn(duration: const Duration(milliseconds: 400)),
+
+                const SizedBox(height: 8),
+
+                _buildSettingsTile(
+                      context,
+                      icon: Icons.notifications_outlined,
+                      title: 'Notifications',
+                      subtitle: 'Gentle reminders',
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.tertiary(context),
+                      ),
+                    )
+                    .animate(delay: const Duration(milliseconds: 350))
+                    .fadeIn(duration: const Duration(milliseconds: 400)),
+
+                const SizedBox(height: 8),
+
+                _buildSettingsTile(
+                      context,
+                      icon: Icons.people_outline_rounded,
+                      title: 'Community',
+                      subtitle: 'Participation settings',
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.tertiary(context),
+                      ),
+                    )
+                    .animate(delay: const Duration(milliseconds: 400))
+                    .fadeIn(duration: const Duration(milliseconds: 400)),
+
+                const SizedBox(height: 8),
+
+                _buildSettingsTile(
+                      context,
+                      icon: Icons.info_outline_rounded,
+                      title: 'About Unravel',
+                      subtitle: 'Version 1.0.0',
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.tertiary(context),
+                      ),
+                    )
+                    .animate(delay: const Duration(milliseconds: 450))
+                    .fadeIn(duration: const Duration(milliseconds: 400)),
+
+                const SizedBox(height: 8),
+
+                // Logout
+                GestureDetector(
+                  onTap: () async {
+                    await AuthService().logout();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
                   },
-                  activeTrackColor: AppColors.softIndigo,
-                  activeThumbColor: Colors.white,
-                  inactiveThumbColor: AppColors.softIndigo.withValues(alpha: 0.6),
-                  inactiveTrackColor: AppColors.dividerColor(context),
-                ),
-              )
-                  .animate(delay: const Duration(milliseconds: 300))
-                  .fadeIn(duration: const Duration(milliseconds: 400)),
-
-              const SizedBox(height: 8),
-
-              _buildSettingsTile(
-                context,
-                icon: Icons.notifications_outlined,
-                title: 'Notifications',
-                subtitle: 'Gentle reminders',
-                trailing: Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.tertiary(context),
-                ),
-              )
-                  .animate(delay: const Duration(milliseconds: 350))
-                  .fadeIn(duration: const Duration(milliseconds: 400)),
-
-              const SizedBox(height: 8),
-
-              _buildSettingsTile(
-                context,
-                icon: Icons.people_outline_rounded,
-                title: 'Community',
-                subtitle: 'Participation settings',
-                trailing: Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.tertiary(context),
-                ),
-              )
-                  .animate(delay: const Duration(milliseconds: 400))
-                  .fadeIn(duration: const Duration(milliseconds: 400)),
-
-              const SizedBox(height: 8),
-
-              _buildSettingsTile(
-                context,
-                icon: Icons.info_outline_rounded,
-                title: 'About Unravel',
-                subtitle: 'Version 1.0.0',
-                trailing: Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.tertiary(context),
-                ),
-              )
-                  .animate(delay: const Duration(milliseconds: 450))
-                  .fadeIn(duration: const Duration(milliseconds: 400)),
-
-              const SizedBox(height: 8),
-
-              // Logout
-              GestureDetector(
-                onTap: () async {
-                  await AuthService().logout();
-                  if (!context.mounted) return;
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
-                child: _buildSettingsTile(
-                  context,
-                  icon: Icons.logout_rounded,
-                  title: 'Log out',
-                  subtitle: 'Sign out of your account',
-                  trailing: Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppColors.tertiary(context),
+                  child: _buildSettingsTile(
+                    context,
+                    icon: Icons.logout_rounded,
+                    title: 'Log out',
+                    subtitle: 'Sign out of your account',
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.tertiary(context),
+                    ),
                   ),
-                ),
-              )
-                  .animate(delay: const Duration(milliseconds: 500))
-                  .fadeIn(duration: const Duration(milliseconds: 400)),
+                )
+                    .animate(delay: const Duration(milliseconds: 500))
+                    .fadeIn(duration: const Duration(milliseconds: 400)),
 
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // ─── Quote ───
-              Center(
-                child: Text(
-                  '"The quieter you become,\nthe more you can hear."',
-                  style: AppTypography.emotionalTextC(context),
-                  textAlign: TextAlign.center,
-                ),
-              )
-                  .animate(delay: const Duration(milliseconds: 500))
-                  .fadeIn(duration: const Duration(milliseconds: 500)),
+                // ─── Quote ───
+                Center(
+                      child: Text(
+                        '"The quieter you become,\nthe more you can hear."',
+                        style: AppTypography.emotionalTextC(context),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                    .animate(delay: const Duration(milliseconds: 500))
+                    .fadeIn(duration: const Duration(milliseconds: 500)),
 
-              const SizedBox(height: 40),
-            ],
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
   }
 
   Widget _buildProfileCard(BuildContext context) {
+    final prefs = UserPreferencesService();
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -208,11 +211,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.softIndigo.withValues(alpha: 0.25),
-                  AppColors.paleLilac.withValues(alpha: 0.4),
-                ],
+              border: Border.all(
+                color: AppColors.softIndigo.withValues(alpha: 0.2),
+                width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
@@ -222,10 +223,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-            child: Icon(
-              Icons.person_outline_rounded,
-              color: AppColors.secondary(context),
-              size: 28,
+            child: ClipOval(
+              child: Image.network(
+                prefs.getAvatarUrl(),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: AppColors.card(context),
+                    child: Icon(
+                      Icons.person_outline_rounded,
+                      color: AppColors.softIndigo.withValues(alpha: 0.5),
+                      size: 28,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -234,7 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  UserPreferencesService().displayName,
+                  prefs.displayName,
                   style: AppTypography.sectionHeadingC(context),
                 ),
                 const SizedBox(height: 2),

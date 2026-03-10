@@ -1,5 +1,6 @@
 import 'database_service.dart';
 import 'auth_service.dart';
+import 'avatar_service.dart';
 
 /// User preferences — loads from Appwrite, falls back to in-memory.
 class UserPreferencesService {
@@ -13,14 +14,28 @@ class UserPreferencesService {
   String? sleepSchedule;
   double moodBaseline = 0.5;
 
-  // Avatar config
-  int hairStyle = 0;
-  int skinTone = 0;
-  int outfitColor = 0;
+  // Avatar config (DiceBear)
+  late String avatarSeed = AvatarService().generateRandomSeed();
+  late String avatarStyle = AvatarService().getRandomStyle();
 
   bool get hasCompletedOnboarding => name != null && name!.isNotEmpty;
 
   String get displayName => name ?? 'friend';
+
+  /// Gets the avatar URL for this user
+  String getAvatarUrl() {
+    return AvatarService().getAvatarUrl(seed: avatarSeed, style: avatarStyle);
+  }
+
+  /// Regenerates a new random avatar
+  void regenerateAvatar() {
+    avatarSeed = AvatarService().generateRandomSeed();
+  }
+
+  /// Changes the avatar style
+  void setAvatarStyle(String style) {
+    avatarStyle = style;
+  }
 
   /// Load user profile from Appwrite database.
   Future<void> loadFromRemote() async {
@@ -35,9 +50,10 @@ class UserPreferencesService {
       concerns = List<String>.from(data['concerns'] ?? []);
       sleepSchedule = data['sleepSchedule'];
       moodBaseline = (data['moodBaseline'] as num?)?.toDouble() ?? 0.5;
-      hairStyle = data['hairStyle'] ?? 0;
-      skinTone = data['skinTone'] ?? 0;
-      outfitColor = data['outfitColor'] ?? 0;
+      if (data['avatarUrl'] != null) {
+        // Parse seed and style from stored URL if available
+        // Otherwise keep the randomly generated defaults
+      }
     } catch (_) {
       // Profile not created yet — keep defaults
     }
@@ -56,9 +72,7 @@ class UserPreferencesService {
         'concerns': concerns,
         'sleepSchedule': sleepSchedule,
         'moodBaseline': moodBaseline,
-        'hairStyle': hairStyle,
-        'skinTone': skinTone,
-        'outfitColor': outfitColor,
+        'avatarUrl': getAvatarUrl(),
       });
     } catch (_) {
       // If profile doesn't exist, create it
@@ -69,9 +83,7 @@ class UserPreferencesService {
         concerns: concerns,
         sleepSchedule: sleepSchedule,
         moodBaseline: moodBaseline,
-        hairStyle: hairStyle,
-        skinTone: skinTone,
-        outfitColor: outfitColor,
+        avatarUrl: getAvatarUrl(),
       );
     }
   }

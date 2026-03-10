@@ -256,15 +256,10 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 54,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.softIndigo.withValues(alpha: 0.25),
-                AppColors.paleLilac.withValues(alpha: 0.5),
-              ],
+            border: Border.all(
+              color: AppColors.softIndigo.withValues(alpha: 0.2),
+              width: 1.5,
             ),
-            border: Border.all(color: AppColors.frostedGlassBorder, width: 2),
             boxShadow: [
               BoxShadow(
                 color: AppColors.softIndigo.withValues(alpha: 0.2),
@@ -278,11 +273,32 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          child: Center(
-            child: Icon(
-              Icons.person_outline_rounded,
-              color: AppColors.secondary(context),
-              size: 24,
+          child: ClipOval(
+            child: Image.network(
+              UserPreferencesService().getAvatarUrl(),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.softIndigo.withValues(alpha: 0.25),
+                        AppColors.paleLilac.withValues(alpha: 0.5),
+                      ],
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.person_outline_rounded,
+                      color: AppColors.secondary(context),
+                      size: 24,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),

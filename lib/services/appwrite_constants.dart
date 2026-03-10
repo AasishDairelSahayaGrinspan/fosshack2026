@@ -5,7 +5,7 @@ class AppwriteConstants {
 
   // ─── Project ───
   static const String endpoint = 'https://cloud.appwrite.io/v1';
-  static const String projectId = 'YOUR_PROJECT_ID'; // <-- Replace
+  static const String projectId = 'unravel-app';
 
   // ─── Database ───
   static const String databaseId = 'unravel_db';

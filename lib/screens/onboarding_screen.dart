@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../widgets/gradient_background.dart';
 import '../services/user_preferences_service.dart';
+import '../services/auth_service.dart';
 import 'community_onboarding_screen.dart';
 
 /// Multi-step onboarding — 7 pages via PageView.
@@ -125,6 +126,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _prefs.hairStyle = _hairStyle;
     _prefs.skinTone = _skinTone;
     _prefs.outfitColor = _outfitColor;
+
+    // Save preferences to Appwrite (fire and forget)
+    _prefs.saveToRemote();
+
+    // Update Appwrite account name
+    AuthService().updateName(_prefs.name ?? 'friend');
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(

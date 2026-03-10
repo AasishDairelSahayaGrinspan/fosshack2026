@@ -1,41 +1,94 @@
 import '../models/community_models.dart';
+import 'database_service.dart';
+import 'auth_service.dart';
+import 'storage_service.dart';
 
-/// Local in-memory community data service.
-/// Will be replaced with backend integration later.
+/// Community data service — backed by Appwrite.
+/// Falls back to local sample data if not logged in.
 class CommunityService {
   static final CommunityService _instance = CommunityService._();
   factory CommunityService() => _instance;
   CommunityService._();
 
-  // Community participation preference
-  String communityPreference = 'yes'; // 'yes', 'browsing', 'no'
+  String communityPreference = 'yes';
 
   bool get canPost => communityPreference != 'no';
 
-  final List<Post> _posts = [];
-  int _nextPostId = 1;
-  int _nextCommentId = 1;
+  final DatabaseService _db = DatabaseService();
 
+  // ─── Local cache ───
+  List<Post> _posts = [];
   List<Post> get posts => List.unmodifiable(_posts);
 
-  /// Initialize with sample posts for demo.
+  /// Load posts from Appwrite.
+  Future<void> loadPosts() async {
+    try {
+      final result = await _db.getPosts();
+      _posts = result.documents.map((doc) {
+        final d = doc.data;
+        return Post(
+          id: doc.$id,
+          username: d['username'] ?? '',
+          avatar: d['avatar'] ?? '',
+          imagePath: d['imagePath'],
+          caption: d['caption'] ?? '',
+          moodTag: d['moodTag'],
+          postType: d['postType'] ?? 'All',
+          timestamp: DateTime.parse(d['timestamp']),
+          likesCount: d['likesCount'] ?? 0,
+          isLiked: _isLikedByCurrentUser(d['likedBy']),
+        );
+      }).toList();
+    } catch (_) {
+      // Keep existing cache on failure
+    }
+  }
+
+  bool _isLikedByCurrentUser(dynamic likedBy) {
+    final user = AuthService().currentUser;
+    if (user == null || likedBy == null) return false;
+    return (likedBy as List).contains(user.$id);
+  }
+
+  /// Load comments for a specific post from Appwrite.
+  Future<List<Comment>> loadComments(String postId) async {
+    try {
+      final result = await _db.getComments(postId);
+      return result.documents.map((doc) {
+        final d = doc.data;
+        return Comment(
+          id: doc.$id,
+          username: d['username'] ?? '',
+          avatar: d['avatar'] ?? '',
+          text: d['text'] ?? '',
+          timestamp: DateTime.parse(d['timestamp']),
+        );
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Initialize with sample posts for demo (unchanged for offline mode).
   void initSampleData() {
     if (_posts.isNotEmpty) return;
 
+    int nextPostId = 1;
+    int nextCommentId = 1;
+
     _posts.addAll([
       Post(
-        id: '${_nextPostId++}',
+        id: '${nextPostId++}',
         username: 'gentle_soul',
         avatar: 'G',
-        caption:
-            'Today I chose rest over guilt. It felt like a small revolution.',
+        caption: 'Today I chose rest over guilt. It felt like a small revolution.',
         moodTag: 'Healing',
         postType: 'Victories',
         timestamp: DateTime.now().subtract(const Duration(hours: 2)),
         likesCount: 14,
       ),
       Post(
-        id: '${_nextPostId++}',
+        id: '${nextPostId++}',
         username: 'quiet_river',
         avatar: 'Q',
         caption:
@@ -46,24 +99,23 @@ class CommunityService {
         likesCount: 42,
         comments: [
           Comment(
-            id: '${_nextCommentId++}',
+            id: '${nextCommentId++}',
             username: 'warm_light',
             avatar: 'W',
             text: 'So proud of you. Keep going.',
             timestamp: DateTime.now().subtract(const Duration(hours: 4)),
           ),
           Comment(
-            id: '${_nextCommentId++}',
+            id: '${nextCommentId++}',
             username: 'still_waters',
             avatar: 'S',
             text: 'You are stronger than you know.',
-            timestamp:
-                DateTime.now().subtract(const Duration(hours: 3, minutes: 30)),
+            timestamp: DateTime.now().subtract(const Duration(hours: 3, minutes: 30)),
           ),
         ],
       ),
       Post(
-        id: '${_nextPostId++}',
+        id: '${nextPostId++}',
         username: 'morning_dew',
         avatar: 'M',
         caption:
@@ -74,7 +126,7 @@ class CommunityService {
         likesCount: 23,
       ),
       Post(
-        id: '${_nextPostId++}',
+        id: '${nextPostId++}',
         username: 'soft_horizon',
         avatar: 'S',
         caption:
@@ -85,7 +137,7 @@ class CommunityService {
         likesCount: 31,
         comments: [
           Comment(
-            id: '${_nextCommentId++}',
+            id: '${nextCommentId++}',
             username: 'gentle_soul',
             avatar: 'G',
             text: 'This is beautiful. I need to try this.',
@@ -94,7 +146,7 @@ class CommunityService {
         ],
       ),
       Post(
-        id: '${_nextPostId++}',
+        id: '${nextPostId++}',
         username: 'still_waters',
         avatar: 'S',
         caption:
@@ -107,18 +159,56 @@ class CommunityService {
     ]);
   }
 
-  void addPost({
+  Future<void> addPost({
     required String caption,
     String? imagePath,
     String? moodTag,
-  }) {
+  }) async {
+    final user = AuthService().currentUser;
+    if (user == null) {
+      // Offline fallback
+      _posts.insert(
+        0,
+        Post(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          username: 'you',
+          avatar: 'Y',
+          imagePath: imagePath,
+          caption: caption,
+          moodTag: moodTag,
+          timestamp: DateTime.now(),
+        ),
+      );
+      return;
+    }
+
+    // Upload image if provided
+    String? uploadedImageId;
+    if (imagePath != null) {
+      final file = await StorageService().uploadPostImage(
+        filePath: imagePath,
+        fileName: 'post_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        userId: user.$id,
+      );
+      uploadedImageId = StorageService().getPostImageUrl(file.$id);
+    }
+
+    final doc = await _db.createPost(
+      userId: user.$id,
+      username: user.name.isNotEmpty ? user.name : 'you',
+      avatar: user.name.isNotEmpty ? user.name[0].toUpperCase() : 'Y',
+      caption: caption,
+      imagePath: uploadedImageId,
+      moodTag: moodTag,
+    );
+
     _posts.insert(
       0,
       Post(
-        id: '${_nextPostId++}',
-        username: 'you',
-        avatar: 'Y',
-        imagePath: imagePath,
+        id: doc.$id,
+        username: user.name.isNotEmpty ? user.name : 'you',
+        avatar: user.name.isNotEmpty ? user.name[0].toUpperCase() : 'Y',
+        imagePath: uploadedImageId,
         caption: caption,
         moodTag: moodTag,
         timestamp: DateTime.now(),
@@ -126,21 +216,55 @@ class CommunityService {
     );
   }
 
-  void toggleLike(String postId) {
-    final post = _posts.firstWhere((p) => p.id == postId);
+  Future<void> toggleLike(String postId) async {
+    final idx = _posts.indexWhere((p) => p.id == postId);
+    if (idx == -1) return;
+
+    final post = _posts[idx];
     post.isLiked = !post.isLiked;
     post.likesCount += post.isLiked ? 1 : -1;
+
+    final user = AuthService().currentUser;
+    if (user != null) {
+      try {
+        await _db.togglePostLike(postId: postId, userId: user.$id);
+      } catch (_) {
+        // Revert on failure
+        post.isLiked = !post.isLiked;
+        post.likesCount += post.isLiked ? 1 : -1;
+      }
+    }
   }
 
-  void addComment(String postId, String text) {
+  Future<void> addComment(String postId, String text) async {
+    final user = AuthService().currentUser;
     final post = _posts.firstWhere((p) => p.id == postId);
-    post.comments.add(Comment(
-      id: '${_nextCommentId++}',
-      username: 'you',
-      avatar: 'Y',
+
+    final username = user?.name ?? 'you';
+    final avatar = username.isNotEmpty ? username[0].toUpperCase() : 'Y';
+
+    final comment = Comment(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      username: username,
+      avatar: avatar,
       text: text,
       timestamp: DateTime.now(),
-    ));
+    );
+    post.comments.add(comment);
+
+    if (user != null) {
+      try {
+        await _db.addComment(
+          postId: postId,
+          userId: user.$id,
+          username: username,
+          avatar: avatar,
+          text: text,
+        );
+      } catch (_) {
+        // Comment already added locally
+      }
+    }
   }
 
   String formatTimeAgo(DateTime timestamp) {

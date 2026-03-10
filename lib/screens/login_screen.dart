@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:appwrite/appwrite.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/frosted_glass_card.dart';
 import '../widgets/pill_button.dart';
+import '../services/auth_service.dart';
 import 'onboarding_screen.dart';
 
 /// Unravel Login Screen
@@ -25,6 +27,8 @@ class _LoginScreenState extends State<LoginScreen>
   bool _showOtp = false;
   bool _isVerifying = false;
   bool _showSuccess = false;
+  String? _otpUserId; // Appwrite token userId for OTP verification
+  String? _errorMessage;
   final _phoneController = TextEditingController();
   final List<TextEditingController> _otpControllers = List.generate(
     6,
@@ -44,11 +48,26 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  void _onSendOtp() {
-    if (_phoneController.text.length >= 10) {
-      setState(() => _showOtp = true);
+  Future<void> _onSendOtp() async {
+    if (_phoneController.text.length < 10) return;
+    setState(() {
+      _errorMessage = null;
+      _isVerifying = true;
+    });
+    try {
+      final token = await AuthService().sendOtp('+91${_phoneController.text}');
+      _otpUserId = token.userId;
+      setState(() {
+        _isVerifying = false;
+        _showOtp = true;
+      });
       Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) _otpFocusNodes[0].requestFocus();
+      });
+    } catch (e) {
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = 'Failed to send OTP. Please try again.';
       });
     }
   }
@@ -73,29 +92,57 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _verifyOtp() async {
-    setState(() => _isVerifying = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
+    final otp = _otpControllers.map((c) => c.text).join();
+    if (otp.length < 6 || _otpUserId == null) return;
+
     setState(() {
-      _isVerifying = false;
-      _showSuccess = true;
+      _isVerifying = true;
+      _errorMessage = null;
     });
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-    _navigateToHome();
+    try {
+      await AuthService().verifyOtp(userId: _otpUserId!, otp: otp);
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _showSuccess = true;
+      });
+      await Future.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
+      _navigateToHome();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = 'Invalid OTP. Please try again.';
+      });
+    }
   }
 
   Future<void> _onSocialLogin(String provider) async {
-    setState(() => _isVerifying = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
     setState(() {
-      _isVerifying = false;
-      _showSuccess = true;
+      _isVerifying = true;
+      _errorMessage = null;
     });
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-    _navigateToHome();
+    try {
+      final oauthProvider = provider == 'google'
+          ? OAuthProvider.google
+          : OAuthProvider.apple;
+      await AuthService().oAuthLogin(oauthProvider);
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _showSuccess = true;
+      });
+      await Future.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
+      _navigateToHome();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = 'Login failed. Please try again.';
+      });
+    }
   }
 
   void _navigateToHome() {

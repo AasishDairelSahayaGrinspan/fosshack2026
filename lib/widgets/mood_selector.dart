@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
+import '../services/database_service.dart';
+import '../services/auth_service.dart';
 
 /// Mood Selector — 5 emotional states with glow + scale animation.
 class MoodSelector extends StatefulWidget {
@@ -14,6 +16,23 @@ class MoodSelector extends StatefulWidget {
 
 class _MoodSelectorState extends State<MoodSelector> {
   int _selectedIndex = -1;
+
+  // Map mood index to a 0-1 score: Calm=0.9, Okay=0.7, Low=0.4, Anxious=0.25, Overwhelmed=0.1
+  static const List<double> _moodScores = [0.9, 0.7, 0.4, 0.25, 0.1];
+
+  Future<void> _saveMood(int index) async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+    try {
+      await DatabaseService().saveMoodEntry(
+        userId: user.$id,
+        mood: _moodScores[index],
+        emoji: _moods[index]['emoji'] as String,
+      );
+      // Also update streak on mood selection (counts as daily check-in)
+      await DatabaseService().updateStreak(user.$id);
+    } catch (_) {}
+  }
 
   static const List<Map<String, dynamic>> _moods = [
     {'emoji': '😌', 'label': 'Calm', 'color': Color(0xFF9CB5A0)},
@@ -46,7 +65,10 @@ class _MoodSelectorState extends State<MoodSelector> {
               final isSelected = _selectedIndex == index;
               final moodColor = _moods[index]['color'] as Color;
               return GestureDetector(
-                    onTap: () => setState(() => _selectedIndex = index),
+                    onTap: () {
+                      setState(() => _selectedIndex = index);
+                      _saveMood(index);
+                    },
                     child: AnimatedContainer(
                       duration: AppTheme.fadeInDuration,
                       curve: AppTheme.defaultCurve,

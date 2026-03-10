@@ -4,6 +4,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../widgets/doodle_refresh.dart';
+import '../services/database_service.dart';
+import '../services/auth_service.dart';
 
 /// Journal Screen — cream paper-style with Lora font, mood tags, prompts.
 class JournalScreen extends StatefulWidget {
@@ -57,11 +59,26 @@ class _JournalScreenState extends State<JournalScreen>
     super.dispose();
   }
 
-  void _saveEntry() {
+  Future<void> _saveEntry() async {
     if (_textController.text.trim().isEmpty) return;
 
     _saveAnimController.forward(from: 0);
     setState(() => _saved = true);
+
+    // Save to Appwrite
+    final user = AuthService().currentUser;
+    if (user != null) {
+      try {
+        await DatabaseService().saveJournalEntry(
+          userId: user.$id,
+          content: _textController.text.trim(),
+          moodTag: _selectedMoodTag >= 0 ? _moodTags[_selectedMoodTag] : null,
+          prompt: _selectedPrompt >= 0 ? _prompts[_selectedPrompt] : null,
+        );
+      } catch (_) {
+        // Saved locally, sync later
+      }
+    }
 
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {

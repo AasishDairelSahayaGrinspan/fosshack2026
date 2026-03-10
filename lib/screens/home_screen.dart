@@ -12,6 +12,8 @@ import '../widgets/mood_chart.dart';
 import '../widgets/community_activity_card.dart';
 import '../widgets/doodle_refresh.dart';
 import '../services/user_preferences_service.dart';
+import '../services/database_service.dart';
+import '../services/auth_service.dart';
 import 'breathing_screen.dart';
 import 'sleep_tracker_screen.dart';
 import 'journal_screen.dart';
@@ -20,8 +22,58 @@ import 'timer_screen.dart';
 /// Unravel Home Screen — the emotional dashboard.
 /// Layout: Greeting → Mood Selector → Recovery Score → Daily Check-in
 ///       → Quick Actions → Charts → Streak
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  double _recoveryScore = 0.78;
+  List<double> _moodData = [0.4, 0.55, 0.6, 0.45, 0.7, 0.8, 0.65];
+  int _streakDays = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+
+    final db = DatabaseService();
+
+    // Load recovery score
+    final score = await db.getLatestRecoveryScore(user.$id);
+    if (score != null && mounted) {
+      setState(() => _recoveryScore = score);
+    }
+
+    // Load mood chart data
+    try {
+      final moodResult = await db.getMoodEntries(user.$id, days: 7);
+      if (moodResult.documents.isNotEmpty && mounted) {
+        setState(() {
+          _moodData = moodResult.documents
+              .map((d) => (d.data['mood'] as num).toDouble())
+              .toList();
+        });
+      }
+    } catch (_) {}
+
+    // Load streak
+    try {
+      final streakDoc = await db.getOrCreateStreak(user.$id);
+      if (mounted) {
+        setState(() {
+          _streakDays = streakDoc.data['currentStreak'] ?? 0;
+        });
+      }
+    } catch (_) {}
+  }
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -93,7 +145,7 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 28),
 
                 // ─── Recovery Score with Quote ───
-                RepaintBoundary(child: const RecoveryScoreCard(score: 0.78)),
+                RepaintBoundary(child: RecoveryScoreCard(score: _recoveryScore)),
 
                 const SizedBox(height: 28),
 
@@ -148,8 +200,8 @@ class HomeScreen extends StatelessWidget {
 
                 // ─── Weekly Mood Chart ───
                 RepaintBoundary(
-                  child: const MoodChart(
-                    moodData: [0.4, 0.55, 0.6, 0.45, 0.7, 0.8, 0.65],
+                  child: MoodChart(
+                    moodData: _moodData,
                   ),
                 ),
 
@@ -168,7 +220,7 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // ─── Streak Indicator ───
-                RepaintBoundary(child: const StreakIndicator(streakDays: 7)),
+                RepaintBoundary(child: StreakIndicator(streakDays: _streakDays)),
 
                 const SizedBox(height: 36),
               ],

@@ -6,6 +6,9 @@ import '../theme/app_typography.dart';
 import '../theme/theme_provider.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/doodle_refresh.dart';
+import '../services/auth_service.dart';
+import '../services/user_preferences_service.dart';
+import 'login_screen.dart';
 
 /// Profile Screen with settings and theme toggle.
 class ProfileScreen extends StatefulWidget {
@@ -141,6 +144,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   .animate(delay: const Duration(milliseconds: 450))
                   .fadeIn(duration: const Duration(milliseconds: 400)),
 
+              const SizedBox(height: 8),
+
+              // Logout
+              GestureDetector(
+                onTap: () async {
+                  await AuthService().logout();
+                  if (!context.mounted) return;
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                },
+                child: _buildSettingsTile(
+                  context,
+                  icon: Icons.logout_rounded,
+                  title: 'Log out',
+                  subtitle: 'Sign out of your account',
+                  trailing: Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.tertiary(context),
+                  ),
+                ),
+              )
+                  .animate(delay: const Duration(milliseconds: 500))
+                  .fadeIn(duration: const Duration(milliseconds: 400)),
+
               const SizedBox(height: 32),
 
               // ─── Quote ───
@@ -204,7 +233,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('You', style: AppTypography.sectionHeadingC(context)),
+                Text(
+                  UserPreferencesService().displayName,
+                  style: AppTypography.sectionHeadingC(context),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   'Taking it one day at a time.',

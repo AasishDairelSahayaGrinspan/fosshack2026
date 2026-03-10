@@ -5,7 +5,10 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../widgets/gradient_background.dart';
+import '../services/auth_service.dart';
+import '../services/user_preferences_service.dart';
 import 'login_screen.dart';
+import 'main_shell.dart';
 
 /// Unravel Splash Screen
 /// Animated gradient background, floating abstract shapes,
@@ -28,12 +31,25 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _navigateToLogin() async {
     await Future.delayed(const Duration(milliseconds: 3500));
     if (!mounted) return;
+
+    // Check if user is already logged in
+    final isLoggedIn = await AuthService().isLoggedIn();
+    Widget destination;
+
+    if (isLoggedIn) {
+      // Load user preferences from Appwrite
+      await UserPreferencesService().loadFromRemote();
+      destination = const MainShell();
+    } else {
+      destination = const LoginScreen();
+    }
+
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 800),
         reverseTransitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const LoginScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) => destination,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: CurvedAnimation(

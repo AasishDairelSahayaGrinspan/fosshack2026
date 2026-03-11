@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/enums.dart' as enums;
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -139,9 +138,16 @@ class _LoginScreenState extends State<LoginScreen>
       _navigateToHome();
     } catch (e) {
       if (!mounted) return;
+      String errorMsg = 'Login failed. Please try again.';
+      if (e.toString().contains('Network') || e.toString().contains('socket')) {
+        errorMsg = 'Network error. Check your connection and try again.';
+      } else if (e.toString().contains('401') ||
+          e.toString().contains('unauthorized')) {
+        errorMsg = 'Google OAuth not configured. Contact support.';
+      }
       setState(() {
         _isVerifying = false;
-        _errorMessage = 'Login failed. Please try again.';
+        _errorMessage = errorMsg;
       });
     }
   }
@@ -258,6 +264,19 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ],
                             ),
+
+                            // ─── Error Message ───
+                            if (_errorMessage != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Text(
+                                  _errorMessage!,
+                                  style: AppTypography.caption(
+                                    color: AppColors.warmCoral,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
 
                             const SizedBox(height: 24),
 
@@ -383,7 +402,10 @@ class _LoginScreenState extends State<LoginScreen>
       key: const ValueKey('otp'),
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Enter the code we sent you', style: AppTypography.subtitleC(context)),
+        Text(
+          'Enter the code we sent you',
+          style: AppTypography.subtitleC(context),
+        ),
         const SizedBox(height: 8),
         Text(
           _phoneController.text.isNotEmpty
@@ -399,50 +421,56 @@ class _LoginScreenState extends State<LoginScreen>
           children: List.generate(6, (index) {
             return Expanded(
               child: Container(
-              height: 52,
-              margin: EdgeInsets.only(right: index < 5 ? 8 : 0),
-              child: KeyboardListener(
-                focusNode: FocusNode(),
-                onKeyEvent: (event) => _onOtpKeyPress(index, event),
-                child: TextField(
-                  controller: _otpControllers[index],
-                  focusNode: _otpFocusNodes[index],
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  maxLength: 1,
-                  style: AppTypography.otpDigit(),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.6),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: BorderSide(
-                        color: AppColors.inputBorder,
-                        width: 1,
+                height: 52,
+                margin: EdgeInsets.only(right: index < 5 ? 8 : 0),
+                child: KeyboardListener(
+                  focusNode: FocusNode(),
+                  onKeyEvent: (event) => _onOtpKeyPress(index, event),
+                  child: TextField(
+                    controller: _otpControllers[index],
+                    focusNode: _otpFocusNodes[index],
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    maxLength: 1,
+                    style: AppTypography.otpDigit(),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusSmall,
+                        ),
+                        borderSide: BorderSide(
+                          color: AppColors.inputBorder,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusSmall,
+                        ),
+                        borderSide: BorderSide(
+                          color: AppColors.inputBorder,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusSmall,
+                        ),
+                        borderSide: BorderSide(
+                          color: AppColors.inputFocusBorder,
+                          width: 1.5,
+                        ),
                       ),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: BorderSide(
-                        color: AppColors.inputBorder,
-                        width: 1,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: BorderSide(
-                        color: AppColors.inputFocusBorder,
-                        width: 1.5,
-                      ),
-                    ),
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (value) => _onOtpChanged(index, value),
                   ),
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onChanged: (value) => _onOtpChanged(index, value),
                 ),
               ),
-            ),
             );
           }),
         ),
@@ -454,11 +482,11 @@ class _LoginScreenState extends State<LoginScreen>
           duration: const Duration(milliseconds: 300),
           child: _showSuccess
               ? const Icon(
-                  Icons.check_circle_rounded,
-                  key: ValueKey('success'),
-                  color: AppColors.sageGreen,
-                  size: 48,
-                )
+                      Icons.check_circle_rounded,
+                      key: ValueKey('success'),
+                      color: AppColors.sageGreen,
+                      size: 48,
+                    )
                     .animate()
                     .scale(
                       begin: const Offset(0.5, 0.5),

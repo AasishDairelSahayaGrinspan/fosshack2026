@@ -150,9 +150,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Logout
                 GestureDetector(
                   onTap: () async {
+                    final navigator = Navigator.of(context);
                     await AuthService().logout();
-                    if (!context.mounted) return;
-                    Navigator.of(context).pushAndRemoveUntil(
+                    if (!mounted) return;
+                    navigator.pushAndRemoveUntil(
                       MaterialPageRoute(builder: (_) => const LoginScreen()),
                       (route) => false,
                     );

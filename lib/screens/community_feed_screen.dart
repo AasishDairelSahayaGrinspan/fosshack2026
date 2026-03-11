@@ -481,7 +481,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                     color: AppColors.tertiary(context),
                     label: '',
                     onTap: () {
-                      Share.share('${post.caption}\n\n— shared from Unravel');
+                      SharePlus.instance.share(ShareParams(text: '${post.caption}\n\n— shared from Unravel'));
                     },
                   ),
                 ],

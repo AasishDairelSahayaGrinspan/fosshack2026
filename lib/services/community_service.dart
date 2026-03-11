@@ -24,7 +24,7 @@ class CommunityService {
   Future<void> loadPosts() async {
     try {
       final result = await _db.getPosts();
-      _posts = result.documents.map((doc) {
+      _posts = result.rows.map((doc) {
         final d = doc.data;
         return Post(
           id: doc.$id,
@@ -47,14 +47,14 @@ class CommunityService {
   bool _isLikedByCurrentUser(dynamic likedBy) {
     final user = AuthService().currentUser;
     if (user == null || likedBy == null) return false;
-    return (likedBy as List).contains(user.$id);
+    return (likedBy is List) && likedBy.contains(user.$id);
   }
 
   /// Load comments for a specific post from Appwrite.
   Future<List<Comment>> loadComments(String postId) async {
     try {
       final result = await _db.getComments(postId);
-      return result.documents.map((doc) {
+      return result.rows.map((doc) {
         final d = doc.data;
         return Comment(
           id: doc.$id,
@@ -238,7 +238,9 @@ class CommunityService {
 
   Future<void> addComment(String postId, String text) async {
     final user = AuthService().currentUser;
-    final post = _posts.firstWhere((p) => p.id == postId);
+    final idx = _posts.indexWhere((p) => p.id == postId);
+    if (idx == -1) return;
+    final post = _posts[idx];
 
     final username = user?.name ?? 'you';
     final avatar = username.isNotEmpty ? username[0].toUpperCase() : 'Y';

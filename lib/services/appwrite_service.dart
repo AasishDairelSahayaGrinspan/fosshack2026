@@ -8,7 +8,7 @@ class AppwriteService {
 
   late final Client client;
   late final Account account;
-  late final Databases databases;
+  late final TablesDB tablesDb;
   late final Storage storage;
   late final Realtime realtime;
 
@@ -19,7 +19,7 @@ class AppwriteService {
         .setSelfSigned(status: true); // Remove in production
 
     account = Account(client);
-    databases = Databases(client);
+    tablesDb = TablesDB(client);
     storage = Storage(client);
     realtime = Realtime(client);
   }

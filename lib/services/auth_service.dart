@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/enums.dart' as enums;
 import 'package:appwrite/models.dart' as models;
@@ -30,10 +31,7 @@ class AuthService {
   /// Send OTP to phone number. Returns the token for verification.
   /// [phone] must include country code, e.g. '+919876543210'.
   Future<models.Token> sendOtp(String phone) async {
-    return await _account.createPhoneToken(
-      userId: ID.unique(),
-      phone: phone,
-    );
+    return await _account.createPhoneToken(userId: ID.unique(), phone: phone);
   }
 
   /// Verify the OTP code. Returns a session on success.
@@ -41,7 +39,7 @@ class AuthService {
     required String userId,
     required String otp,
   }) async {
-    final session = await _account.updatePhoneSession(
+    final session = await _account.createSession(
       userId: userId,
       secret: otp,
     );
@@ -53,9 +51,30 @@ class AuthService {
 
   /// Launch OAuth flow for the given provider.
   /// [provider] should be 'google' or 'apple'.
+  /// Throws [AppwriteException] if OAuth session creation fails.
   Future<void> oAuthLogin(enums.OAuthProvider provider) async {
-    await _account.createOAuth2Session(provider: provider);
-    _currentUser = await _account.get();
+    try {
+      developer.log('Starting OAuth login with provider: $provider');
+      await _account.createOAuth2Session(
+        provider: provider,
+      );
+      _currentUser = await _account.get();
+      developer.log('OAuth login successful for user: ${_currentUser?.$id}');
+    } on AppwriteException catch (e) {
+      developer.log(
+        'OAuth login failed: ${e.message}',
+        error: e,
+        stackTrace: StackTrace.current,
+      );
+      rethrow;
+    } catch (e) {
+      developer.log(
+        'Unexpected error during OAuth login',
+        error: e,
+        stackTrace: StackTrace.current,
+      );
+      rethrow;
+    }
   }
 
   // ─── Session Management ───

@@ -55,9 +55,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // Load mood chart data
     try {
       final moodResult = await db.getMoodEntries(user.$id, days: 7);
-      if (moodResult.documents.isNotEmpty && mounted) {
+      if (moodResult.rows.isNotEmpty && mounted) {
         setState(() {
-          _moodData = moodResult.documents
+          _moodData = moodResult.rows
               .map((d) => (d.data['mood'] as num).toDouble())
               .toList();
         });

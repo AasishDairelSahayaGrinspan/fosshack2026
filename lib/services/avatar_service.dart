@@ -1,4 +1,3 @@
-/// Service for DiceBear avatar creation and management.
 import 'dart:math';
 
 class AvatarService {
@@ -60,7 +59,7 @@ class AvatarService {
     double scale = 100,
     String? backgroundColor,
   }) {
-    final baseUrl = 'https://api.dicebear.com/9.x/$style/svg';
+    final baseUrl = 'https://api.dicebear.com/9.x/$style/png';
     final params = <String, String>{
       'seed': seed,
       'scale': scale.toStringAsFixed(0),

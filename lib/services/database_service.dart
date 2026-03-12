@@ -8,14 +8,14 @@ class DatabaseService {
   factory DatabaseService() => _instance;
   DatabaseService._internal();
 
-  final TablesDB _db = AppwriteService().tablesDb;
+  final Databases _db = AppwriteService().databases;
   static const _dbId = AppwriteConstants.databaseId;
 
   // ═══════════════════════════════════════════════════
   //  USER PROFILE
   // ═══════════════════════════════════════════════════
 
-  Future<models.Row> createUserProfile({
+  Future<models.Document> createUserProfile({
     required String userId,
     required String name,
     String? ageGroup,
@@ -27,10 +27,10 @@ class DatabaseService {
     int skinTone = 0,
     int outfitColor = 0,
   }) async {
-    return await _db.createRow(
+    return await _db.createDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.usersCollection,
-      rowId: userId,
+      collectionId: AppwriteConstants.usersCollection,
+      documentId: userId,
       data: {
         'userId': userId,
         'name': name,
@@ -52,22 +52,22 @@ class DatabaseService {
     );
   }
 
-  Future<models.Row> getUserProfile(String userId) async {
-    return await _db.getRow(
+  Future<models.Document> getUserProfile(String userId) async {
+    return await _db.getDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.usersCollection,
-      rowId: userId,
+      collectionId: AppwriteConstants.usersCollection,
+      documentId: userId,
     );
   }
 
-  Future<models.Row> updateUserProfile(
+  Future<models.Document> updateUserProfile(
     String userId,
     Map<String, dynamic> data,
   ) async {
-    return await _db.updateRow(
+    return await _db.updateDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.usersCollection,
-      rowId: userId,
+      collectionId: AppwriteConstants.usersCollection,
+      documentId: userId,
       data: data,
     );
   }
@@ -76,16 +76,16 @@ class DatabaseService {
   //  MOOD ENTRIES
   // ═══════════════════════════════════════════════════
 
-  Future<models.Row> saveMoodEntry({
+  Future<models.Document> saveMoodEntry({
     required String userId,
     required double mood,
     required String emoji,
     String? note,
   }) async {
-    return await _db.createRow(
+    return await _db.createDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.moodEntriesCollection,
-      rowId: ID.unique(),
+      collectionId: AppwriteConstants.moodEntriesCollection,
+      documentId: ID.unique(),
       data: {
         'userId': userId,
         'mood': mood,
@@ -101,7 +101,7 @@ class DatabaseService {
   }
 
   /// Get last [days] mood entries for the weekly chart.
-  Future<models.RowList> getMoodEntries(
+  Future<models.DocumentList> getMoodEntries(
     String userId, {
     int days = 7,
   }) async {
@@ -109,9 +109,9 @@ class DatabaseService {
         .subtract(Duration(days: days))
         .toIso8601String();
 
-    return await _db.listRows(
+    return await _db.listDocuments(
       databaseId: _dbId,
-      tableId: AppwriteConstants.moodEntriesCollection,
+      collectionId: AppwriteConstants.moodEntriesCollection,
       queries: [
         Query.equal('userId', userId),
         Query.greaterThanEqual('timestamp', since),
@@ -125,17 +125,17 @@ class DatabaseService {
   //  JOURNAL ENTRIES
   // ═══════════════════════════════════════════════════
 
-  Future<models.Row> saveJournalEntry({
+  Future<models.Document> saveJournalEntry({
     required String userId,
     required String content,
     String? moodTag,
     String? prompt,
     List<String>? mediaIds,
   }) async {
-    return await _db.createRow(
+    return await _db.createDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.journalEntriesCollection,
-      rowId: ID.unique(),
+      collectionId: AppwriteConstants.journalEntriesCollection,
+      documentId: ID.unique(),
       data: {
         'userId': userId,
         'content': content,
@@ -152,14 +152,14 @@ class DatabaseService {
     );
   }
 
-  Future<models.RowList> getJournalEntries(
+  Future<models.DocumentList> getJournalEntries(
     String userId, {
     int limit = 20,
     int offset = 0,
   }) async {
-    return await _db.listRows(
+    return await _db.listDocuments(
       databaseId: _dbId,
-      tableId: AppwriteConstants.journalEntriesCollection,
+      collectionId: AppwriteConstants.journalEntriesCollection,
       queries: [
         Query.equal('userId', userId),
         Query.orderDesc('timestamp'),
@@ -169,11 +169,11 @@ class DatabaseService {
     );
   }
 
-  Future<void> deleteJournalEntry(String rowId) async {
-    await _db.deleteRow(
+  Future<void> deleteJournalEntry(String documentId) async {
+    await _db.deleteDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.journalEntriesCollection,
-      rowId: rowId,
+      collectionId: AppwriteConstants.journalEntriesCollection,
+      documentId: documentId,
     );
   }
 
@@ -181,19 +181,19 @@ class DatabaseService {
   //  STREAKS
   // ═══════════════════════════════════════════════════
 
-  Future<models.Row> getOrCreateStreak(String userId) async {
+  Future<models.Document> getOrCreateStreak(String userId) async {
     try {
-      return await _db.getRow(
+      return await _db.getDocument(
         databaseId: _dbId,
-        tableId: AppwriteConstants.streaksCollection,
-        rowId: userId,
+        collectionId: AppwriteConstants.streaksCollection,
+        documentId: userId,
       );
     } on AppwriteException catch (e) {
       if (e.code == 404) {
-        return await _db.createRow(
+        return await _db.createDocument(
           databaseId: _dbId,
-          tableId: AppwriteConstants.streaksCollection,
-          rowId: userId,
+          collectionId: AppwriteConstants.streaksCollection,
+          documentId: userId,
           data: {
             'userId': userId,
             'currentStreak': 0,
@@ -211,7 +211,7 @@ class DatabaseService {
   }
 
   /// Call this when user completes a daily check-in.
-  Future<models.Row> updateStreak(String userId) async {
+  Future<models.Document> updateStreak(String userId) async {
     final doc = await getOrCreateStreak(userId);
     final data = doc.data;
     final now = DateTime.now();
@@ -246,10 +246,10 @@ class DatabaseService {
       longestStreak = currentStreak;
     }
 
-    return await _db.updateRow(
+    return await _db.updateDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.streaksCollection,
-      rowId: userId,
+      collectionId: AppwriteConstants.streaksCollection,
+      documentId: userId,
       data: {
         'currentStreak': currentStreak,
         'longestStreak': longestStreak,
@@ -262,15 +262,15 @@ class DatabaseService {
   //  RECOVERY SCORES
   // ═══════════════════════════════════════════════════
 
-  Future<models.Row> saveRecoveryScore({
+  Future<models.Document> saveRecoveryScore({
     required String userId,
     required double score,
     List<String>? factors,
   }) async {
-    return await _db.createRow(
+    return await _db.createDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.recoveryScoresCollection,
-      rowId: ID.unique(),
+      collectionId: AppwriteConstants.recoveryScoresCollection,
+      documentId: ID.unique(),
       data: {
         'userId': userId,
         'score': score,
@@ -284,24 +284,24 @@ class DatabaseService {
   }
 
   Future<double?> getLatestRecoveryScore(String userId) async {
-    final result = await _db.listRows(
+    final result = await _db.listDocuments(
       databaseId: _dbId,
-      tableId: AppwriteConstants.recoveryScoresCollection,
+      collectionId: AppwriteConstants.recoveryScoresCollection,
       queries: [
         Query.equal('userId', userId),
         Query.orderDesc('date'),
         Query.limit(1),
       ],
     );
-    if (result.rows.isEmpty) return null;
-    return (result.rows.first.data['score'] as num).toDouble();
+    if (result.documents.isEmpty) return null;
+    return (result.documents.first.data['score'] as num).toDouble();
   }
 
   // ═══════════════════════════════════════════════════
   //  COMMUNITY POSTS
   // ═══════════════════════════════════════════════════
 
-  Future<models.Row> createPost({
+  Future<models.Document> createPost({
     required String userId,
     required String username,
     required String avatar,
@@ -310,10 +310,10 @@ class DatabaseService {
     String? moodTag,
     String postType = 'All',
   }) async {
-    return await _db.createRow(
+    return await _db.createDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.postsCollection,
-      rowId: ID.unique(),
+      collectionId: AppwriteConstants.postsCollection,
+      documentId: ID.unique(),
       data: {
         'userId': userId,
         'username': username,
@@ -334,13 +334,13 @@ class DatabaseService {
     );
   }
 
-  Future<models.RowList> getPosts({
+  Future<models.DocumentList> getPosts({
     int limit = 20,
     int offset = 0,
   }) async {
-    return await _db.listRows(
+    return await _db.listDocuments(
       databaseId: _dbId,
-      tableId: AppwriteConstants.postsCollection,
+      collectionId: AppwriteConstants.postsCollection,
       queries: [
         Query.orderDesc('timestamp'),
         Query.limit(limit),
@@ -353,10 +353,10 @@ class DatabaseService {
     required String postId,
     required String userId,
   }) async {
-    final doc = await _db.getRow(
+    final doc = await _db.getDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.postsCollection,
-      rowId: postId,
+      collectionId: AppwriteConstants.postsCollection,
+      documentId: postId,
     );
     final List<dynamic> likedBy = List.from(doc.data['likedBy'] ?? []);
     int likesCount = doc.data['likesCount'] ?? 0;
@@ -369,10 +369,10 @@ class DatabaseService {
       likesCount += 1;
     }
 
-    await _db.updateRow(
+    await _db.updateDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.postsCollection,
-      rowId: postId,
+      collectionId: AppwriteConstants.postsCollection,
+      documentId: postId,
       data: {
         'likedBy': likedBy,
         'likesCount': likesCount,
@@ -382,17 +382,17 @@ class DatabaseService {
 
   // ─── Comments ───
 
-  Future<models.Row> addComment({
+  Future<models.Document> addComment({
     required String postId,
     required String userId,
     required String username,
     required String avatar,
     required String text,
   }) async {
-    return await _db.createRow(
+    return await _db.createDocument(
       databaseId: _dbId,
-      tableId: AppwriteConstants.commentsCollection,
-      rowId: ID.unique(),
+      collectionId: AppwriteConstants.commentsCollection,
+      documentId: ID.unique(),
       data: {
         'postId': postId,
         'userId': userId,
@@ -408,10 +408,10 @@ class DatabaseService {
     );
   }
 
-  Future<models.RowList> getComments(String postId) async {
-    return await _db.listRows(
+  Future<models.DocumentList> getComments(String postId) async {
+    return await _db.listDocuments(
       databaseId: _dbId,
-      tableId: AppwriteConstants.commentsCollection,
+      collectionId: AppwriteConstants.commentsCollection,
       queries: [
         Query.equal('postId', postId),
         Query.orderAsc('timestamp'),

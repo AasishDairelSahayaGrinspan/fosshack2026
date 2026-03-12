@@ -24,7 +24,7 @@ class CommunityService {
   Future<void> loadPosts() async {
     try {
       final result = await _db.getPosts();
-      _posts = result.rows.map((doc) {
+      _posts = result.documents.map((doc) {
         final d = doc.data;
         return Post(
           id: doc.$id,
@@ -54,7 +54,7 @@ class CommunityService {
   Future<List<Comment>> loadComments(String postId) async {
     try {
       final result = await _db.getComments(postId);
-      return result.rows.map((doc) {
+      return result.documents.map((doc) {
         final d = doc.data;
         return Comment(
           id: doc.$id,

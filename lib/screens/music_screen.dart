@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../widgets/doodle_refresh.dart';
+import '../services/user_preferences_service.dart';
 
 /// Music Screen — mood-aware Tamil playlist companion.
 class MusicScreen extends StatefulWidget {
@@ -16,6 +17,21 @@ class MusicScreen extends StatefulWidget {
 class _MusicScreenState extends State<MusicScreen> {
   bool _setupDone = false;
   final Set<String> _selectedLanguages = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedLanguages();
+  }
+
+  void _loadSavedLanguages() {
+    final saved = UserPreferencesService().musicLanguages;
+    if (saved.isNotEmpty) {
+      _selectedLanguages.addAll(saved);
+      _setupDone = true;
+      if (mounted) setState(() {});
+    }
+  }
 
   static const List<String> _languages = [
     'English',
@@ -140,6 +156,11 @@ class _MusicScreenState extends State<MusicScreen> {
   void _completeSetup() {
     if (_selectedLanguages.isEmpty) return;
     setState(() => _setupDone = true);
+
+    // Persist language preferences
+    final prefs = UserPreferencesService();
+    prefs.musicLanguages = _selectedLanguages.toList();
+    prefs.saveToRemote();
   }
 
   @override

@@ -46,10 +46,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final db = DatabaseService();
 
-    // Load recovery score
-    final score = await db.getLatestRecoveryScore(user.$id);
-    if (score != null && mounted) {
-      setState(() => _recoveryScore = score);
+    // Compute and load recovery score
+    try {
+      final score = await db.computeAndSaveRecoveryScore(user.$id);
+      if (mounted) {
+        setState(() => _recoveryScore = score);
+      }
+    } catch (_) {
+      // Fall back to reading latest saved score
+      try {
+        final saved = await db.getLatestRecoveryScore(user.$id);
+        if (saved != null && mounted) {
+          setState(() => _recoveryScore = saved);
+        }
+      } catch (_) {}
     }
 
     // Load mood chart data
@@ -150,7 +160,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 28),
 
                 // ─── Daily Check-in ───
-                RepaintBoundary(child: const DailyCheckin()),
+                RepaintBoundary(
+                  child: DailyCheckin(
+                    onNeedSelected: (need) {
+                      final user = AuthService().currentUser;
+                      if (user != null) {
+                        DatabaseService().saveDailyNeed(userId: user.$id, need: need);
+                      }
+                    },
+                  ),
+                ),
 
                 const SizedBox(height: 28),
 

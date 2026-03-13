@@ -190,21 +190,25 @@ class DatabaseService {
       );
     } on AppwriteException catch (e) {
       if (e.code == 404) {
-        return await _db.createDocument(
-          databaseId: _dbId,
-          collectionId: AppwriteConstants.streaksCollection,
-          documentId: userId,
-          data: {
-            'userId': userId,
-            'currentStreak': 0,
-            'longestStreak': 0,
-            'lastCheckIn': null,
-          },
-          permissions: [
-            Permission.read(Role.user(userId)),
-            Permission.update(Role.user(userId)),
-          ],
-        );
+        try {
+          return await _db.createDocument(
+            databaseId: _dbId,
+            collectionId: AppwriteConstants.streaksCollection,
+            documentId: userId,
+            data: {
+              'userId': userId,
+              'currentStreak': 0,
+              'longestStreak': 0,
+              'lastCheckIn': null,
+            },
+            permissions: [
+              Permission.read(Role.user(userId)),
+              Permission.update(Role.user(userId)),
+            ],
+          );
+        } catch (_) {
+          rethrow;
+        }
       }
       rethrow;
     }
@@ -295,6 +299,177 @@ class DatabaseService {
     );
     if (result.documents.isEmpty) return null;
     return (result.documents.first.data['score'] as num).toDouble();
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  SLEEP ENTRIES
+  // ═══════════════════════════════════════════════════
+
+  Future<models.Document> saveSleepEntry({
+    required String userId,
+    required double hours,
+    required String date,
+  }) async {
+    return await _db.createDocument(
+      databaseId: _dbId,
+      collectionId: AppwriteConstants.sleepEntriesCollection,
+      documentId: ID.unique(),
+      data: {
+        'userId': userId,
+        'hours': hours,
+        'date': date,
+      },
+      permissions: [
+        Permission.read(Role.user(userId)),
+        Permission.delete(Role.user(userId)),
+      ],
+    );
+  }
+
+  Future<models.DocumentList> getSleepEntries(
+    String userId, {
+    int days = 7,
+  }) async {
+    final since = DateTime.now()
+        .subtract(Duration(days: days))
+        .toIso8601String()
+        .split('T')
+        .first;
+
+    return await _db.listDocuments(
+      databaseId: _dbId,
+      collectionId: AppwriteConstants.sleepEntriesCollection,
+      queries: [
+        Query.equal('userId', userId),
+        Query.greaterThanEqual('date', since),
+        Query.orderAsc('date'),
+        Query.limit(days),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  CHAT MESSAGES
+  // ═══════════════════════════════════════════════════
+
+  Future<models.Document> sendChatMessage({
+    required String userId,
+    required String username,
+    required String avatar,
+    required String text,
+  }) async {
+    return await _db.createDocument(
+      databaseId: _dbId,
+      collectionId: AppwriteConstants.chatMessagesCollection,
+      documentId: ID.unique(),
+      data: {
+        'userId': userId,
+        'username': username,
+        'avatar': avatar,
+        'text': text,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+      permissions: [
+        Permission.read(Role.any()),
+        Permission.delete(Role.user(userId)),
+      ],
+    );
+  }
+
+  Future<models.DocumentList> getChatMessages({
+    int limit = 50,
+  }) async {
+    return await _db.listDocuments(
+      databaseId: _dbId,
+      collectionId: AppwriteConstants.chatMessagesCollection,
+      queries: [
+        Query.orderDesc('timestamp'),
+        Query.limit(limit),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  DAILY NEED
+  // ═══════════════════════════════════════════════════
+
+  Future<void> saveDailyNeed({
+    required String userId,
+    required String need,
+  }) async {
+    try {
+      await _db.updateDocument(
+        databaseId: _dbId,
+        collectionId: AppwriteConstants.streaksCollection,
+        documentId: userId,
+        data: {'dailyNeed': need},
+      );
+    } catch (_) {
+      // Streak document may not exist yet — silently ignore
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  RECOVERY SCORE COMPUTATION
+  // ═══════════════════════════════════════════════════
+
+  /// Compute and save a recovery score combining:
+  /// mood (30%), sleep (30%), streak (20%), baseline (20%).
+  Future<double> computeAndSaveRecoveryScore(String userId) async {
+    double moodScore = 0.5;
+    double sleepScore = 0.5;
+    double streakScore = 0.0;
+    double baselineScore = 0.5;
+
+    // Mood: average of last 7 days (0..1)
+    try {
+      final moods = await getMoodEntries(userId, days: 7);
+      if (moods.documents.isNotEmpty) {
+        final values = moods.documents
+            .map((d) => (d.data['mood'] as num).toDouble())
+            .toList();
+        moodScore = values.reduce((a, b) => a + b) / values.length;
+      }
+    } catch (_) {}
+
+    // Sleep: average hours / 8 clamped to 0..1
+    try {
+      final sleeps = await getSleepEntries(userId, days: 7);
+      if (sleeps.documents.isNotEmpty) {
+        final values = sleeps.documents
+            .map((d) => (d.data['hours'] as num).toDouble())
+            .toList();
+        final avg = values.reduce((a, b) => a + b) / values.length;
+        sleepScore = (avg / 8.0).clamp(0.0, 1.0);
+      }
+    } catch (_) {}
+
+    // Streak: currentStreak / 30 clamped to 0..1
+    try {
+      final streak = await getOrCreateStreak(userId);
+      final current = (streak.data['currentStreak'] as num?) ?? 0;
+      streakScore = (current / 30.0).clamp(0.0, 1.0);
+    } catch (_) {}
+
+    // Baseline from user preferences
+    try {
+      final profile = await getUserProfile(userId);
+      baselineScore = (profile.data['moodBaseline'] as num?)?.toDouble() ?? 0.5;
+    } catch (_) {}
+
+    final score =
+        moodScore * 0.30 + sleepScore * 0.30 + streakScore * 0.20 + baselineScore * 0.20;
+
+    // Save the computed score
+    try {
+      await saveRecoveryScore(
+        userId: userId,
+        score: score,
+        factors: ['mood:$moodScore', 'sleep:$sleepScore', 'streak:$streakScore', 'baseline:$baselineScore'],
+      );
+    } catch (_) {}
+
+    return score;
   }
 
   // ═══════════════════════════════════════════════════

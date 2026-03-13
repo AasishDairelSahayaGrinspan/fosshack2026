@@ -4,6 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
+import '../services/database_service.dart';
+import '../services/auth_service.dart';
 
 /// Sleep Tracker — moon-themed UI with slider and weekly graph.
 class SleepTrackerScreen extends StatefulWidget {
@@ -18,8 +20,8 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
   double _hoursSlept = 7.0;
   bool _saved = false;
 
-  // Mock weekly data
-  final List<double> _weeklyData = [6.5, 7.0, 5.5, 8.0, 7.5, 6.0, 0];
+  // Weekly data — loaded from backend
+  final List<double> _weeklyData = [0, 0, 0, 0, 0, 0, 0];
 
   late AnimationController _starsController;
   late AnimationController _chartController;
@@ -44,6 +46,38 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) _chartController.forward();
     });
+    _loadWeeklyData();
+  }
+
+  Future<void> _loadWeeklyData() async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+
+    try {
+      final result = await DatabaseService().getSleepEntries(user.$id, days: 7);
+      if (!mounted) return;
+
+      // Build a map of date -> hours
+      final Map<String, double> dateMap = {};
+      for (final doc in result.documents) {
+        dateMap[doc.data['date']] = (doc.data['hours'] as num).toDouble();
+      }
+
+      // Fill weekly data for the last 7 days
+      final now = DateTime.now();
+      setState(() {
+        for (int i = 0; i < 7; i++) {
+          final day = now.subtract(Duration(days: 6 - i));
+          final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+          _weeklyData[i] = dateMap[key] ?? 0;
+        }
+      });
+
+      _chartController.reset();
+      _chartController.forward();
+    } catch (_) {
+      // Keep zeros on failure
+    }
   }
 
   @override
@@ -53,13 +87,29 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
     super.dispose();
   }
 
-  void _saveEntry() {
+  Future<void> _saveEntry() async {
+    final now = DateTime.now();
+    final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
     setState(() {
       _weeklyData[6] = _hoursSlept;
       _saved = true;
     });
     _chartController.reset();
     _chartController.forward();
+
+    // Persist to backend
+    final user = AuthService().currentUser;
+    if (user != null) {
+      try {
+        await DatabaseService().saveSleepEntry(
+          userId: user.$id,
+          hours: _hoursSlept,
+          date: dateStr,
+        );
+      } catch (_) {}
+    }
+
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _saved = false);
     });

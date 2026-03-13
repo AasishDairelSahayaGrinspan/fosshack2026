@@ -40,7 +40,18 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   @override
   void initState() {
     super.initState();
-    _service.initSampleData();
+    _loadPosts();
+  }
+
+  Future<void> _loadPosts() async {
+    try {
+      await _service.loadPosts();
+    } catch (_) {}
+    // Fall back to sample data if backend returned empty
+    if (_service.posts.isEmpty) {
+      _service.initSampleData();
+    }
+    if (mounted) setState(() {});
   }
 
   void _onDoubleTap(Post post) {

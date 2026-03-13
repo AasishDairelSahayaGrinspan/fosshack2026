@@ -18,6 +18,8 @@ class AppwriteConstants {
   static const String recoveryScoresCollection = 'recovery_scores';
   static const String postsCollection = 'posts';
   static const String commentsCollection = 'comments';
+  static const String sleepEntriesCollection = 'sleep_entries';
+  static const String chatMessagesCollection = 'chat_messages';
 
   // ─── Storage Buckets ───
   static const String profilePicsBucket = 'profile_pics';

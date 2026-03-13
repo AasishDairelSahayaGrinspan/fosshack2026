@@ -26,25 +26,48 @@ class AuthService {
     }
   }
 
-  // ─── Phone OTP ───
+  // ─── Email / Password Auth ───
 
-  /// Send OTP to phone number. Returns the token for verification.
-  /// [phone] must include country code, e.g. '+919876543210'.
-  Future<models.Token> sendOtp(String phone) async {
-    return await _account.createPhoneToken(userId: ID.unique(), phone: phone);
+  /// Create a new account and log in.
+  Future<models.User> emailSignUp({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    _currentUser = await _account.create(
+      userId: ID.unique(),
+      email: email,
+      password: password,
+      name: name,
+    );
+    // Auto-login after sign-up
+    await _account.createEmailPasswordSession(
+      email: email,
+      password: password,
+    );
+    _currentUser = await _account.get();
+    return _currentUser!;
   }
 
-  /// Verify the OTP code. Returns a session on success.
-  Future<models.Session> verifyOtp({
-    required String userId,
-    required String otp,
+  /// Log in with existing email/password.
+  Future<models.Session> emailLogin({
+    required String email,
+    required String password,
   }) async {
-    final session = await _account.createSession(
-      userId: userId,
-      secret: otp,
+    final session = await _account.createEmailPasswordSession(
+      email: email,
+      password: password,
     );
     _currentUser = await _account.get();
     return session;
+  }
+
+  /// Send a password-recovery email.
+  Future<models.Token> forgotPassword(String email) async {
+    return await _account.createRecovery(
+      email: email,
+      url: 'https://unravel-app.com/reset-password',
+    );
   }
 
   // ─── OAuth (Google / Apple) ───

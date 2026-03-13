@@ -37,8 +37,12 @@ class _SplashScreenState extends State<SplashScreen> {
     Widget destination;
 
     if (isLoggedIn) {
-      // Load user preferences from Appwrite
-      await UserPreferencesService().loadFromRemote();
+      // Load user preferences from Appwrite (non-fatal on failure)
+      try {
+        await UserPreferencesService().loadFromRemote();
+      } catch (_) {
+        // Permission error or network issue — continue with defaults
+      }
       destination = const MainShell();
     } else {
       destination = const LoginScreen();

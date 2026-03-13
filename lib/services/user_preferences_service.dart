@@ -13,6 +13,7 @@ class UserPreferencesService {
   List<String> concerns = [];
   String? sleepSchedule;
   double moodBaseline = 0.5;
+  List<String> musicLanguages = [];
 
   // Avatar config (DiceBear)
   late String avatarSeed = AvatarService().generateRandomSeed();
@@ -50,6 +51,7 @@ class UserPreferencesService {
       concerns = List<String>.from(data['concerns'] ?? []);
       sleepSchedule = data['sleepSchedule'];
       moodBaseline = (data['moodBaseline'] as num?)?.toDouble() ?? 0.5;
+      musicLanguages = List<String>.from(data['musicLanguages'] ?? []);
       if (data['avatarUrl'] != null) {
         // Parse seed and style from stored URL if available
         // Otherwise keep the randomly generated defaults
@@ -73,18 +75,23 @@ class UserPreferencesService {
         'sleepSchedule': sleepSchedule,
         'moodBaseline': moodBaseline,
         'avatarUrl': getAvatarUrl(),
+        'musicLanguages': musicLanguages,
       });
     } catch (_) {
       // If profile doesn't exist, create it
-      await DatabaseService().createUserProfile(
-        userId: user.$id,
-        name: name ?? 'friend',
-        ageGroup: ageGroup,
-        concerns: concerns,
-        sleepSchedule: sleepSchedule,
-        moodBaseline: moodBaseline,
-        avatarUrl: getAvatarUrl(),
-      );
+      try {
+        await DatabaseService().createUserProfile(
+          userId: user.$id,
+          name: name ?? 'friend',
+          ageGroup: ageGroup,
+          concerns: concerns,
+          sleepSchedule: sleepSchedule,
+          moodBaseline: moodBaseline,
+          avatarUrl: getAvatarUrl(),
+        );
+      } catch (_) {
+        // Permission denied or network error — continue with local defaults
+      }
     }
   }
 }

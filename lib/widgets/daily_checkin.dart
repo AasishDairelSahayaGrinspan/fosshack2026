@@ -6,7 +6,9 @@ import '../theme/app_typography.dart';
 
 /// Daily Check-in — "What do you need today?" with 4 soft selectable options.
 class DailyCheckin extends StatefulWidget {
-  const DailyCheckin({super.key});
+  final void Function(String need)? onNeedSelected;
+
+  const DailyCheckin({super.key, this.onNeedSelected});
 
   @override
   State<DailyCheckin> createState() => _DailyCheckinState();
@@ -43,7 +45,10 @@ class _DailyCheckinState extends State<DailyCheckin> {
             final color = option['color'] as Color;
 
             return GestureDetector(
-              onTap: () => setState(() => _selectedIndex = index),
+              onTap: () {
+                setState(() => _selectedIndex = index);
+                widget.onNeedSelected?.call(option['label'] as String);
+              },
               child: AnimatedContainer(
                 duration: AppTheme.fadeInDuration,
                 curve: AppTheme.defaultCurve,

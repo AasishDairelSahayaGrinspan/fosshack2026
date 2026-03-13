@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:appwrite/enums.dart' as enums;
+import 'package:appwrite/appwrite.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -12,8 +12,8 @@ import '../services/auth_service.dart';
 import 'onboarding_screen.dart';
 
 /// Unravel Login Screen
-/// "Welcome back." — spa-like entry experience.
-/// Frosted glass card with social login, phone + OTP flow.
+/// "Welcome back." / "Create your space." — spa-like entry experience.
+/// Frosted glass card with social login and email/password auth.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -24,131 +24,137 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
   // ─── State ───
-  bool _showOtp = false;
-  bool _isVerifying = false;
+  bool _isSignUp = false;
+  bool _isLoading = false;
   bool _showSuccess = false;
-  String? _otpUserId; // Appwrite token userId for OTP verification
+  bool _obscurePassword = true;
   String? _errorMessage;
-  final _phoneController = TextEditingController();
-  final List<TextEditingController> _otpControllers = List.generate(
-    6,
-    (_) => TextEditingController(),
-  );
-  final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
+
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
 
   @override
   void dispose() {
-    _phoneController.dispose();
-    for (final c in _otpControllers) {
-      c.dispose();
-    }
-    for (final n in _otpFocusNodes) {
-      n.dispose();
-    }
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
-  Future<void> _onSendOtp() async {
-    if (_phoneController.text.length < 10) return;
-    setState(() {
-      _errorMessage = null;
-      _isVerifying = true;
-    });
+  String _parseAuthError(dynamic e) {
+    final msg = e.toString().toLowerCase();
+    if (e is AppwriteException) {
+      final m = e.message?.toLowerCase() ?? '';
+      if (m.contains('already exists') || m.contains('user_already_exists')) {
+        return 'An account with this email already exists.';
+      }
+      if (m.contains('invalid credentials') || m.contains('user_invalid_credentials')) {
+        return 'Invalid email or password.';
+      }
+      if (m.contains('rate limit') || m.contains('too many')) {
+        return 'Too many attempts. Please wait a moment.';
+      }
+      if (e.message != null && e.message!.isNotEmpty) {
+        return e.message!;
+      }
+    }
+    if (msg.contains('network') || msg.contains('socket')) {
+      return 'Network error. Check your connection.';
+    }
+    return 'Something went wrong. Please try again.';
+  }
+
+  Future<void> _onEmailLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'Please enter email and password.');
+      return;
+    }
+
+    setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      final token = await AuthService().sendOtp('+91${_phoneController.text}');
-      _otpUserId = token.userId;
-      setState(() {
-        _isVerifying = false;
-        _showOtp = true;
-      });
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) _otpFocusNodes[0].requestFocus();
-      });
-    } catch (e) {
-      setState(() {
-        _isVerifying = false;
-        _errorMessage = 'Failed to send OTP. Please try again.';
-      });
-    }
-  }
-
-  void _onOtpChanged(int index, String value) {
-    if (value.isNotEmpty && index < 5) {
-      _otpFocusNodes[index + 1].requestFocus();
-    }
-    // Auto-verify when all 6 digits are entered
-    if (_otpControllers.every((c) => c.text.isNotEmpty)) {
-      _verifyOtp();
-    }
-  }
-
-  void _onOtpKeyPress(int index, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.backspace &&
-        _otpControllers[index].text.isEmpty &&
-        index > 0) {
-      _otpFocusNodes[index - 1].requestFocus();
-    }
-  }
-
-  Future<void> _verifyOtp() async {
-    final otp = _otpControllers.map((c) => c.text).join();
-    if (otp.length < 6 || _otpUserId == null) return;
-
-    setState(() {
-      _isVerifying = true;
-      _errorMessage = null;
-    });
-    try {
-      await AuthService().verifyOtp(userId: _otpUserId!, otp: otp);
+      await AuthService().emailLogin(email: email, password: password);
       if (!mounted) return;
-      setState(() {
-        _isVerifying = false;
-        _showSuccess = true;
-      });
+      setState(() { _isLoading = false; _showSuccess = true; });
       await Future.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
       _navigateToHome();
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _isVerifying = false;
-        _errorMessage = 'Invalid OTP. Please try again.';
-      });
+      setState(() { _isLoading = false; _errorMessage = _parseAuthError(e); });
+    }
+  }
+
+  Future<void> _onEmailSignUp() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'Please fill in all fields.');
+      return;
+    }
+    if (password.length < 8) {
+      setState(() => _errorMessage = 'Password must be at least 8 characters.');
+      return;
+    }
+
+    setState(() { _isLoading = true; _errorMessage = null; });
+    try {
+      await AuthService().emailSignUp(email: email, password: password, name: name);
+      if (!mounted) return;
+      setState(() { _isLoading = false; _showSuccess = true; });
+      await Future.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
+      _navigateToHome();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _isLoading = false; _errorMessage = _parseAuthError(e); });
+    }
+  }
+
+  Future<void> _onForgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() => _errorMessage = 'Enter your email first, then tap Forgot password.');
+      return;
+    }
+
+    setState(() { _isLoading = true; _errorMessage = null; });
+    try {
+      await AuthService().forgotPassword(email);
+      if (!mounted) return;
+      setState(() { _isLoading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Recovery email sent to $email', style: AppTypography.body(color: Colors.white)),
+          backgroundColor: AppColors.sageGreen,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusSmall)),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _isLoading = false; _errorMessage = _parseAuthError(e); });
     }
   }
 
   Future<void> _onSocialLogin(String provider) async {
-    setState(() {
-      _isVerifying = true;
-      _errorMessage = null;
-    });
+    setState(() { _isLoading = true; _errorMessage = null; });
     try {
       final oauthProvider = provider == 'google'
           ? enums.OAuthProvider.google
           : enums.OAuthProvider.apple;
       await AuthService().oAuthLogin(oauthProvider);
       if (!mounted) return;
-      setState(() {
-        _isVerifying = false;
-        _showSuccess = true;
-      });
+      setState(() { _isLoading = false; _showSuccess = true; });
       await Future.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
       _navigateToHome();
     } catch (e) {
       if (!mounted) return;
-      String errorMsg = 'Login failed. Please try again.';
-      if (e.toString().contains('Network') || e.toString().contains('socket')) {
-        errorMsg = 'Network error. Check your connection and try again.';
-      } else if (e.toString().contains('401') ||
-          e.toString().contains('unauthorized')) {
-        errorMsg = 'Google OAuth not configured. Contact support.';
-      }
-      setState(() {
-        _isVerifying = false;
-        _errorMessage = errorMsg;
-      });
+      setState(() { _isLoading = false; _errorMessage = _parseAuthError(e); });
     }
   }
 
@@ -202,14 +208,24 @@ class _LoginScreenState extends State<LoginScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             // Heading
-                            Text(
-                              'Welcome back.',
-                              style: AppTypography.heroHeadingC(context),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: Text(
+                                _isSignUp ? 'Create your space.' : 'Welcome back.',
+                                key: ValueKey<bool>(_isSignUp),
+                                style: AppTypography.heroHeadingC(context),
+                              ),
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              'We saved your quiet place.',
-                              style: AppTypography.subtitleC(context),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: Text(
+                                _isSignUp
+                                    ? 'A quiet place, just for you.'
+                                    : 'We saved your quiet place.',
+                                key: ValueKey<String>(_isSignUp ? 'signup' : 'login'),
+                                style: AppTypography.subtitleC(context),
+                              ),
                             ),
                             const SizedBox(height: 32),
 
@@ -280,27 +296,8 @@ class _LoginScreenState extends State<LoginScreen>
 
                             const SizedBox(height: 24),
 
-                            // ─── Phone / OTP Section ───
-                            AnimatedSwitcher(
-                              duration: AppTheme.fadeInDuration,
-                              switchInCurve: AppTheme.defaultCurve,
-                              switchOutCurve: AppTheme.defaultCurve,
-                              transitionBuilder: (child, animation) {
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: SlideTransition(
-                                    position: Tween<Offset>(
-                                      begin: const Offset(0, 0.08),
-                                      end: Offset.zero,
-                                    ).animate(animation),
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: _showOtp
-                                  ? _buildOtpSection()
-                                  : _buildPhoneSection(),
-                            ),
+                            // ─── Email / Password Section ───
+                            _buildEmailSection(),
                           ],
                         ),
                       )
@@ -337,147 +334,79 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ─── Phone Input Section ───
-  Widget _buildPhoneSection() {
+  // ─── Email / Password Section ───
+  Widget _buildEmailSection() {
     return Column(
-      key: const ValueKey('phone'),
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Phone number input
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(AppTheme.radiusInput),
-            border: Border.all(color: AppColors.inputBorder, width: 1),
-          ),
-          child: Row(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: Text('+91', style: AppTypography.uiLabelC(context)),
-              ),
-              Container(
-                width: 1,
-                height: 28,
-                margin: const EdgeInsets.symmetric(horizontal: 12),
-                color: AppColors.dividerColor(context),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  style: AppTypography.uiLabelC(context),
-                  decoration: InputDecoration(
-                    hintText: 'Mobile number',
-                    hintStyle: AppTypography.uiLabel(
-                      color: AppColors.tertiary(context),
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        // Name field (sign-up only)
+        AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: AppTheme.defaultCurve,
+          child: _isSignUp
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildInputField(
+                    controller: _nameController,
+                    hint: 'Your name',
+                    icon: Icons.person_outline_rounded,
+                    textInputType: TextInputType.name,
+                    textInputAction: TextInputAction.next,
                   ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(10),
-                  ],
-                ),
+                )
+              : const SizedBox.shrink(),
+        ),
+
+        // Email field
+        _buildInputField(
+          controller: _emailController,
+          hint: 'Email',
+          icon: Icons.email_outlined,
+          textInputType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
+        ),
+        const SizedBox(height: 12),
+
+        // Password field with visibility toggle
+        _buildInputField(
+          controller: _passwordController,
+          hint: 'Password',
+          icon: Icons.lock_outline_rounded,
+          obscureText: _obscurePassword,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _isSignUp ? _onEmailSignUp() : _onEmailLogin(),
+          suffix: GestureDetector(
+            onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Icon(
+                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                color: AppColors.tertiary(context),
+                size: 20,
               ),
-            ],
+            ),
           ),
         ),
+
+        // Forgot password (login mode only)
+        if (!_isSignUp)
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: GestureDetector(
+                onTap: _onForgotPassword,
+                child: Text(
+                  'Forgot password?',
+                  style: AppTypography.caption(color: AppColors.softIndigo),
+                ),
+              ),
+            ),
+          ),
+
         const SizedBox(height: 20),
-        PillButton(
-          label: 'Send OTP',
-          width: double.infinity,
-          backgroundColor: AppColors.softIndigo.withValues(alpha: 0.85),
-          textColor: Colors.white,
-          onTap: _onSendOtp,
-        ),
-      ],
-    );
-  }
 
-  // ─── OTP Input Section ───
-  Widget _buildOtpSection() {
-    return Column(
-      key: const ValueKey('otp'),
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'Enter the code we sent you',
-          style: AppTypography.subtitleC(context),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _phoneController.text.isNotEmpty
-              ? '+91 ${_phoneController.text}'
-              : '',
-          style: AppTypography.captionC(context),
-        ),
-        const SizedBox(height: 24),
-
-        // OTP boxes
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(6, (index) {
-            return Expanded(
-              child: Container(
-                height: 52,
-                margin: EdgeInsets.only(right: index < 5 ? 8 : 0),
-                child: KeyboardListener(
-                  focusNode: FocusNode(),
-                  onKeyEvent: (event) => _onOtpKeyPress(index, event),
-                  child: TextField(
-                    controller: _otpControllers[index],
-                    focusNode: _otpFocusNodes[index],
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    maxLength: 1,
-                    style: AppTypography.otpDigit(),
-                    decoration: InputDecoration(
-                      counterText: '',
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.6),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppTheme.radiusSmall,
-                        ),
-                        borderSide: BorderSide(
-                          color: AppColors.inputBorder,
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppTheme.radiusSmall,
-                        ),
-                        borderSide: BorderSide(
-                          color: AppColors.inputBorder,
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppTheme.radiusSmall,
-                        ),
-                        borderSide: BorderSide(
-                          color: AppColors.inputFocusBorder,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onChanged: (value) => _onOtpChanged(index, value),
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Verify / Loading / Success
+        // Submit button / Success
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: _showSuccess
@@ -496,27 +425,86 @@ class _LoginScreenState extends State<LoginScreen>
                     )
                     .fadeIn(duration: const Duration(milliseconds: 300))
               : PillButton(
-                  key: const ValueKey('verify'),
-                  label: 'Verify',
+                  key: const ValueKey('submit'),
+                  label: _isSignUp ? 'Create Account' : 'Log In',
                   width: double.infinity,
                   backgroundColor: AppColors.softIndigo.withValues(alpha: 0.85),
                   textColor: Colors.white,
-                  isLoading: _isVerifying,
-                  onTap: _verifyOtp,
+                  isLoading: _isLoading,
+                  onTap: _isSignUp ? _onEmailSignUp : _onEmailLogin,
                 ),
         ),
 
         const SizedBox(height: 16),
 
-        // Change number link
+        // Toggle sign-up / log-in
         GestureDetector(
-          onTap: () => setState(() => _showOtp = false),
-          child: Text(
-            'Change number',
-            style: AppTypography.caption(color: AppColors.softIndigo),
+          onTap: () => setState(() {
+            _isSignUp = !_isSignUp;
+            _errorMessage = null;
+          }),
+          child: Text.rich(
+            TextSpan(
+              text: _isSignUp ? 'Already have an account? ' : "Don't have an account? ",
+              style: AppTypography.captionC(context),
+              children: [
+                TextSpan(
+                  text: _isSignUp ? 'Log in' : 'Sign up',
+                  style: AppTypography.caption(color: AppColors.softIndigo)
+                      .copyWith(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    TextInputType? textInputType,
+    TextInputAction? textInputAction,
+    bool obscureText = false,
+    Widget? suffix,
+    void Function(String)? onSubmitted,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(AppTheme.radiusInput),
+        border: Border.all(color: AppColors.inputBorder, width: 1),
+      ),
+      child: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 14),
+            child: Icon(icon, color: AppColors.tertiary(context), size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: textInputType,
+              textInputAction: textInputAction,
+              obscureText: obscureText,
+              onSubmitted: onSubmitted,
+              style: AppTypography.uiLabelC(context),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: AppTypography.uiLabel(
+                  color: AppColors.tertiary(context),
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+          if (suffix != null) suffix,
+        ],
+      ),
     );
   }
 

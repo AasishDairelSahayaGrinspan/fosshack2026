@@ -14,6 +14,10 @@ class UserPreferencesService {
   String? sleepSchedule;
   double moodBaseline = 0.5;
 
+  // Music language preferences
+  List<String> musicLanguages = [];
+  bool get hasMusicSetup => musicLanguages.isNotEmpty;
+
   // Avatar config (DiceBear)
   late String avatarSeed = AvatarService().generateRandomSeed();
   late String avatarStyle = AvatarService().getRandomStyle();
@@ -50,6 +54,7 @@ class UserPreferencesService {
       concerns = List<String>.from(data['concerns'] ?? []);
       sleepSchedule = data['sleepSchedule'];
       moodBaseline = (data['moodBaseline'] as num?)?.toDouble() ?? 0.5;
+      musicLanguages = List<String>.from(data['musicLanguages'] ?? []);
       if (data['avatarUrl'] != null) {
         // Parse seed and style from stored URL if available
         // Otherwise keep the randomly generated defaults
@@ -73,6 +78,7 @@ class UserPreferencesService {
         'sleepSchedule': sleepSchedule,
         'moodBaseline': moodBaseline,
         'avatarUrl': getAvatarUrl(),
+        'musicLanguages': musicLanguages,
       });
     } catch (_) {
       // If profile doesn't exist, create it
@@ -84,6 +90,7 @@ class UserPreferencesService {
         sleepSchedule: sleepSchedule,
         moodBaseline: moodBaseline,
         avatarUrl: getAvatarUrl(),
+        musicLanguages: musicLanguages,
       );
     }
   }

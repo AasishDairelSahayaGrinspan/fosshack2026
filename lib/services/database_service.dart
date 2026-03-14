@@ -26,6 +26,7 @@ class DatabaseService {
     int hairStyle = 0,
     int skinTone = 0,
     int outfitColor = 0,
+    List<String>? musicLanguages,
   }) async {
     return await _db.createRow(
       databaseId: _dbId,
@@ -42,6 +43,7 @@ class DatabaseService {
         'hairStyle': hairStyle,
         'skinTone': skinTone,
         'outfitColor': outfitColor,
+        'musicLanguages': musicLanguages ?? [],
         'createdAt': DateTime.now().toIso8601String(),
       },
       permissions: [

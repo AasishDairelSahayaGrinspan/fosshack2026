@@ -58,23 +58,31 @@ class AuthService {
       await _account.createOAuth2Session(
         provider: provider,
       );
+      developer.log('OAuth2 session created, fetching user...');
       _currentUser = await _account.get();
       developer.log('OAuth login successful for user: ${_currentUser?.$id}');
     } on AppwriteException catch (e) {
       developer.log(
-        'OAuth login failed: ${e.message}',
+        'OAuth AppwriteException: code=${e.code}, type=${e.type}, message=${e.message}',
         error: e,
         stackTrace: StackTrace.current,
       );
       rethrow;
     } catch (e) {
       developer.log(
-        'Unexpected error during OAuth login',
+        'OAuth unexpected error: ${e.runtimeType}: $e',
         error: e,
         stackTrace: StackTrace.current,
       );
       rethrow;
     }
+  }
+
+  // ─── Guest / Anonymous ───
+
+  Future<void> guestLogin() async {
+    await _account.createAnonymousSession();
+    _currentUser = await _account.get();
   }
 
   // ─── Session Management ───

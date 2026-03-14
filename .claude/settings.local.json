@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(flutter analyze:*)"
+      "Bash(flutter analyze:*)",
+      "Read(//c/Users/eswr0/Desktop/Unravel/$LOCALAPPDATA/Pub/**)",
+      "Read(//c/Users/eswr0/Desktop/Unravel/$HOME/**)",
+      "Read(//c/Users/eswr0/AppData/Local/Pub/Cache/**)"
     ]
   }
 }

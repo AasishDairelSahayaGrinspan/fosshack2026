@@ -1,6 +1,8 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lottie/lottie.dart';
 import 'package:appwrite/enums.dart' as enums;
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -118,6 +120,30 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<void> _onGuestLogin() async {
+    setState(() {
+      _isVerifying = true;
+      _errorMessage = null;
+    });
+    try {
+      await AuthService().guestLogin();
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _showSuccess = true;
+      });
+      await Future.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
+      _navigateToHome();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = 'Guest login failed. Please try again.';
+      });
+    }
+  }
+
   Future<void> _onSocialLogin(String provider) async {
     setState(() {
       _isVerifying = true;
@@ -137,13 +163,18 @@ class _LoginScreenState extends State<LoginScreen>
       if (!mounted) return;
       _navigateToHome();
     } catch (e) {
+      developer.log('Login screen caught error: ${e.runtimeType}: $e');
       if (!mounted) return;
+      final errorStr = e.toString();
       String errorMsg = 'Login failed. Please try again.';
-      if (e.toString().contains('Network') || e.toString().contains('socket')) {
+      if (errorStr.contains('Network') || errorStr.contains('socket')) {
         errorMsg = 'Network error. Check your connection and try again.';
-      } else if (e.toString().contains('401') ||
-          e.toString().contains('unauthorized')) {
+      } else if (errorStr.contains('401') || errorStr.contains('unauthorized')) {
         errorMsg = 'Google OAuth not configured. Contact support.';
+      } else if (errorStr.contains('Invalid OAuth2 Response')) {
+        errorMsg = 'OAuth redirect failed. Check Appwrite platform config.';
+      } else if (errorStr.contains('CANCELED') || errorStr.contains('cancel')) {
+        errorMsg = 'Login was cancelled.';
       }
       setState(() {
         _isVerifying = false;
@@ -177,7 +208,9 @@ class _LoginScreenState extends State<LoginScreen>
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: GradientBackground(
+      body: Stack(
+        children: [
+          GradientBackground(
         colors: const [AppColors.mistBlue, AppColors.paleLilac],
         secondaryColors: const [AppColors.cream, AppColors.warmLavender],
         begin: Alignment.topCenter,
@@ -234,6 +267,20 @@ class _LoginScreenState extends State<LoginScreen>
                               backgroundColor: Colors.white,
                               borderColor: AppColors.inputBorder,
                               onTap: () => _onSocialLogin('apple'),
+                            ),
+
+                            const SizedBox(height: 12),
+                            PillButton(
+                              label: 'Continue as Guest',
+                              width: double.infinity,
+                              icon: Icon(
+                                Icons.person_outline_rounded,
+                                color: AppColors.tertiary(context),
+                                size: 20,
+                              ),
+                              backgroundColor: Colors.white.withValues(alpha: 0.4),
+                              borderColor: AppColors.inputBorder,
+                              onTap: _onGuestLogin,
                             ),
 
                             const SizedBox(height: 24),
@@ -333,6 +380,41 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
         ),
+      ),
+
+          // ─── Cat Loading Overlay ───
+          if (_isVerifying)
+            Container(
+              color: Colors.white.withValues(alpha: 0.85),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 200,
+                      width: 200,
+                      child: LottieBuilder(
+                        lottie: AssetLottie(
+                          'assets/lottie/cat_loading.lottie',
+                          decoder: LottieComposition.decodeZip,
+                        ),
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Settling you in...',
+                      style: AppTypography.subtitle(
+                        color: AppColors.softIndigo,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+                .animate()
+                .fadeIn(duration: const Duration(milliseconds: 300)),
+        ],
       ),
     );
   }

@@ -1,3 +1,6 @@
+/// Service for DiceBear avatar creation and management.
+library;
+
 import 'dart:math';
 
 class AvatarService {

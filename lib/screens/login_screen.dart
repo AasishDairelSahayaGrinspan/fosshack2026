@@ -1,8 +1,8 @@
 import 'dart:developer' as developer;
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lottie/lottie.dart';
 import 'package:appwrite/enums.dart' as enums;
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -11,7 +11,10 @@ import '../widgets/gradient_background.dart';
 import '../widgets/frosted_glass_card.dart';
 import '../widgets/pill_button.dart';
 import '../services/auth_service.dart';
+import '../services/community_service.dart';
+import '../services/user_preferences_service.dart';
 import 'onboarding_screen.dart';
+import 'main_shell.dart';
 
 /// Unravel Login Screen
 /// "Welcome back." — spa-like entry experience.
@@ -110,12 +113,17 @@ class _LoginScreenState extends State<LoginScreen>
       });
       await Future.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
-      _navigateToHome();
+      _navigateAfterAuth();
     } catch (e) {
       if (!mounted) return;
+      final errorStr = e.toString();
+      String errorMsg = 'Invalid OTP. Please try again.';
+      if (errorStr.contains('expired')) {
+        errorMsg = 'OTP expired. Please request a new code.';
+      }
       setState(() {
         _isVerifying = false;
-        _errorMessage = 'Invalid OTP. Please try again.';
+        _errorMessage = errorMsg;
       });
     }
   }
@@ -134,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen>
       });
       await Future.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
-      _navigateToHome();
+      _navigateAfterAuth();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -161,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen>
       });
       await Future.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
-      _navigateToHome();
+      _navigateAfterAuth();
     } catch (e) {
       developer.log('Login screen caught error: ${e.runtimeType}: $e');
       if (!mounted) return;
@@ -169,7 +177,8 @@ class _LoginScreenState extends State<LoginScreen>
       String errorMsg = 'Login failed. Please try again.';
       if (errorStr.contains('Network') || errorStr.contains('socket')) {
         errorMsg = 'Network error. Check your connection and try again.';
-      } else if (errorStr.contains('401') || errorStr.contains('unauthorized')) {
+      } else if (errorStr.contains('401') ||
+          errorStr.contains('unauthorized')) {
         errorMsg = 'Google OAuth not configured. Contact support.';
       } else if (errorStr.contains('Invalid OAuth2 Response')) {
         errorMsg = 'OAuth redirect failed. Check Appwrite platform config.';
@@ -183,12 +192,22 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  void _navigateToHome() {
+  Future<void> _navigateAfterAuth() async {
+    await UserPreferencesService().loadFromRemote();
+    CommunityService().communityPreference =
+        UserPreferencesService().communityPreference;
+
+    if (!mounted) return;
+    final hasCompletedOnboarding =
+        UserPreferencesService().hasCompletedOnboarding;
+    final destination = hasCompletedOnboarding
+        ? const MainShell()
+        : const OnboardingScreen();
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const OnboardingScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) => destination,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: CurvedAnimation(
@@ -211,209 +230,179 @@ class _LoginScreenState extends State<LoginScreen>
       body: Stack(
         children: [
           GradientBackground(
-        colors: const [AppColors.mistBlue, AppColors.paleLilac],
-        secondaryColors: const [AppColors.cream, AppColors.warmLavender],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        child: SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: AppTheme.screenPadding,
-            child: SizedBox(
-              height: screenHeight - MediaQuery.of(context).padding.top - 32,
-              child: Column(
-                children: [
-                  const Spacer(flex: 2),
+            colors: const [AppColors.mistBlue, AppColors.paleLilac],
+            secondaryColors: const [AppColors.cream, AppColors.warmLavender],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            child: SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: AppTheme.screenPadding,
+                child: SizedBox(
+                  height:
+                      screenHeight - MediaQuery.of(context).padding.top - 32,
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 2),
 
-                  // ─── Frosted Glass Card ───
-                  FrostedGlassCard(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 32,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Heading
-                            Text(
-                              'Welcome back.',
-                              style: AppTypography.heroHeadingC(context),
+                      // ─── Frosted Glass Card ───
+                      FrostedGlassCard(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 32,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'We saved your quiet place.',
-                              style: AppTypography.subtitleC(context),
-                            ),
-                            const SizedBox(height: 32),
-
-                            // ─── Social Login Buttons ───
-                            PillButton(
-                              label: 'Continue with Google',
-                              width: double.infinity,
-                              icon: _buildGoogleIcon(),
-                              backgroundColor: Colors.white,
-                              borderColor: AppColors.inputBorder,
-                              onTap: () => _onSocialLogin('google'),
-                            ),
-                            const SizedBox(height: 12),
-                            PillButton(
-                              label: 'Continue with Apple',
-                              width: double.infinity,
-                              icon: Icon(
-                                Icons.apple,
-                                color: AppColors.primary(context),
-                                size: 20,
-                              ),
-                              backgroundColor: Colors.white,
-                              borderColor: AppColors.inputBorder,
-                              onTap: () => _onSocialLogin('apple'),
-                            ),
-
-                            const SizedBox(height: 12),
-                            PillButton(
-                              label: 'Continue as Guest',
-                              width: double.infinity,
-                              icon: Icon(
-                                Icons.person_outline_rounded,
-                                color: AppColors.tertiary(context),
-                                size: 20,
-                              ),
-                              backgroundColor: Colors.white.withValues(alpha: 0.4),
-                              borderColor: AppColors.inputBorder,
-                              onTap: _onGuestLogin,
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // ─── Divider ───
-                            Row(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Expanded(
-                                  child: Divider(
-                                    color: AppColors.dividerColor(context),
-                                    thickness: 0.8,
-                                  ),
+                                // Heading
+                                Text(
+                                  'Welcome back.',
+                                  style: AppTypography.heroHeadingC(context),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    'or',
-                                    style: AppTypography.captionC(context),
-                                  ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'We saved your quiet place.',
+                                  style: AppTypography.subtitleC(context),
                                 ),
-                                Expanded(
-                                  child: Divider(
-                                    color: AppColors.dividerColor(context),
-                                    thickness: 0.8,
+                                const SizedBox(height: 32),
+
+                                // ─── Social Login Buttons ───
+                                PillButton(
+                                  label: 'Continue with Google',
+                                  width: double.infinity,
+                                  icon: _buildGoogleIcon(),
+                                  backgroundColor: Colors.white,
+                                  borderColor: AppColors.inputBorder,
+                                  onTap: () => _onSocialLogin('google'),
+                                ),
+                                const SizedBox(height: 12),
+                                PillButton(
+                                  label: 'Continue with Apple',
+                                  width: double.infinity,
+                                  icon: Icon(
+                                    Icons.apple,
+                                    color: AppColors.primary(context),
+                                    size: 20,
                                   ),
+                                  backgroundColor: Colors.white,
+                                  borderColor: AppColors.inputBorder,
+                                  onTap: () => _onSocialLogin('apple'),
+                                ),
+
+                                const SizedBox(height: 12),
+                                PillButton(
+                                  label: 'Continue as Guest',
+                                  width: double.infinity,
+                                  icon: Icon(
+                                    Icons.person_outline_rounded,
+                                    color: AppColors.tertiary(context),
+                                    size: 20,
+                                  ),
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                  borderColor: AppColors.inputBorder,
+                                  onTap: _onGuestLogin,
+                                ),
+
+                                const SizedBox(height: 24),
+
+                                // ─── Divider ───
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Divider(
+                                        color: AppColors.dividerColor(context),
+                                        thickness: 0.8,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      child: Text(
+                                        'or',
+                                        style: AppTypography.captionC(context),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Divider(
+                                        color: AppColors.dividerColor(context),
+                                        thickness: 0.8,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // ─── Error Message ───
+                                if (_errorMessage != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 16),
+                                    child: Text(
+                                      _errorMessage!,
+                                      style: AppTypography.caption(
+                                        color: AppColors.warmCoral,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+
+                                const SizedBox(height: 24),
+
+                                // ─── Phone / OTP Section ───
+                                AnimatedSwitcher(
+                                  duration: AppTheme.fadeInDuration,
+                                  switchInCurve: AppTheme.defaultCurve,
+                                  switchOutCurve: AppTheme.defaultCurve,
+                                  transitionBuilder: (child, animation) {
+                                    return FadeTransition(
+                                      opacity: animation,
+                                      child: SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: const Offset(0, 0.08),
+                                          end: Offset.zero,
+                                        ).animate(animation),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: _showOtp
+                                      ? _buildOtpSection()
+                                      : _buildPhoneSection(),
                                 ),
                               ],
                             ),
+                          )
+                          .animate()
+                          .fadeIn(
+                            duration: const Duration(milliseconds: 700),
+                            curve: AppTheme.gentleCurve,
+                          )
+                          .slideY(
+                            begin: 0.08,
+                            end: 0,
+                            duration: const Duration(milliseconds: 700),
+                            curve: AppTheme.gentleCurve,
+                          ),
 
-                            // ─── Error Message ───
-                            if (_errorMessage != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 16),
-                                child: Text(
-                                  _errorMessage!,
-                                  style: AppTypography.caption(
-                                    color: AppColors.warmCoral,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
+                      const Spacer(flex: 3),
 
-                            const SizedBox(height: 24),
+                      // ─── Footer ───
+                      Text(
+                            'By continuing, you agree to our Terms & Privacy Policy',
+                            style: AppTypography.captionC(context),
+                            textAlign: TextAlign.center,
+                          )
+                          .animate(delay: const Duration(milliseconds: 500))
+                          .fadeIn(duration: const Duration(milliseconds: 500)),
 
-                            // ─── Phone / OTP Section ───
-                            AnimatedSwitcher(
-                              duration: AppTheme.fadeInDuration,
-                              switchInCurve: AppTheme.defaultCurve,
-                              switchOutCurve: AppTheme.defaultCurve,
-                              transitionBuilder: (child, animation) {
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: SlideTransition(
-                                    position: Tween<Offset>(
-                                      begin: const Offset(0, 0.08),
-                                      end: Offset.zero,
-                                    ).animate(animation),
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: _showOtp
-                                  ? _buildOtpSection()
-                                  : _buildPhoneSection(),
-                            ),
-                          ],
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(
-                        duration: const Duration(milliseconds: 700),
-                        curve: AppTheme.gentleCurve,
-                      )
-                      .slideY(
-                        begin: 0.08,
-                        end: 0,
-                        duration: const Duration(milliseconds: 700),
-                        curve: AppTheme.gentleCurve,
-                      ),
-
-                  const Spacer(flex: 3),
-
-                  // ─── Footer ───
-                  Text(
-                        'By continuing, you agree to our Terms & Privacy Policy',
-                        style: AppTypography.captionC(context),
-                        textAlign: TextAlign.center,
-                      )
-                      .animate(delay: const Duration(milliseconds: 500))
-                      .fadeIn(duration: const Duration(milliseconds: 500)),
-
-                  const SizedBox(height: 16),
-                ],
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
-
-          // ─── Cat Loading Overlay ───
-          if (_isVerifying)
-            Container(
-              color: Colors.white.withValues(alpha: 0.85),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      height: 200,
-                      width: 200,
-                      child: LottieBuilder(
-                        lottie: AssetLottie(
-                          'assets/lottie/cat_loading.lottie',
-                          decoder: LottieComposition.decodeZip,
-                        ),
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Settling you in...',
-                      style: AppTypography.subtitle(
-                        color: AppColors.softIndigo,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-                .animate()
-                .fadeIn(duration: const Duration(milliseconds: 300)),
         ],
       ),
     );
@@ -485,7 +474,7 @@ class _LoginScreenState extends State<LoginScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Enter the code we sent you',
+          'Check your notification for the code',
           style: AppTypography.subtitleC(context),
         ),
         const SizedBox(height: 8),
@@ -604,7 +593,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   // ─── Google Icon ───
   Widget _buildGoogleIcon() {
-    return SizedBox(
+    return const SizedBox(
       width: 20,
       height: 20,
       child: CustomPaint(painter: _GoogleLogoPainter()),
@@ -612,55 +601,45 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
-/// Simple Google "G" logo painter
+/// Multicolor Google "G" logo painter.
 class _GoogleLogoPainter extends CustomPainter {
+  const _GoogleLogoPainter();
+
+  static const Color _blue = Color(0xFF4285F4);
+  static const Color _red = Color(0xFFEA4335);
+  static const Color _yellow = Color(0xFFFBBC05);
+  static const Color _green = Color(0xFF34A853);
+
+  double _deg(double d) => d * (math.pi / 180);
+
   @override
   void paint(Canvas canvas, Size size) {
-    final double w = size.width;
-    final double h = size.height;
+    final stroke = size.width * 0.2;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - stroke) / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
 
-    // Blue arc
-    final bluePaint = Paint()
-      ..color = const Color(0xFF4285F4)
+    Paint arcPaint(Color c) => Paint()
+      ..color = c
       ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.18
+      ..strokeWidth = stroke
       ..strokeCap = StrokeCap.butt;
 
-    // Red arc
-    final redPaint = Paint()
-      ..color = const Color(0xFFEA4335)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.18
-      ..strokeCap = StrokeCap.butt;
+    canvas.drawArc(rect, _deg(-45), _deg(85), false, arcPaint(_blue));
+    canvas.drawArc(rect, _deg(40), _deg(95), false, arcPaint(_red));
+    canvas.drawArc(rect, _deg(135), _deg(95), false, arcPaint(_yellow));
+    canvas.drawArc(rect, _deg(230), _deg(95), false, arcPaint(_green));
 
-    // Yellow arc
-    final yellowPaint = Paint()
-      ..color = const Color(0xFFFBBC05)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.18
-      ..strokeCap = StrokeCap.butt;
-
-    // Green arc
-    final greenPaint = Paint()
-      ..color = const Color(0xFF34A853)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.18
-      ..strokeCap = StrokeCap.butt;
-
-    final rect = Rect.fromLTWH(w * 0.1, h * 0.1, w * 0.8, h * 0.8);
-
-    // Draw arcs (approximate G shape)
-    canvas.drawArc(rect, -0.6, -1.2, false, redPaint);
-    canvas.drawArc(rect, -1.8, -1.0, false, yellowPaint);
-    canvas.drawArc(rect, -2.8, -1.0, false, greenPaint);
-    canvas.drawArc(rect, -0.6, 0.9, false, bluePaint);
-
-    // Blue horizontal bar
     final barPaint = Paint()
-      ..color = const Color(0xFF4285F4)
+      ..color = _blue
       ..style = PaintingStyle.fill;
     canvas.drawRect(
-      Rect.fromLTWH(w * 0.5, h * 0.42, w * 0.42, h * 0.16),
+      Rect.fromLTWH(
+        size.width * 0.50,
+        size.height * 0.42,
+        size.width * 0.36,
+        stroke * 0.55,
+      ),
       barPaint,
     );
   }

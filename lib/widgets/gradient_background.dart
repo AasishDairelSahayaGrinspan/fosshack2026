@@ -34,8 +34,8 @@ class GradientBackground extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: begin as Alignment,
-          end: end as Alignment,
+          begin: begin,
+          end: end,
           colors: gradientColors,
         ),
       ),

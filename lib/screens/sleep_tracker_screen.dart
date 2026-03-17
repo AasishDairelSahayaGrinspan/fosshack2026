@@ -1,9 +1,12 @@
+import 'dart:developer' as developer;
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
+import '../services/database_service.dart';
+import '../services/auth_service.dart';
 
 /// Sleep Tracker — moon-themed UI with slider and weekly graph.
 class SleepTrackerScreen extends StatefulWidget {
@@ -18,8 +21,8 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
   double _hoursSlept = 7.0;
   bool _saved = false;
 
-  // Mock weekly data
-  final List<double> _weeklyData = [6.5, 7.0, 5.5, 8.0, 7.5, 6.0, 0];
+  // Weekly data — loaded from database (index 0 = 6 days ago, index 6 = today)
+  final List<double> _weeklyData = List.filled(7, 0.0);
 
   late AnimationController _starsController;
   late AnimationController _chartController;
@@ -41,6 +44,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
       parent: _chartController,
       curve: Curves.easeOutCubic,
     );
+    _loadSleepData();
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) _chartController.forward();
     });
@@ -53,16 +57,48 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
     super.dispose();
   }
 
-  void _saveEntry() {
+  Future<void> _saveEntry() async {
     setState(() {
       _weeklyData[6] = _hoursSlept;
       _saved = true;
     });
     _chartController.reset();
     _chartController.forward();
+
+    // Persist to local database
+    final user = AuthService().currentUser;
+    if (user != null) {
+      try {
+        await DatabaseService().saveSleepLog(
+          userId: user.$id,
+          hours: _hoursSlept,
+          dreamType: '',
+          dreamDescription: '',
+        );
+      } catch (e, st) {
+        developer.log('Failed to save sleep log', name: 'SleepTracker', error: e, stackTrace: st);
+      }
+    }
+
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _saved = false);
     });
+  }
+
+  Future<void> _loadSleepData() async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+    try {
+      final logs = await DatabaseService().getSleepLogs(user.$id, days: 7);
+      if (!mounted) return;
+      setState(() {
+        for (int i = 0; i < logs.length && i < 7; i++) {
+          _weeklyData[i] = (logs[i]['hours'] as num?)?.toDouble() ?? 0.0;
+        }
+      });
+    } catch (e, st) {
+      developer.log('Failed to load sleep data', name: 'SleepTracker', error: e, stackTrace: st);
+    }
   }
 
   String get _sleepMessage {
@@ -82,9 +118,9 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1B1F3B), // Deep indigo night
-              Color(0xFF2D3561),
-              Color(0xFF3E4A7A),
+              AppColors.black,
+              AppColors.black,
+              AppColors.ink304057,
             ],
           ),
         ),
@@ -116,7 +152,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFF5E6C8)
+                                  color: AppColors.amberFdb903
                                       .withValues(alpha: 0.3),
                                   blurRadius: 40,
                                   spreadRadius: 10,
@@ -125,7 +161,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                             ),
                             child: const Icon(
                               Icons.nightlight_round,
-                              color: Color(0xFFF5E6C8),
+                              color: AppColors.amberFdb903,
                               size: 48,
                             ),
                           ),
@@ -133,7 +169,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                           Text(
                             'Sleep Tracker',
                             style: AppTypography.heroHeading(
-                              color: const Color(0xFFF5E6C8),
+                              color: AppColors.amberFdb903,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -246,7 +282,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
           Text(
             '${_hoursSlept.toStringAsFixed(1)}h',
             style: AppTypography.heroHeading(
-              color: const Color(0xFFF5E6C8),
+              color: AppColors.amberFdb903,
             ).copyWith(fontSize: 48),
           ),
           const SizedBox(height: 4),
@@ -265,10 +301,10 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
           // Slider
           SliderTheme(
             data: SliderThemeData(
-              activeTrackColor: const Color(0xFFF5E6C8).withValues(alpha: 0.6),
+              activeTrackColor: AppColors.amberFdb903.withValues(alpha: 0.6),
               inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
-              thumbColor: const Color(0xFFF5E6C8),
-              overlayColor: const Color(0xFFF5E6C8).withValues(alpha: 0.1),
+              thumbColor: AppColors.amberFdb903,
+              overlayColor: AppColors.amberFdb903.withValues(alpha: 0.1),
               trackHeight: 4,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
             ),
@@ -309,12 +345,12 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
               decoration: BoxDecoration(
                 color: _saved
                     ? AppColors.sageGreen.withValues(alpha: 0.3)
-                    : const Color(0xFFF5E6C8).withValues(alpha: 0.15),
+                    : AppColors.amberFdb903.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(AppTheme.radiusButton),
                 border: Border.all(
                   color: _saved
                       ? AppColors.sageGreen.withValues(alpha: 0.5)
-                      : const Color(0xFFF5E6C8).withValues(alpha: 0.3),
+                      : AppColors.amberFdb903.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -326,7 +362,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                     _saved ? Icons.check_rounded : Icons.save_outlined,
                     color: _saved
                         ? AppColors.sageGreen
-                        : const Color(0xFFF5E6C8),
+                        : AppColors.amberFdb903,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
@@ -335,7 +371,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                     style: AppTypography.buttonText(
                       color: _saved
                           ? AppColors.sageGreen
-                          : const Color(0xFFF5E6C8),
+                          : AppColors.amberFdb903,
                     ),
                   ),
                 ],
@@ -347,8 +383,41 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
     );
   }
 
+  /// Returns short day labels for the last 7 days (index 0 = 6 days ago, 6 = today).
+  List<String> _dayLabels() {
+    const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final now = DateTime.now();
+    return List.generate(7, (i) {
+      final day = now.subtract(Duration(days: 6 - i));
+      return names[day.weekday - 1];
+    });
+  }
+
+  /// Returns date labels like "12" for bar chart sub-labels.
+  List<String> _dateLabels() {
+    final now = DateTime.now();
+    return List.generate(7, (i) {
+      final day = now.subtract(Duration(days: 6 - i));
+      return '${day.day}';
+    });
+  }
+
+  String _formattedToday() {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    const days = [
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+      'Friday', 'Saturday', 'Sunday',
+    ];
+    final now = DateTime.now();
+    return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
+  }
+
   Widget _buildWeeklyChart() {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final dayNames = _dayLabels();
+    final dateNums = _dateLabels();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -366,12 +435,12 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
           Text(
             'This Week',
             style: AppTypography.sectionHeading(
-              color: const Color(0xFFF5E6C8),
+              color: AppColors.amberFdb903,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Your sleep rhythm',
+            _formattedToday(),
             style: AppTypography.caption(
               color: Colors.white.withValues(alpha: 0.4),
             ),
@@ -404,7 +473,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                                 _weeklyData[i].toStringAsFixed(1),
                                 style: AppTypography.caption(
                                   color: isToday
-                                      ? const Color(0xFFF5E6C8)
+                                      ? AppColors.amberFdb903
                                       : Colors.white
                                           .withValues(alpha: 0.4),
                                 ).copyWith(fontSize: 10),
@@ -428,7 +497,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                                           spreadRadius: isToday ? 2 : 1,
                                         ),
                                         BoxShadow(
-                                          color: const Color(0xFFF5E6C8)
+                                          color: AppColors.amberFdb903
                                               .withValues(
                                             alpha: isToday ? 0.2 : 0.06,
                                           ),
@@ -449,17 +518,32 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
             ),
           ),
           const SizedBox(height: 8),
+          // Day name + date number labels
           Row(
             children: List.generate(7, (i) {
+              final isToday = i == 6;
               return Expanded(
                 child: Center(
-                  child: Text(
-                    days[i],
-                    style: AppTypography.caption(
-                      color: i == 6
-                          ? const Color(0xFFF5E6C8)
-                          : Colors.white.withValues(alpha: 0.4),
-                    ).copyWith(fontSize: 10),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        dayNames[i],
+                        style: AppTypography.caption(
+                          color: isToday
+                              ? AppColors.amberFdb903
+                              : Colors.white.withValues(alpha: 0.4),
+                        ).copyWith(fontSize: 10),
+                      ),
+                      Text(
+                        dateNums[i],
+                        style: AppTypography.caption(
+                          color: isToday
+                              ? AppColors.amberFdb903
+                              : Colors.white.withValues(alpha: 0.25),
+                        ).copyWith(fontSize: 8),
+                      ),
+                    ],
                   ),
                 ),
               );

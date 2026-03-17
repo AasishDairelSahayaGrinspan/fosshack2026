@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_colors.dart';
@@ -8,7 +9,9 @@ import '../services/auth_service.dart';
 
 /// Mood Selector — 5 emotional states with glow + scale animation.
 class MoodSelector extends StatefulWidget {
-  const MoodSelector({super.key});
+  final ValueChanged<double>? onMoodSaved;
+
+  const MoodSelector({super.key, this.onMoodSaved});
 
   @override
   State<MoodSelector> createState() => _MoodSelectorState();
@@ -31,15 +34,18 @@ class _MoodSelectorState extends State<MoodSelector> {
       );
       // Also update streak on mood selection (counts as daily check-in)
       await DatabaseService().updateStreak(user.$id);
-    } catch (_) {}
+      widget.onMoodSaved?.call(_moodScores[index]);
+    } catch (e, st) {
+      developer.log('Failed to save mood', name: 'MoodSelector', error: e, stackTrace: st);
+    }
   }
 
   static const List<Map<String, dynamic>> _moods = [
-    {'emoji': '😌', 'label': 'Calm', 'color': Color(0xFF9CB5A0)},
-    {'emoji': '🙂', 'label': 'Okay', 'color': Color(0xFF9BA4CC)},
-    {'emoji': '😔', 'label': 'Low', 'color': Color(0xFFB8A9C9)},
-    {'emoji': '😰', 'label': 'Anxious', 'color': Color(0xFFE8A598)},
-    {'emoji': '😣', 'label': 'Overwhelmed', 'color': Color(0xFFD4918A)},
+    {'emoji': '😌', 'label': 'Calm', 'color': AppColors.sageGreen},
+    {'emoji': '🙂', 'label': 'Okay', 'color': AppColors.softIndigo},
+    {'emoji': '😔', 'label': 'Low', 'color': AppColors.orangeE2814d},
+    {'emoji': '😰', 'label': 'Anxious', 'color': AppColors.warmCoral},
+    {'emoji': '😣', 'label': 'Overwhelmed', 'color': AppColors.coralDa5e5a},
   ];
 
   @override

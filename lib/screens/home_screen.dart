@@ -14,14 +14,13 @@ import '../widgets/doodle_refresh.dart';
 import '../services/user_preferences_service.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
+import '../services/app_navigation_service.dart';
 import 'breathing_screen.dart';
 import 'sleep_tracker_screen.dart';
 import 'journal_screen.dart';
 import 'timer_screen.dart';
 
-/// Unravel Home Screen — the emotional dashboard.
-/// Layout: Greeting → Mood Selector → Recovery Score → Daily Check-in
-///       → Quick Actions → Charts → Streak
+/// Unravel Home Screen - the emotional dashboard.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -30,9 +29,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  double _recoveryScore = 0.78;
-  List<double> _moodData = [0.4, 0.55, 0.6, 0.45, 0.7, 0.8, 0.65];
+  double _recoveryScore = 100.0;
+  List<double> _moodData = List<double>.filled(7, 0.5);
   int _streakDays = 0;
+
+  String? _needMessage;
+  bool _highlightTimer = false;
 
   @override
   void initState() {
@@ -45,34 +47,26 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user == null) return;
 
     final db = DatabaseService();
+    final scoreFuture = db.getLatestRecoveryScore(user.$id).catchError((_) => 100.0);
+    final moodFuture = db.getMoodEntries(user.$id, days: 7).catchError((_) => LocalRowList(rows: <LocalRow>[]));
+    final streakFuture = db.getOrCreateStreak(user.$id).catchError((_) => LocalRow($id: user.$id, data: <String, dynamic>{'currentStreak': 0}));
 
-    // Load recovery score
-    final score = await db.getLatestRecoveryScore(user.$id);
-    if (score != null && mounted) {
-      setState(() => _recoveryScore = score);
-    }
+    final results = await Future.wait<dynamic>([scoreFuture, moodFuture, streakFuture]);
+    if (!mounted) return;
 
-    // Load mood chart data
-    try {
-      final moodResult = await db.getMoodEntries(user.$id, days: 7);
-      if (moodResult.rows.isNotEmpty && mounted) {
-        setState(() {
-          _moodData = moodResult.rows
-              .map((d) => (d.data['mood'] as num).toDouble())
-              .toList();
-        });
+    final score = (results[0] as num?)?.toDouble() ?? 100.0;
+    final moodResult = results[1] as LocalRowList;
+    final streakDoc = results[2] as LocalRow;
+
+    setState(() {
+      _recoveryScore = (score / 100.0).clamp(0.0, 1.0);
+      if (moodResult.rows.isNotEmpty) {
+        _moodData = moodResult.rows
+            .map<double>((d) => ((d.data['mood'] as num?)?.toDouble() ?? 0.5))
+            .toList();
       }
-    } catch (_) {}
-
-    // Load streak
-    try {
-      final streakDoc = await db.getOrCreateStreak(user.$id);
-      if (mounted) {
-        setState(() {
-          _streakDays = streakDoc.data['currentStreak'] ?? 0;
-        });
-      }
-    } catch (_) {}
+      _streakDays = (streakDoc.data['currentStreak'] as num?)?.toInt() ?? 0;
+    });
   }
 
   String _getGreeting() {
@@ -81,8 +75,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final prefix = hour < 12
         ? 'Good morning'
         : hour < 17
-        ? 'Good afternoon'
-        : 'Good evening';
+            ? 'Good afternoon'
+            : 'Good evening';
     return '$prefix, $name.';
   }
 
@@ -99,22 +93,62 @@ class _HomeScreenState extends State<HomeScreen> {
               curve: AppTheme.gentleCurve,
             ),
             child: SlideTransition(
-              position:
-                  Tween<Offset>(
-                    begin: const Offset(0, 0.04),
-                    end: Offset.zero,
-                  ).animate(
-                    CurvedAnimation(
-                      parent: animation,
-                      curve: AppTheme.gentleCurve,
-                    ),
-                  ),
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.04),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(
+                  parent: animation,
+                  curve: AppTheme.gentleCurve,
+                ),
+              ),
               child: child,
             ),
           );
         },
       ),
     );
+  }
+
+  void _handleNeedSelection(String need) {
+    switch (need) {
+      case 'Focus':
+        setState(() {
+          _highlightTimer = true;
+          _needMessage = 'Use Timer to gain focus, or open Music for lofi focus tracks.';
+        });
+        AppNavigationService().highlightTab(AppTabTarget.music);
+        AppNavigationService().setMusicRecommendation('Focus mood: Try Focus Mode / Instrumental calm.');
+        Future.delayed(const Duration(seconds: 3), () {
+          if (!mounted) return;
+          setState(() => _highlightTimer = false);
+          AppNavigationService().clearHighlight();
+        });
+        break;
+      case 'Calm':
+        setState(() {
+          _needMessage = 'Calm mode: open Music and play gentle calming songs.';
+          _highlightTimer = false;
+        });
+        AppNavigationService().setMusicRecommendation('Calm mood: Try Soft Tamil Evenings or Deep Calm.');
+        AppNavigationService().requestTab(AppTabTarget.music);
+        break;
+      case 'Release thoughts':
+        setState(() {
+          _needMessage = 'Opening Journal so you can release your thoughts.';
+          _highlightTimer = false;
+        });
+        _navigate(context, const JournalScreen());
+        break;
+      case 'Rest':
+        setState(() {
+          _needMessage = 'Rest mode: listen to mild, slow tracks in Music.';
+          _highlightTimer = false;
+        });
+        AppNavigationService().setMusicRecommendation('Rest mood: Try Sleep Mode and soft ambient tracks.');
+        AppNavigationService().requestTab(AppTabTarget.music);
+        break;
+    }
   }
 
   @override
@@ -124,114 +158,145 @@ class _HomeScreenState extends State<HomeScreen> {
       secondaryColors: AppColors.bgGradientAlt(context),
       child: SafeArea(
         child: DoodleRefresh(
-          child: SingleChildScrollView(
+          child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-
-                // ─── Greeting Header with Avatar ───
-                RepaintBoundary(child: _buildGreetingHeader(context)),
-
-                const SizedBox(height: 32),
-
-                // ─── Mood Selector ───
-                RepaintBoundary(child: const MoodSelector()),
-
-                const SizedBox(height: 28),
-
-                // ─── Recovery Score with Quote ───
-                RepaintBoundary(child: RecoveryScoreCard(score: _recoveryScore)),
-
-                const SizedBox(height: 28),
-
-                // ─── Daily Check-in ───
-                RepaintBoundary(child: const DailyCheckin()),
-
-                const SizedBox(height: 28),
-
-                // ─── Quick Actions (links to Phase 4 modules) ───
-                Text('Explore', style: AppTypography.sectionHeadingC(context)),
-                const SizedBox(height: 14),
-                RepaintBoundary(
-                  child: GridView.count(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    const SizedBox(height: 20),
+                    RepaintBoundary(child: _buildGreetingHeader(context)),
+                    const SizedBox(height: 32),
+                    RepaintBoundary(
+                      child: MoodSelector(
+                        onMoodSaved: (_) => _loadData(),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    RepaintBoundary(
+                      child: RecoveryScoreCard(score: _recoveryScore),
+                    ),
+                    const SizedBox(height: 28),
+                    RepaintBoundary(
+                      child: DailyCheckin(
+                        onNeedSelected: _handleNeedSelection,
+                      ),
+                    ),
+                    if (_needMessage != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.softIndigo.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                          border: Border.all(
+                            color: AppColors.softIndigo.withValues(alpha: 0.35),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.softIndigo.withValues(alpha: 0.22),
+                              blurRadius: 16,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.auto_awesome_rounded, size: 18, color: AppColors.softIndigo),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _needMessage!,
+                                style: AppTypography.caption(color: AppColors.primary(context)),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => AppNavigationService().requestTab(AppTabTarget.music),
+                              child: Text(
+                                'Music',
+                                style: AppTypography.caption(color: AppColors.softIndigo)
+                                    .copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 28),
+                    Text(
+                      'Explore',
+                      style: AppTypography.sectionHeadingC(context),
+                    ),
+                    const SizedBox(height: 14),
+                  ]),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
                     childAspectRatio: 1.3,
-                    children: [
-                      QuickActionButton(
-                        icon: Icons.air_rounded,
-                        label: 'Breathing',
-                        iconColor: AppColors.softIndigo,
-                        onTap: () =>
-                            _navigate(context, const BreathingScreen()),
-                      ),
-                      QuickActionButton(
-                        icon: Icons.timer_outlined,
-                        label: 'Timer',
-                        iconColor: AppColors.sageGreen,
-                        onTap: () => _navigate(context, const TimerScreen()),
-                      ),
-                      QuickActionButton(
-                        icon: Icons.nightlight_outlined,
-                        label: 'Sleep Tracker',
-                        iconColor: AppColors.warmCoral,
-                        onTap: () =>
-                            _navigate(context, const SleepTrackerScreen()),
-                      ),
-                      QuickActionButton(
-                        icon: Icons.edit_note_rounded,
-                        label: 'Journal',
-                        iconColor: const Color(0xFFB8A9C9),
-                        onTap: () => _navigate(context, const JournalScreen()),
-                      ),
-                    ],
                   ),
+                  delegate: SliverChildListDelegate([
+                    QuickActionButton(
+                      icon: Icons.air_rounded,
+                      label: 'Breathing',
+                      iconColor: AppColors.softIndigo,
+                      onTap: () => _navigate(context, const BreathingScreen()),
+                    ),
+                    QuickActionButton(
+                      icon: Icons.timer_outlined,
+                      label: 'Timer',
+                      iconColor: AppColors.sageGreen,
+                      highlight: _highlightTimer,
+                      onTap: () => _navigate(context, const TimerScreen()),
+                    ),
+                    QuickActionButton(
+                      icon: Icons.nightlight_outlined,
+                      label: 'Sleep Tracker',
+                      iconColor: AppColors.warmCoral,
+                      onTap: () => _navigate(context, const SleepTrackerScreen()),
+                    ),
+                    QuickActionButton(
+                      icon: Icons.edit_note_rounded,
+                      label: 'Journal',
+                      iconColor: AppColors.orangeE2814d,
+                      onTap: () => _navigate(context, const JournalScreen()),
+                    ),
+                  ]),
                 ),
-
-                const SizedBox(height: 28),
-
-                // ─── Weekly Mood Chart ───
-                RepaintBoundary(
-                  child: MoodChart(
-                    moodData: _moodData,
-                  ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 36),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    RepaintBoundary(child: MoodChart(moodData: _moodData)),
+                    const SizedBox(height: 24),
+                    RepaintBoundary(
+                      child: CommunityActivityCard(
+                        onTap: () => AppNavigationService().requestTab(AppTabTarget.community),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    RepaintBoundary(
+                      child: StreakIndicator(streakDays: _streakDays),
+                    ),
+                  ]),
                 ),
-
-                const SizedBox(height: 24),
-
-                // ─── Community Activity Card ───
-                RepaintBoundary(
-                  child: CommunityActivityCard(
-                    onTap: () {
-                      // Navigate to community tab (index 2) via MainShell
-                      // For now this is a gentle invite
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // ─── Streak Indicator ───
-                RepaintBoundary(child: StreakIndicator(streakDays: _streakDays)),
-
-                const SizedBox(height: 36),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  /// Greeting header with time-based text and glowing avatar
   Widget _buildGreetingHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -250,7 +315,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(width: 16),
-        // Avatar with soft glow
         Container(
           width: 54,
           height: 54,
@@ -277,6 +341,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Image.network(
               UserPreferencesService().getAvatarUrl(),
               fit: BoxFit.cover,
+              cacheWidth: 108,
+              cacheHeight: 108,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   decoration: BoxDecoration(

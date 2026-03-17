@@ -6,7 +6,9 @@ import '../theme/app_typography.dart';
 
 /// Daily Check-in — "What do you need today?" with 4 soft selectable options.
 class DailyCheckin extends StatefulWidget {
-  const DailyCheckin({super.key});
+  final ValueChanged<String>? onNeedSelected;
+
+  const DailyCheckin({super.key, this.onNeedSelected});
 
   @override
   State<DailyCheckin> createState() => _DailyCheckinState();
@@ -16,10 +18,22 @@ class _DailyCheckinState extends State<DailyCheckin> {
   int _selectedIndex = -1;
 
   static const List<Map<String, dynamic>> _options = [
-    {'icon': Icons.center_focus_strong_outlined, 'label': 'Focus', 'color': Color(0xFF9BA4CC)},
-    {'icon': Icons.spa_outlined, 'label': 'Calm', 'color': Color(0xFF9CB5A0)},
-    {'icon': Icons.cloud_outlined, 'label': 'Release thoughts', 'color': Color(0xFFB8A9C9)},
-    {'icon': Icons.nightlight_outlined, 'label': 'Rest', 'color': Color(0xFFE8A598)},
+    {
+      'icon': Icons.center_focus_strong_outlined,
+      'label': 'Focus',
+      'color': AppColors.softIndigo,
+    },
+    {'icon': Icons.spa_outlined, 'label': 'Calm', 'color': AppColors.sageGreen},
+    {
+      'icon': Icons.cloud_outlined,
+      'label': 'Release thoughts',
+      'color': AppColors.warmCoral,
+    },
+    {
+      'icon': Icons.nightlight_outlined,
+      'label': 'Rest',
+      'color': AppColors.orangeE2814d,
+    },
   ];
 
   @override
@@ -43,7 +57,10 @@ class _DailyCheckinState extends State<DailyCheckin> {
             final color = option['color'] as Color;
 
             return GestureDetector(
-              onTap: () => setState(() => _selectedIndex = index),
+              onTap: () {
+                setState(() => _selectedIndex = index);
+                widget.onNeedSelected?.call(option['label'] as String);
+              },
               child: AnimatedContainer(
                 duration: AppTheme.fadeInDuration,
                 curve: AppTheme.defaultCurve,

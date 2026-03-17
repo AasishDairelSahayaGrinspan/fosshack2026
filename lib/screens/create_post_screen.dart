@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -23,15 +24,67 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   int _selectedMoodTag = -1;
   bool _isPosting = false;
   String? _imagePath;
+  bool _hasShownCameraInfo = false;
+  bool _hasShownGalleryInfo = false;
 
   static const List<Map<String, dynamic>> _moodTags = [
-    {'label': 'Grateful', 'color': Color(0xFF9CB5A0)},
-    {'label': 'Healing', 'color': Color(0xFF9BA4CC)},
-    {'label': 'Struggling', 'color': Color(0xFFE8A598)},
-    {'label': 'Progress', 'color': Color(0xFFB8A9C9)},
+    {'label': 'Grateful', 'color': AppColors.sageGreen},
+    {'label': 'Healing', 'color': AppColors.softIndigo},
+    {'label': 'Struggling', 'color': AppColors.warmCoral},
+    {'label': 'Progress', 'color': AppColors.orangeE2814d},
   ];
 
+  Future<bool> _showAccessInfo({
+    required String source,
+    required String message,
+  }) async {
+    final shouldShow = source == 'camera'
+        ? !_hasShownCameraInfo
+        : !_hasShownGalleryInfo;
+    if (!shouldShow) return true;
+
+    final allow = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.card(context),
+        title: Text('Permission needed', style: AppTypography.uiLabelC(context)),
+        content: Text(message, style: AppTypography.bodyC(context)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Not now',
+              style: AppTypography.caption(color: AppColors.tertiary(context)),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'Continue',
+              style: AppTypography.caption(color: AppColors.softIndigo),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (source == 'camera') {
+      _hasShownCameraInfo = allow == true;
+    } else {
+      _hasShownGalleryInfo = allow == true;
+    }
+    return allow == true;
+  }
+
   Future<void> _selectImage(String source) async {
+    final allowed = await _showAccessInfo(
+      source: source,
+      message: source == 'camera'
+          ? 'Unravel needs access to your camera so you can share moments with the community.'
+          : 'Unravel needs access to your gallery so you can share moments with the community.',
+    );
+    if (!allowed) return;
+
     final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
       source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
@@ -52,13 +105,30 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     // Simulate posting delay
     await Future.delayed(const Duration(milliseconds: 800));
 
-    _service.addPost(
-      caption: caption,
-      imagePath: _imagePath,
-      moodTag: _selectedMoodTag >= 0
-          ? _moodTags[_selectedMoodTag]['label'] as String
-          : null,
-    );
+    try {
+      await _service.addPost(
+        caption: caption,
+        imagePath: _imagePath,
+        moodTag: _selectedMoodTag >= 0
+            ? _moodTags[_selectedMoodTag]['label'] as String
+            : null,
+      );
+    } catch (e, st) {
+      developer.log('Failed to create post', name: 'CreatePostScreen', error: e, stackTrace: st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not post right now. Please try again.',
+              style: AppTypography.body(color: Colors.white),
+            ),
+            backgroundColor: AppColors.warmCoral,
+          ),
+        );
+      }
+      setState(() => _isPosting = false);
+      return;
+    }
 
     if (mounted) {
       Navigator.of(context).pop(true);

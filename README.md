@@ -25,7 +25,6 @@
 | Design System | Custom theme with `AppColors`, `AppTypography`, `AppTheme` |
 | Target Platforms | Android, iOS, Web, Windows, macOS, Linux |
 
-=======
 
 ## ✨ Features
 

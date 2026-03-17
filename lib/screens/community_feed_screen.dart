@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:share_plus/share_plus.dart';
@@ -40,22 +41,36 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   @override
   void initState() {
     super.initState();
-    _service.initSampleData();
+    _loadFeed();
   }
 
-  void _onDoubleTap(Post post) {
+  Future<void> _loadFeed() async {
+    await _service.loadPosts();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _onDoubleTap(Post post) async {
     if (!post.isLiked) {
       setState(() {
-        _service.toggleLike(post.id);
         _showHeart[post.id] = true;
       });
+      await _service.toggleLike(post.id);
+      if (!mounted) return;
+      setState(() {});
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) setState(() => _showHeart[post.id] = false);
       });
     }
   }
 
-  void _openComments(Post post) {
+  Future<void> _openComments(Post post) async {
+    final comments = await _service.loadComments(post.id);
+    if (comments.isNotEmpty) {
+      post.comments
+        ..clear()
+        ..addAll(comments);
+    }
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -369,20 +384,8 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                   alignment: Alignment.center,
                   children: [
                     ClipRRect(
-                      child: Container(
-                        width: double.infinity,
-                        height: 240,
-                        color: AppColors.dividerColor(
-                          context,
-                        ).withValues(alpha: 0.3),
-                        child: Center(
-                          child: Icon(
-                            Icons.image_outlined,
-                            color: AppColors.tertiary(context),
-                            size: 48,
-                          ),
-                        ),
-                      ),
+                      borderRadius: BorderRadius.zero,
+                      child: _buildPostImage(post.imagePath!),
                     ),
                     // Heart animation on double tap
                     if (_showHeart[post.id] == true)
@@ -461,7 +464,10 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                         : AppColors.tertiary(context),
                     label: post.likesCount > 0 ? '${post.likesCount}' : '',
                     onTap: () {
-                      setState(() => _service.toggleLike(post.id));
+                      _service.toggleLike(post.id).then((_) {
+                        if (mounted) setState(() {});
+                      });
+                      setState(() {});
                     },
                   ),
                   const SizedBox(width: 4),

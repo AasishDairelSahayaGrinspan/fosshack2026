@@ -118,7 +118,7 @@ class _MoodChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (data.isEmpty) return;
+    if (data.length < 2) return;
 
     final w = size.width;
     final h = size.height;

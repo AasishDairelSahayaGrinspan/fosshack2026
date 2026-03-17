@@ -9,6 +9,7 @@ class QuickActionButton extends StatefulWidget {
   final String label;
   final Color? iconColor;
   final VoidCallback? onTap;
+  final bool highlight;
 
   const QuickActionButton({
     super.key,
@@ -16,6 +17,7 @@ class QuickActionButton extends StatefulWidget {
     required this.label,
     this.iconColor,
     this.onTap,
+    this.highlight = false,
   });
 
   @override
@@ -61,8 +63,21 @@ class _QuickActionButtonState extends State<QuickActionButton>
           decoration: BoxDecoration(
             color: AppColors.card(context),
             borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-            border: Border.all(color: AppColors.dividerColor(context), width: 0.8),
-            boxShadow: AppColors.subtleShadow,
+            border: Border.all(
+              color: widget.highlight
+                  ? AppColors.amberFdb903
+                  : AppColors.dividerColor(context),
+              width: widget.highlight ? 1.5 : 0.8,
+            ),
+            boxShadow: widget.highlight
+                ? [
+                    BoxShadow(
+                      color: AppColors.amberFdb903.withValues(alpha: 0.45),
+                      blurRadius: 22,
+                      spreadRadius: 1.5,
+                    ),
+                  ]
+                : AppColors.subtleShadow,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

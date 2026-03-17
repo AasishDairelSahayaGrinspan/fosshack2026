@@ -26,14 +26,13 @@ class _CommentsSheetState extends State<CommentsSheet> {
   final FocusNode _focusNode = FocusNode();
   final CommunityService _service = CommunityService();
 
-  void _submitComment() {
+  Future<void> _submitComment() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    setState(() {
-      _service.addComment(widget.post.id, text);
-      _controller.clear();
-    });
+    await _service.addComment(widget.post.id, text);
+    if (!mounted) return;
+    setState(() => _controller.clear());
     widget.onCommentAdded();
   }
 

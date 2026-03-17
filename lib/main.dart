@@ -3,9 +3,13 @@ import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'screens/splash_screen.dart';
+import 'services/local_data_service.dart';
+import 'services/notification_service.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LocalDataService().init();
+  await NotificationService().init();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

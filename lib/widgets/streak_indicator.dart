@@ -68,7 +68,7 @@ class _StreakIndicatorState extends State<StreakIndicator>
                     colors: [
                       AppColors.warmCoral
                           .withValues(alpha: _glowAnimation.value),
-                      const Color(0xFFFFB347)
+                      AppColors.orangeE2814d
                           .withValues(alpha: _glowAnimation.value),
                     ],
                   ).createShader(bounds),

@@ -1,26 +1,42 @@
 import 'package:flutter/material.dart';
 
 /// Unravel Color System
-/// Soft premium tones with light and dark mode support.
+///
+/// Light mode color policy:
+/// - Allowed base colors: #304057, #DA5E5A, #E2814D, #FDB903
+/// - Allowed extras: black/white neutrals and opacity variants
+///
+/// Dark mode policy:
+/// - Pure black surfaces with the same accent colors as light mode.
 class AppColors {
   AppColors._();
 
-  // ─── Primary Background Gradient Sets (Light) ───
-  static const Color warmLavender = Color(0xFFE8D5E0);
-  static const Color softPeach = Color(0xFFF5E0D3);
-  static const Color mistBlue = Color(0xFFD6E4EF);
-  static const Color paleLilac = Color(0xFFE8DCF0);
-  static const Color cream = Color(0xFFF7F3EE);
-  static const Color lightBlush = Color(0xFFF5E1E0);
+  // Canonical palette
+  static const Color ink304057 = Color(0xFF304057);
+  static const Color coralDa5e5a = Color(0xFFDA5E5A);
+  static const Color orangeE2814d = Color(0xFFE2814D);
+  static const Color amberFdb903 = Color(0xFFFDB903);
 
-  // ─── Dark Mode Background Colors ───
-  static const Color darkBg = Color(0xFF121526);
-  static const Color darkBgSecondary = Color(0xFF1B1F3B);
-  static const Color darkSurface = Color(0xFF1E2240);
-  static const Color darkCard = Color(0xFF252A4A);
-  static const Color darkCardBorder = Color(0xFF2E345A);
+  // Neutrals
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color black = Color(0xFF000000);
 
-  // ─── Gradient Presets ───
+  // Legacy light gradient tokens mapped to palette tints
+  static const Color warmLavender = Color(0x1ADA5E5A);
+  static const Color softPeach = Color(0x1AE2814D);
+  static const Color mistBlue = Color(0x14304057);
+  static const Color paleLilac = Color(0x14DA5E5A);
+  static const Color cream = white;
+  static const Color lightBlush = Color(0x1AFDB903);
+
+  // Dark mode surfaces (pure black)
+  static const Color darkBg = black;
+  static const Color darkBgSecondary = black;
+  static const Color darkSurface = black;
+  static const Color darkCard = black;
+  static const Color darkCardBorder = Color(0x66304057);
+
+  // Gradient presets
   static const splashGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -39,38 +55,38 @@ class AppColors {
     colors: [cream, lightBlush],
   );
 
-  // ─── Card & Surface (Light) ───
-  static const Color cardBackground = Color(0xFFFAF8F6);
-  static const Color frostedGlass = Color(0x99FFFFFF);
-  static const Color frostedGlassBorder = Color(0x33FFFFFF);
+  // Card & surface (light)
+  static const Color cardBackground = white;
+  static const Color frostedGlass = Color(0xF2FFFFFF);
+  static const Color frostedGlassBorder = Color(0x22304057);
 
-  // ─── Accent Colors (shared across themes) ───
-  static const Color sageGreen = Color(0xFF9CB5A0);
-  static const Color warmCoral = Color(0xFFE8A598);
-  static const Color softIndigo = Color(0xFF9BA4CC);
+  // Accent colors (shared across themes)
+  static const Color sageGreen = orangeE2814d;
+  static const Color warmCoral = amberFdb903;
+  static const Color softIndigo = coralDa5e5a;
 
-  // ─── Text Colors (Light – updated for better contrast) ───
-  static const Color textPrimary = Color(0xFF2E2E2E);
-  static const Color textSecondary = Color(0xFF5F5F5F);
-  static const Color textTertiary = Color(0xFF8A8A8A);
-  static const Color textOnDark = Color(0xFFF5F5F5);
+  // Text colors (light)
+  static const Color textPrimary = ink304057;
+  static const Color textSecondary = Color(0xCC304057);
+  static const Color textTertiary = Color(0x99304057);
+  static const Color textOnDark = white;
 
-  // ─── Text Colors (Dark) ───
-  static const Color darkTextPrimary = Color(0xFFF5F5F5);
-  static const Color darkTextSecondary = Color(0xFFB0B0C0);
-  static const Color darkTextTertiary = Color(0xFF7A7A90);
+  // Text colors (dark)
+  static const Color darkTextPrimary = white;
+  static const Color darkTextSecondary = Color(0xCCFFFFFF);
+  static const Color darkTextTertiary = Color(0x99FFFFFF);
 
-  // ─── Misc (Light) ───
-  static const Color divider = Color(0xFFE8E4E0);
-  static const Color inputBorder = Color(0xFFDDD8D3);
-  static const Color inputFocusBorder = Color(0xFFBDB3C7);
-  static const Color shadow = Color(0x0D000000);
+  // Misc (light)
+  static const Color divider = Color(0x33304057);
+  static const Color inputBorder = Color(0x55304057);
+  static const Color inputFocusBorder = coralDa5e5a;
+  static const Color shadow = Color(0x1A304057);
 
-  // ─── Misc (Dark) ───
-  static const Color darkDivider = Color(0xFF2E345A);
-  static const Color darkShadow = Color(0x33000000);
+  // Misc (dark)
+  static const Color darkDivider = Color(0x55FFFFFF);
+  static const Color darkShadow = Color(0x66000000);
 
-  // ─── Soft Shadows ───
+  // Soft shadows
   static List<BoxShadow> get softShadow => [
         BoxShadow(
           color: shadow,
@@ -98,7 +114,7 @@ class AppColors {
         ),
       ];
 
-  // ─── Context-aware helpers ───
+  // Context-aware helpers
   static Color bg(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? darkBg : cream;
 
@@ -140,12 +156,12 @@ class AppColors {
 
   static Color frosted(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0x44252A4A)
+          ? const Color(0x33000000)
           : frostedGlass;
 
   static Color frostedBorder(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0x22FFFFFF)
+          ? const Color(0x33FFFFFF)
           : frostedGlassBorder;
 
   static List<Color> bgGradient(BuildContext context) =>
@@ -156,5 +172,5 @@ class AppColors {
   static List<Color> bgGradientAlt(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
           ? [darkBgSecondary, darkSurface]
-          : [paleLilac, cream];
+          : [paleLilac, softPeach];
 }

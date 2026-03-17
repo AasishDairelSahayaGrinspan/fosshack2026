@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_colors.dart';
@@ -5,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../widgets/gradient_background.dart';
 import '../services/community_service.dart';
+import '../services/user_preferences_service.dart';
 import 'main_shell.dart';
 
 /// Community Onboarding — optional question about community participation.
@@ -43,12 +45,19 @@ class _CommunityOnboardingScreenState
     },
   ];
 
-  void _continue() {
+  Future<void> _continue() async {
     if (_selectedIndex < 0) return;
 
     _service.communityPreference =
         _options[_selectedIndex]['value'] as String;
+    UserPreferencesService().communityPreference = _service.communityPreference;
+    try {
+      await UserPreferencesService().saveToRemote();
+    } catch (e, st) {
+      developer.log('Failed to save community preference', name: 'CommunityOnboarding', error: e, stackTrace: st);
+    }
 
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
@@ -247,7 +256,7 @@ class _CommunityOnboardingScreenState
 
                 // ─── Continue Button ───
                 GestureDetector(
-                  onTap: _selectedIndex >= 0 ? _continue : null,
+                  onTap: _selectedIndex >= 0 ? () => _continue() : null,
                   child: AnimatedContainer(
                     duration: AppTheme.fadeInDuration,
                     width: double.infinity,
@@ -279,9 +288,9 @@ class _CommunityOnboardingScreenState
                 // Skip option
                 Center(
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       _service.communityPreference = 'yes';
-                      _continue();
+                      await _continue();
                     },
                     child: Text(
                       'Skip for now',

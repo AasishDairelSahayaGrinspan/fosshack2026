@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_colors.dart';
@@ -75,8 +76,8 @@ class _JournalScreenState extends State<JournalScreen>
           moodTag: _selectedMoodTag >= 0 ? _moodTags[_selectedMoodTag] : null,
           prompt: _selectedPrompt >= 0 ? _prompts[_selectedPrompt] : null,
         );
-      } catch (_) {
-        // Saved locally, sync later
+      } catch (e, st) {
+        developer.log('Failed to save journal entry', name: 'JournalScreen', error: e, stackTrace: st);
       }
     }
 
@@ -114,9 +115,9 @@ class _JournalScreenState extends State<JournalScreen>
             colors: isDark
                 ? [AppColors.darkBg, AppColors.darkBgSecondary, AppColors.darkSurface]
                 : [
-                    const Color(0xFFFAF6F0),
-                    const Color(0xFFF5EDE3),
-                    const Color(0xFFF0E8DB),
+                    AppColors.cream,
+                    AppColors.lightBlush,
+                    AppColors.softPeach,
                   ],
           ),
         ),
@@ -229,22 +230,25 @@ class _JournalScreenState extends State<JournalScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: AppColors.primary(context).withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(14),
+          if (Navigator.of(context).canPop())
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.primary(context).withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.secondary(context),
+                  size: 20,
+                ),
               ),
-              child: Icon(
-                Icons.arrow_back_rounded,
-                color: AppColors.secondary(context),
-                size: 20,
-              ),
-            ),
-          ),
+            )
+          else
+            const SizedBox(width: 42),
           Text('Journal', style: AppTypography.uiLabelC(context)),
           // Save button
           GestureDetector(

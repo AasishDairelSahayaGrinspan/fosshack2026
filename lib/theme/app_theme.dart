@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 /// Unravel Theme
-/// Calm, breathable, premium — light and dark.
+/// Calm, breathable, premium with shared palette accents.
 class AppTheme {
   AppTheme._();
 
-  // ─── Spacing Constants ───
+  // Spacing constants
   static const double spacingXS = 8;
   static const double spacingSM = 12;
   static const double spacingMD = 16;
@@ -19,27 +19,27 @@ class AppTheme {
     vertical: 16,
   );
 
-  // ─── Border Radius ───
+  // Border radius
   static const double radiusCard = 22;
   static const double radiusButton = 999;
   static const double radiusInput = 16;
   static const double radiusSmall = 12;
 
-  // ─── Animation Durations ───
+  // Animation durations
   static const Duration fadeInDuration = Duration(milliseconds: 350);
   static const Duration slideInDuration = Duration(milliseconds: 400);
   static const Duration tapScaleDuration = Duration(milliseconds: 150);
 
-  // ─── Animation Curves ───
+  // Animation curves
   static const Curve defaultCurve = Curves.easeInOut;
   static const Curve gentleCurve = Curves.easeOut;
 
-  // ─── Light Theme ───
+  // Light mode source colors must come from AppColors palette policy.
   static ThemeData get lightTheme => ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
     scaffoldBackgroundColor: AppColors.cream,
-    colorScheme: ColorScheme.light(
+    colorScheme: const ColorScheme.light(
       primary: AppColors.softIndigo,
       secondary: AppColors.sageGreen,
       error: AppColors.warmCoral,
@@ -54,12 +54,12 @@ class AppTheme {
     highlightColor: Colors.transparent,
   );
 
-  // ─── Dark Theme ───
+  // Dark mode is pure black surfaces with the same accent palette.
   static ThemeData get darkTheme => ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: AppColors.darkBg,
-    colorScheme: ColorScheme.dark(
+    colorScheme: const ColorScheme.dark(
       primary: AppColors.softIndigo,
       secondary: AppColors.sageGreen,
       error: AppColors.warmCoral,

@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
+import '../services/database_service.dart';
+import '../services/auth_service.dart';
 
 /// Breathing Screen — 8 mantra gradient colors, 4/4/6 breathing cycle,
 /// expanding circle, zen music toggle.
@@ -20,6 +22,7 @@ class _BreathingScreenState extends State<BreathingScreen>
   late AnimationController _colorController;
   bool _isActive = false;
   bool _ambientEnabled = true;
+  DateTime? _sessionStart;
   String _phaseText = 'Tap to begin';
   String _phaseSubtext = 'Find a comfortable position.';
 
@@ -28,16 +31,16 @@ class _BreathingScreenState extends State<BreathingScreen>
   static const double _inhaleEnd = 4 / 14;
   static const double _holdEnd = 8 / 14;
 
-  // 8 mantra gradient colors
+  // 8 mantra gradient colors mapped to the global palette
   static const List<List<Color>> _mantraColors = [
-    [Color(0xFFD8C8E8), Color(0xFFE8DCF0)], // Lavender
-    [Color(0xFFC4DCF0), Color(0xFFD6E8F5)], // Sky blue
-    [Color(0xFFBDE0D8), Color(0xFFD0EBE5)], // Soft teal
-    [Color(0xFFF5E0D3), Color(0xFFF8EBE0)], // Pale peach
-    [Color(0xFFF0D0D4), Color(0xFFF5DDE0)], // Warm pink
-    [Color(0xFFCDD4F0), Color(0xFFD8DEF5)], // Light indigo
-    [Color(0xFFDCDDE0), Color(0xFFE8E8EB)], // Mist gray
-    [Color(0xFFF7F3EE), Color(0xFFFAF6F0)], // Cream
+    [AppColors.ink304057, AppColors.coralDa5e5a],
+    [AppColors.coralDa5e5a, AppColors.orangeE2814d],
+    [AppColors.orangeE2814d, AppColors.amberFdb903],
+    [AppColors.amberFdb903, AppColors.coralDa5e5a],
+    [AppColors.ink304057, AppColors.orangeE2814d],
+    [AppColors.ink304057, AppColors.amberFdb903],
+    [AppColors.coralDa5e5a, AppColors.amberFdb903],
+    [AppColors.white, AppColors.lightBlush],
   ];
 
   int _colorIndex = 0;
@@ -100,11 +103,25 @@ class _BreathingScreenState extends State<BreathingScreen>
     setState(() {
       _isActive = !_isActive;
       if (_isActive) {
+        _sessionStart = DateTime.now();
         _breathController.repeat();
         _colorController.forward(from: 0);
         _phaseText = 'Inhale';
         _phaseSubtext = 'Breathe in slowly...';
       } else {
+        // Save completed session
+        if (_sessionStart != null) {
+          final duration = DateTime.now().difference(_sessionStart!).inSeconds;
+          final user = AuthService().currentUser;
+          if (user != null && duration > 2) {
+            DatabaseService().saveBreathingSession(
+              userId: user.$id,
+              durationSeconds: duration,
+              ambientEnabled: _ambientEnabled,
+            );
+          }
+          _sessionStart = null;
+        }
         _breathController.stop();
         _breathController.reset();
         _colorController.stop();

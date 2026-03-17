@@ -106,7 +106,7 @@ class _TimerScreenState extends State<TimerScreen>
 
   List<Color> get _gradientColors => _mode == TimerMode.focus
       ? [AppColors.cream, AppColors.paleLilac]
-      : [const Color(0xFFF0F5EF), const Color(0xFFE5EDE3)];
+      : [AppColors.cream, AppColors.softPeach];
 
   @override
   Widget build(BuildContext context) {

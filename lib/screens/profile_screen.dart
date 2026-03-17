@@ -8,6 +8,7 @@ import '../widgets/gradient_background.dart';
 import '../widgets/doodle_refresh.dart';
 import '../services/auth_service.dart';
 import '../services/user_preferences_service.dart';
+import '../services/notification_service.dart';
 import 'login_screen.dart';
 
 /// Profile Screen with settings and theme toggle.
@@ -106,11 +107,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       context,
                       icon: Icons.notifications_outlined,
                       title: 'Notifications',
-                      subtitle: 'Gentle reminders',
+                      subtitle: 'Open app notification settings',
                       trailing: Icon(
                         Icons.chevron_right_rounded,
                         color: AppColors.tertiary(context),
                       ),
+                      onTap: () async {
+                        final granted =
+                            await NotificationService().requestPermissionIfNeeded();
+                        await NotificationService().openAppNotificationSettings();
+                        if (granted) {
+                          await NotificationService()
+                              .showTrackerEnabledGreeting();
+                        }
+                      },
                     )
                     .animate(delay: const Duration(milliseconds: 350))
                     .fadeIn(duration: const Duration(milliseconds: 400)),
@@ -269,38 +279,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String title,
     required String subtitle,
     required Widget trailing,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.card(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        border: Border.all(color: AppColors.cardBorder(context), width: 0.8),
-        boxShadow: AppColors.cardShadow(context),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: AppColors.softIndigo.withValues(alpha: 0.1),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.card(context),
+          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+          border: Border.all(color: AppColors.cardBorder(context), width: 0.8),
+          boxShadow: AppColors.cardShadow(context),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: AppColors.softIndigo.withValues(alpha: 0.1),
+              ),
+              child: Icon(icon, color: AppColors.softIndigo, size: 20),
             ),
-            child: Icon(icon, color: AppColors.softIndigo, size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppTypography.uiLabelC(context)),
-                Text(subtitle, style: AppTypography.captionC(context)),
-              ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppTypography.uiLabelC(context)),
+                  Text(subtitle, style: AppTypography.captionC(context)),
+                ],
+              ),
             ),
-          ),
-          trailing,
-        ],
+            trailing,
+          ],
+        ),
       ),
     );
   }

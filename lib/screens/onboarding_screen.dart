@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_colors.dart';
@@ -92,7 +93,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  void _finish() {
+  Future<void> _finish() async {
     _prefs.name = _nameController.text.trim();
     _prefs.ageGroup = _ageGroupLabel;
     _prefs.concerns = _selectedConcerns
@@ -104,10 +105,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _prefs.avatarSeed = _avatarSeed;
 
     // Save preferences to Appwrite (fire and forget)
-    _prefs.saveToRemote();
+    try {
+      await _prefs.saveToRemote();
+      await AuthService().updateName(_prefs.name ?? 'friend');
+    } catch (e, st) {
+      developer.log('Failed to save onboarding preferences', name: 'OnboardingScreen', error: e, stackTrace: st);
+    }
 
-    // Update Appwrite account name
-    AuthService().updateName(_prefs.name ?? 'friend');
+    if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(

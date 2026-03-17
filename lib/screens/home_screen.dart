@@ -275,6 +275,14 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 54,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.softIndigo.withValues(alpha: 0.3),
+                AppColors.paleLilac.withValues(alpha: 0.6),
+              ],
+            ),
             border: Border.all(
               color: AppColors.softIndigo.withValues(alpha: 0.2),
               width: 1.5,
@@ -292,32 +300,15 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          child: ClipOval(
-            child: Image.network(
-              UserPreferencesService().getAvatarUrl(),
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.softIndigo.withValues(alpha: 0.25),
-                        AppColors.paleLilac.withValues(alpha: 0.5),
-                      ],
-                    ),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.person_outline_rounded,
-                      color: AppColors.secondary(context),
-                      size: 24,
-                    ),
-                  ),
-                );
-              },
+          child: Center(
+            child: Text(
+              (UserPreferencesService().displayName.isNotEmpty
+                      ? UserPreferencesService().displayName[0]
+                      : '?')
+                  .toUpperCase(),
+              style: AppTypography.sectionHeading(
+                color: AppColors.softIndigo,
+              ).copyWith(fontSize: 20, fontWeight: FontWeight.w600),
             ),
           ),
         ),

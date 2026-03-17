@@ -212,6 +212,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.softIndigo.withValues(alpha: 0.3),
+                  AppColors.paleLilac.withValues(alpha: 0.6),
+                ],
+              ),
               border: Border.all(
                 color: AppColors.softIndigo.withValues(alpha: 0.2),
                 width: 1.5,
@@ -224,20 +232,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-            child: ClipOval(
-              child: Image.network(
-                prefs.getAvatarUrl(),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.card(context),
-                    child: Icon(
-                      Icons.person_outline_rounded,
-                      color: AppColors.softIndigo.withValues(alpha: 0.5),
-                      size: 28,
-                    ),
-                  );
-                },
+            child: Center(
+              child: Text(
+                (prefs.displayName.isNotEmpty
+                        ? prefs.displayName[0]
+                        : '?')
+                    .toUpperCase(),
+                style: AppTypography.sectionHeading(
+                  color: AppColors.softIndigo,
+                ).copyWith(fontSize: 22, fontWeight: FontWeight.w600),
               ),
             ),
           ),

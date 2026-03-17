@@ -14,16 +14,20 @@ class UserPreferencesService {
   String? sleepSchedule;
   double moodBaseline = 0.5;
   List<String> musicLanguages = [];
+  String communityPreference = 'yes';
 
-  // Avatar config (DiceBear)
+  // Avatar config (DiceBear) — kept for legacy compatibility
   late String avatarSeed = AvatarService().generateRandomSeed();
   late String avatarStyle = AvatarService().getRandomStyle();
+
+  // Custom avatar SVG string (from avatar_maker, if the user customised it)
+  String? avatarSvg;
 
   bool get hasCompletedOnboarding => name != null && name!.isNotEmpty;
 
   String get displayName => name ?? 'friend';
 
-  /// Gets the avatar URL for this user
+  /// Gets the avatar URL for this user (DiceBear fallback)
   String getAvatarUrl() {
     return AvatarService().getAvatarUrl(seed: avatarSeed, style: avatarStyle);
   }
@@ -52,9 +56,12 @@ class UserPreferencesService {
       sleepSchedule = data['sleepSchedule'];
       moodBaseline = (data['moodBaseline'] as num?)?.toDouble() ?? 0.5;
       musicLanguages = List<String>.from(data['musicLanguages'] ?? []);
-      if (data['avatarUrl'] != null) {
-        // Parse seed and style from stored URL if available
-        // Otherwise keep the randomly generated defaults
+      communityPreference = data['communityPreference'] ?? 'yes';
+
+      // Restore avatar SVG if stored
+      final storedAvatarSvg = data['avatarSvg'] as String?;
+      if (storedAvatarSvg != null && storedAvatarSvg.isNotEmpty) {
+        avatarSvg = storedAvatarSvg;
       }
     } catch (_) {
       // Profile not created yet — keep defaults
@@ -75,7 +82,9 @@ class UserPreferencesService {
         'sleepSchedule': sleepSchedule,
         'moodBaseline': moodBaseline,
         'avatarUrl': getAvatarUrl(),
+        'avatarSvg': avatarSvg ?? '',
         'musicLanguages': musicLanguages,
+        'communityPreference': communityPreference,
       });
     } catch (_) {
       // If profile doesn't exist, create it

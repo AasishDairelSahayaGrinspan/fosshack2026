@@ -100,8 +100,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         .toList();
     _prefs.sleepSchedule = _selectedSleep == 0 ? 'morning' : 'night';
     _prefs.moodBaseline = _moodBaseline;
-    _prefs.avatarStyle = _avatarStyle;
-    _prefs.avatarSeed = _avatarSeed;
+    // avatarStyle / avatarSeed kept in UserPreferencesService singleton
 
     // Save preferences to Appwrite (fire and forget)
     _prefs.saveToRemote();

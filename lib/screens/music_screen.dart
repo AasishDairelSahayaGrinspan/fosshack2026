@@ -39,6 +39,7 @@ class _MusicScreenState extends State<MusicScreen> {
   static const List<Map<String, dynamic>> _playlists = [
     {
       'title': 'Feel Good Tamil',
+      'language': 'Tamil',
       'mood': 'Happy',
       'icon': Icons.sentiment_very_satisfied_rounded,
       'color': AppColors.warmCoral,
@@ -53,6 +54,7 @@ class _MusicScreenState extends State<MusicScreen> {
     },
     {
       'title': 'Soft Tamil Evenings',
+      'language': 'Tamil',
       'mood': 'Calm',
       'icon': Icons.spa_outlined,
       'color': AppColors.sageGreen,
@@ -67,6 +69,7 @@ class _MusicScreenState extends State<MusicScreen> {
     },
     {
       'title': 'Rise Again',
+      'language': 'Tamil',
       'mood': 'Healing',
       'icon': Icons.healing_outlined,
       'color': AppColors.orangeE2814d,
@@ -81,6 +84,7 @@ class _MusicScreenState extends State<MusicScreen> {
     },
     {
       'title': 'Focus Instrumentals',
+      'language': 'Instrumental',
       'mood': 'Focus',
       'icon': Icons.center_focus_strong_outlined,
       'color': AppColors.softIndigo,
@@ -93,7 +97,44 @@ class _MusicScreenState extends State<MusicScreen> {
         {'title': 'Alaipayuthey Theme', 'artist': 'A.R. Rahman', 'spotifyUrl': 'https://open.spotify.com/search/Alaipayuthey%20Theme%20AR%20Rahman', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Alaipayuthey+Theme+AR+Rahman'},
       ],
     },
+    {
+      'title': 'English Pop Hits',
+      'language': 'English',
+      'mood': 'Happy',
+      'icon': Icons.sentiment_very_satisfied_rounded,
+      'color': AppColors.warmCoral,
+      'description': 'Upbeat tracks to keep you smiling.',
+      'spotifyUrl': 'https://open.spotify.com/search/feel%20good%20pop',
+      'youtubeUrl': 'https://www.youtube.com/results?search_query=feel+good+pop',
+      'songs': [
+        {'title': 'Levitating', 'artist': 'Dua Lipa', 'spotifyUrl': 'https://open.spotify.com/search/Levitating', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Levitating+Dua+Lipa'},
+        {'title': 'Blinding Lights', 'artist': 'The Weeknd', 'spotifyUrl': 'https://open.spotify.com/search/Blinding%20Lights', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Blinding+Lights+The+Weeknd'},
+        {'title': 'Watermelon Sugar', 'artist': 'Harry Styles', 'spotifyUrl': 'https://open.spotify.com/search/Watermelon%20Sugar', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Watermelon+Sugar+Harry+Styles'},
+      ],
+    },
+    {
+      'title': 'Calm English Acoustics',
+      'language': 'English',
+      'mood': 'Calm',
+      'icon': Icons.spa_outlined,
+      'color': AppColors.sageGreen,
+      'description': 'Soothing acoustic melodies.',
+      'spotifyUrl': 'https://open.spotify.com/search/calm%20acoustic',
+      'youtubeUrl': 'https://www.youtube.com/results?search_query=calm+acoustic+songs',
+      'songs': [
+        {'title': 'Perfect', 'artist': 'Ed Sheeran', 'spotifyUrl': 'https://open.spotify.com/search/Perfect%20Ed%20Sheeran', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Perfect+Ed+Sheeran'},
+        {'title': 'All of Me', 'artist': 'John Legend', 'spotifyUrl': 'https://open.spotify.com/search/All%20of%20Me', 'youtubeUrl': 'https://www.youtube.com/results?search_query=All+of+Me+John+Legend'},
+        {'title': 'Stay With Me', 'artist': 'Sam Smith', 'spotifyUrl': 'https://open.spotify.com/search/Stay%20With%20Me', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Stay+With+Me+Sam+Smith'},
+      ],
+    },
   ];
+
+  List<Map<String, dynamic>> get _filteredPlaylists {
+    if (_selectedLanguages.isEmpty) return _playlists;
+    final filtered = _playlists.where((p) => _selectedLanguages.contains(p['language'])).toList();
+    if (filtered.isEmpty) return _playlists;
+    return filtered;
+  }
 
   @override
   void initState() {
@@ -314,7 +355,7 @@ class _MusicScreenState extends State<MusicScreen> {
                     style: AppTypography.sectionHeading(color: Colors.white),
                   ),
                   const SizedBox(height: 14),
-                  ..._playlists.map((pl) => _buildPlaylistCard(pl)),
+                  ..._filteredPlaylists.map((pl) => _buildPlaylistCard(pl)),
                   const SizedBox(height: 32),
                 ],
               ),

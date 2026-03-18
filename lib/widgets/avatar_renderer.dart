@@ -409,7 +409,9 @@ class _AvatarPainter extends CustomPainter {
     final hairStyle = config.hairStyle.clamp(0, 15);
     final hairPaint = Paint()..color = hairColor;
     final faceCy = cy - s * 0.02;
-    final headTop = faceCy - s * 0.19;
+    double baseHeadTop = faceCy - s * 0.19;
+    if (config.faceShape == 4) baseHeadTop = faceCy - s * 0.20; // Long face
+    final headTop = baseHeadTop;
 
     if (hairStyle == 15) return; // Bald
 

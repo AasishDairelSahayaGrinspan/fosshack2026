@@ -61,6 +61,22 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
   }
 
   @override
+  void didUpdateWidget(RecoveryScoreCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.score != widget.score) {
+      _progressAnimation = Tween<double>(
+        begin: _progressAnimation.value,
+        end: widget.score,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+      _countAnimation = Tween<double>(
+        begin: _countAnimation.value,
+        end: widget.score * 100,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

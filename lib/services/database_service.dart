@@ -7,6 +7,7 @@ import 'appwrite_constants.dart';
 import 'appwrite_service.dart';
 import 'auth_service.dart';
 import 'local_data_service.dart';
+import 'storage_service.dart';
 
 class LocalRow {
   final String $id;
@@ -682,6 +683,7 @@ class DatabaseService {
       'username': username,
       'avatar': avatar,
       'imageFileId': imageFileId,
+      'imagePath': imageFileId != null ? StorageService().getPostImageUrl(imageFileId) : null,
       'caption': caption,
       'moodTag': moodTag,
       'postType': postType,

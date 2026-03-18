@@ -31,7 +31,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  double _recoveryScore = 100.0;
+  double _recoveryScore = 1.0;
   List<double> _moodData = List<double>.filled(7, 0.5);
   int _streakDays = 0;
 

@@ -41,11 +41,11 @@ class _MoodSelectorState extends State<MoodSelector> {
   }
 
   static const List<Map<String, dynamic>> _moods = [
-    {'emoji': '😌', 'label': 'Calm', 'color': AppColors.sageGreen},
-    {'emoji': '🙂', 'label': 'Okay', 'color': AppColors.softIndigo},
-    {'emoji': '😔', 'label': 'Low', 'color': AppColors.orangeE2814d},
-    {'emoji': '😰', 'label': 'Anxious', 'color': AppColors.warmCoral},
-    {'emoji': '😣', 'label': 'Overwhelmed', 'color': AppColors.coralDa5e5a},
+    {'icon': Icons.water_drop_outlined, 'emoji': '😌', 'label': 'Calm', 'color': AppColors.sageGreen},
+    {'icon': Icons.check_circle_outline_rounded, 'emoji': '🙂', 'label': 'Okay', 'color': AppColors.softIndigo},
+    {'icon': Icons.cloud_outlined, 'emoji': '😔', 'label': 'Low', 'color': AppColors.orangeE2814d},
+    {'icon': Icons.waves_outlined, 'emoji': '😰', 'label': 'Anxious', 'color': AppColors.warmCoral},
+    {'icon': Icons.storm_outlined, 'emoji': '😣', 'label': 'Overwhelmed', 'color': AppColors.coralDa5e5a},
   ];
 
   @override
@@ -110,9 +110,10 @@ class _MoodSelectorState extends State<MoodSelector> {
                             scale: isSelected ? 1.3 : 1.0,
                             duration: AppTheme.fadeInDuration,
                             curve: AppTheme.defaultCurve,
-                            child: Text(
-                              _moods[index]['emoji'] as String,
-                              style: const TextStyle(fontSize: 28),
+                            child: Icon(
+                              _moods[index]['icon'] as IconData,
+                              color: isSelected ? _moods[index]['color'] as Color : AppColors.tertiary(context),
+                              size: 28,
                             ),
                           ),
                           const SizedBox(height: 8),

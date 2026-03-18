@@ -11,10 +11,12 @@ import '../widgets/streak_indicator.dart';
 import '../widgets/mood_chart.dart';
 import '../widgets/community_activity_card.dart';
 import '../widgets/doodle_refresh.dart';
+import '../models/avatar_config.dart';
 import '../services/user_preferences_service.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
 import '../services/app_navigation_service.dart';
+import '../widgets/avatar_renderer.dart';
 import 'breathing_screen.dart';
 import 'sleep_tracker_screen.dart';
 import 'journal_screen.dart';
@@ -297,6 +299,45 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildAvatarWidget(double size) {
+    final prefs = UserPreferencesService();
+    if (prefs.avatarData != null && prefs.avatarData!.isNotEmpty) {
+      return AvatarRenderer(
+        config: AvatarConfig.fromJsonString(prefs.avatarData!),
+        size: size,
+      );
+    }
+    // Fallback to DiceBear
+    return Image.network(
+      prefs.getAvatarUrl(),
+      fit: BoxFit.cover,
+      cacheWidth: (size * 2).toInt(),
+      cacheHeight: (size * 2).toInt(),
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.softIndigo.withValues(alpha: 0.25),
+                AppColors.paleLilac.withValues(alpha: 0.5),
+              ],
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.person_outline_rounded,
+              color: AppColors.secondary(context),
+              size: size * 0.45,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildGreetingHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -338,34 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           child: ClipOval(
-            child: Image.network(
-              UserPreferencesService().getAvatarUrl(),
-              fit: BoxFit.cover,
-              cacheWidth: 108,
-              cacheHeight: 108,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.softIndigo.withValues(alpha: 0.25),
-                        AppColors.paleLilac.withValues(alpha: 0.5),
-                      ],
-                    ),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.person_outline_rounded,
-                      color: AppColors.secondary(context),
-                      size: 24,
-                    ),
-                  ),
-                );
-              },
-            ),
+            child: _buildAvatarWidget(54),
           ),
         ),
       ],

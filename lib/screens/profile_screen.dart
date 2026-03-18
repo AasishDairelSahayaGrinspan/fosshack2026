@@ -6,9 +6,13 @@ import '../theme/app_typography.dart';
 import '../theme/theme_provider.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/doodle_refresh.dart';
+import '../models/avatar_config.dart';
 import '../services/auth_service.dart';
+import '../services/database_service.dart';
 import '../services/user_preferences_service.dart';
 import '../services/notification_service.dart';
+import '../widgets/avatar_renderer.dart';
+import 'avatar_customization_screen.dart';
 import 'login_screen.dart';
 
 /// Profile Screen with settings and theme toggle.
@@ -21,6 +25,48 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ThemeProvider _themeProvider = ThemeProvider();
+  int _streakDays = 0;
+  int _journalCount = 0;
+  bool _isEditingName = false;
+  final _nameController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadStats() async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+    final db = DatabaseService();
+    try {
+      final streak = await db.getOrCreateStreak(user.$id);
+      final journals = await db.getJournalEntries(user.$id, limit: 1000);
+      if (!mounted) return;
+      setState(() {
+        _streakDays = (streak.data['currentStreak'] as num?)?.toInt() ?? 0;
+        _journalCount = journals.rows.length;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _saveName() async {
+    final newName = _nameController.text.trim();
+    if (newName.isEmpty) return;
+    await AuthService().updateName(newName);
+    UserPreferencesService().name = newName;
+    await UserPreferencesService().saveToRemote();
+    if (mounted) {
+      setState(() => _isEditingName = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -204,6 +250,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildAvatarWidget(double size) {
+    final prefs = UserPreferencesService();
+    if (prefs.avatarData != null && prefs.avatarData!.isNotEmpty) {
+      return AvatarRenderer(
+        config: AvatarConfig.fromJsonString(prefs.avatarData!),
+        size: size,
+      );
+    }
+    return Image.network(
+      prefs.getAvatarUrl(),
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: AppColors.card(context),
+          child: Icon(
+            Icons.person_outline_rounded,
+            color: AppColors.softIndigo.withValues(alpha: 0.5),
+            size: size * 0.45,
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildProfileCard(BuildContext context) {
     final prefs = UserPreferencesService();
 
@@ -215,60 +285,177 @@ class _ProfileScreenState extends State<ProfileScreen> {
         border: Border.all(color: AppColors.cardBorder(context), width: 0.8),
         boxShadow: AppColors.cardShadow(context),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.softIndigo.withValues(alpha: 0.2),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.softIndigo.withValues(alpha: 0.15),
-                  blurRadius: 16,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: ClipOval(
-              child: Image.network(
-                prefs.getAvatarUrl(),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.card(context),
-                    child: Icon(
-                      Icons.person_outline_rounded,
-                      color: AppColors.softIndigo.withValues(alpha: 0.5),
-                      size: 28,
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AvatarCustomizationScreen(
+                        onSaved: () => setState(() {}),
+                      ),
                     ),
                   );
                 },
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.softIndigo.withValues(alpha: 0.2),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.softIndigo.withValues(alpha: 0.15),
+                            blurRadius: 16,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(child: _buildAvatarWidget(80)),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: AppColors.softIndigo,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.card(context), width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.edit_rounded,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_isEditingName)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _nameController,
+                              style: AppTypography.sectionHeadingC(context),
+                              decoration: InputDecoration(
+                                hintText: 'Your name',
+                                hintStyle: AppTypography.sectionHeading(
+                                  color: AppColors.tertiary(context),
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                                isDense: true,
+                              ),
+                              onSubmitted: (_) => _saveName(),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: _saveName,
+                            child: Icon(
+                              Icons.check_rounded,
+                              color: AppColors.sageGreen,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      GestureDetector(
+                        onTap: () {
+                          _nameController.text = prefs.displayName;
+                          setState(() => _isEditingName = true);
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              prefs.displayName,
+                              style: AppTypography.sectionHeadingC(context),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 14,
+                              color: AppColors.tertiary(context),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Taking it one day at a time.',
+                      style: AppTypography.captionC(context),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  prefs.displayName,
-                  style: AppTypography.sectionHeadingC(context),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Taking it one day at a time.',
-                  style: AppTypography.captionC(context),
-                ),
-              ],
-            ),
+          const SizedBox(height: 16),
+          // ─── Stats Row ───
+          Row(
+            children: [
+              _buildStatChip(
+                icon: Icons.local_fire_department_outlined,
+                label: '$_streakDays day streak',
+                color: AppColors.warmCoral,
+              ),
+              const SizedBox(width: 8),
+              _buildStatChip(
+                icon: Icons.edit_note_rounded,
+                label: '$_journalCount entries',
+                color: AppColors.sageGreen,
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: AppTypography.caption(color: color)
+                    .copyWith(fontWeight: FontWeight.w500, fontSize: 11),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

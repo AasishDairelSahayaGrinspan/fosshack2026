@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/app_navigation_service.dart';
 import '../services/auth_service.dart';
@@ -42,10 +43,12 @@ class _MusicScreenState extends State<MusicScreen> {
       'icon': Icons.sentiment_very_satisfied_rounded,
       'color': AppColors.warmCoral,
       'description': 'Uplifting energy for bright moments.',
+      'spotifyUrl': 'https://open.spotify.com/search/feel%20good%20tamil',
+      'youtubeUrl': 'https://www.youtube.com/results?search_query=feel+good+tamil+songs',
       'songs': [
-        {'title': 'Rowdy Baby', 'artist': 'Maari 2'},
-        {'title': 'Vaathi Coming', 'artist': 'Master'},
-        {'title': 'Arabic Kuthu', 'artist': 'Beast'},
+        {'title': 'Rowdy Baby', 'artist': 'Maari 2', 'spotifyUrl': 'https://open.spotify.com/search/Rowdy%20Baby%20Maari%202', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Rowdy+Baby+Maari+2'},
+        {'title': 'Vaathi Coming', 'artist': 'Master', 'spotifyUrl': 'https://open.spotify.com/search/Vaathi%20Coming%20Master', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Vaathi+Coming+Master'},
+        {'title': 'Arabic Kuthu', 'artist': 'Beast', 'spotifyUrl': 'https://open.spotify.com/search/Arabic%20Kuthu%20Beast', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Arabic+Kuthu+Beast'},
       ],
     },
     {
@@ -54,10 +57,12 @@ class _MusicScreenState extends State<MusicScreen> {
       'icon': Icons.spa_outlined,
       'color': AppColors.sageGreen,
       'description': 'Gentle melodies for quiet moments.',
+      'spotifyUrl': 'https://open.spotify.com/search/soft%20tamil%20melodies',
+      'youtubeUrl': 'https://www.youtube.com/results?search_query=soft+tamil+melodies',
       'songs': [
-        {'title': 'Munbe Vaa', 'artist': 'Sillunu Oru Kadhal'},
-        {'title': 'Vaseegara', 'artist': 'Minnale'},
-        {'title': 'Nenjukkul Peidhidum', 'artist': 'Vaaranam Aayiram'},
+        {'title': 'Munbe Vaa', 'artist': 'Sillunu Oru Kadhal', 'spotifyUrl': 'https://open.spotify.com/search/Munbe%20Vaa%20Sillunu%20Oru%20Kadhal', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Munbe+Vaa+Sillunu+Oru+Kadhal'},
+        {'title': 'Vaseegara', 'artist': 'Minnale', 'spotifyUrl': 'https://open.spotify.com/search/Vaseegara%20Minnale', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Vaseegara+Minnale'},
+        {'title': 'Nenjukkul Peidhidum', 'artist': 'Vaaranam Aayiram', 'spotifyUrl': 'https://open.spotify.com/search/Nenjukkul%20Peidhidum%20Vaaranam%20Aayiram', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Nenjukkul+Peidhidum+Vaaranam+Aayiram'},
       ],
     },
     {
@@ -66,10 +71,12 @@ class _MusicScreenState extends State<MusicScreen> {
       'icon': Icons.healing_outlined,
       'color': AppColors.orangeE2814d,
       'description': 'Songs for mending and moving forward.',
+      'spotifyUrl': 'https://open.spotify.com/search/tamil%20healing%20songs',
+      'youtubeUrl': 'https://www.youtube.com/results?search_query=tamil+healing+songs',
       'songs': [
-        {'title': 'Thalli Pogathey', 'artist': 'AYM'},
-        {'title': 'Po Nee Po', 'artist': '3'},
-        {'title': 'Kanave Kanave', 'artist': 'David'},
+        {'title': 'Thalli Pogathey', 'artist': 'AYM', 'spotifyUrl': 'https://open.spotify.com/search/Thalli%20Pogathey%20AYM', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Thalli+Pogathey+AYM'},
+        {'title': 'Po Nee Po', 'artist': '3', 'spotifyUrl': 'https://open.spotify.com/search/Po%20Nee%20Po%203%20movie', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Po+Nee+Po+3+movie'},
+        {'title': 'Kanave Kanave', 'artist': 'David', 'spotifyUrl': 'https://open.spotify.com/search/Kanave%20Kanave%20David', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Kanave+Kanave+David'},
       ],
     },
     {
@@ -78,10 +85,12 @@ class _MusicScreenState extends State<MusicScreen> {
       'icon': Icons.center_focus_strong_outlined,
       'color': AppColors.softIndigo,
       'description': 'Instrumental peace for deep focus.',
+      'spotifyUrl': 'https://open.spotify.com/search/AR%20Rahman%20instrumental',
+      'youtubeUrl': 'https://www.youtube.com/results?search_query=AR+Rahman+instrumental+themes',
       'songs': [
-        {'title': 'Bombay Theme', 'artist': 'A.R. Rahman'},
-        {'title': 'Roja Theme', 'artist': 'A.R. Rahman'},
-        {'title': 'Alaipayuthey Theme', 'artist': 'A.R. Rahman'},
+        {'title': 'Bombay Theme', 'artist': 'A.R. Rahman', 'spotifyUrl': 'https://open.spotify.com/search/Bombay%20Theme%20AR%20Rahman', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Bombay+Theme+AR+Rahman'},
+        {'title': 'Roja Theme', 'artist': 'A.R. Rahman', 'spotifyUrl': 'https://open.spotify.com/search/Roja%20Theme%20AR%20Rahman', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Roja+Theme+AR+Rahman'},
+        {'title': 'Alaipayuthey Theme', 'artist': 'A.R. Rahman', 'spotifyUrl': 'https://open.spotify.com/search/Alaipayuthey%20Theme%20AR%20Rahman', 'youtubeUrl': 'https://www.youtube.com/results?search_query=Alaipayuthey+Theme+AR+Rahman'},
       ],
     },
   ];
@@ -386,10 +395,19 @@ class _PlaylistDetailScreen extends StatelessWidget {
 
   const _PlaylistDetailScreen({required this.playlist});
 
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final songs = playlist['songs'] as List;
     final color = playlist['color'] as Color;
+    final playlistSpotifyUrl = playlist['spotifyUrl'] as String?;
+    final playlistYoutubeUrl = playlist['youtubeUrl'] as String?;
 
     return Scaffold(
       body: Container(
@@ -453,15 +471,24 @@ class _PlaylistDetailScreen extends StatelessWidget {
                     final song = songs[i] as Map<String, String>;
                     return GestureDetector(
                       onTap: () async {
+                        // Log the listen
                         final user = AuthService().currentUser;
                         if (user != null) {
-                          await DatabaseService().saveListenedSong(
+                          DatabaseService().saveListenedSong(
                             userId: user.$id,
                             title: song['title']!,
                             artist: song['artist']!,
                             playlist: playlist['title'] as String,
                             mood: playlist['mood'] as String?,
                           );
+                        }
+                        // Open in Spotify (preferred) or YouTube
+                        final spotifyUrl = song['spotifyUrl'];
+                        final youtubeUrl = song['youtubeUrl'];
+                        if (spotifyUrl != null) {
+                          await _openUrl(spotifyUrl);
+                        } else if (youtubeUrl != null) {
+                          await _openUrl(youtubeUrl);
                         }
                       },
                       child: Container(
@@ -504,7 +531,7 @@ class _PlaylistDetailScreen extends StatelessWidget {
                             ),
                             Icon(
                               Icons.play_circle_outline_rounded,
-                              color: Colors.white.withValues(alpha: 0.25),
+                              color: Colors.white.withValues(alpha: 0.45),
                               size: 22,
                             ),
                           ],
@@ -514,37 +541,83 @@ class _PlaylistDetailScreen extends StatelessWidget {
                   },
                 ),
               ),
+              // ─── Spotify & YouTube Buttons ───
               Padding(
-                padding: const EdgeInsets.all(20),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1DB954).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-                    border: Border.all(
-                      color: const Color(0xFF1DB954).withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.music_note_rounded,
-                        color: Color(0xFF1DB954),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Play on Spotify',
-                        style: AppTypography.buttonText(
-                          color: const Color(0xFF1DB954),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                child: Row(
+                  children: [
+                    if (playlistSpotifyUrl != null)
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _openUrl(playlistSpotifyUrl),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1DB954).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                              border: Border.all(
+                                color: const Color(0xFF1DB954).withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.music_note_rounded,
+                                  color: Color(0xFF1DB954),
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Spotify',
+                                  style: AppTypography.buttonText(
+                                    color: const Color(0xFF1DB954),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    if (playlistSpotifyUrl != null && playlistYoutubeUrl != null)
+                      const SizedBox(width: 12),
+                    if (playlistYoutubeUrl != null)
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _openUrl(playlistYoutubeUrl),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF0000).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                              border: Border.all(
+                                color: const Color(0xFFFF0000).withValues(alpha: 0.25),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.play_arrow_rounded,
+                                  color: Color(0xFFFF0000),
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'YouTube',
+                                  style: AppTypography.buttonText(
+                                    color: const Color(0xFFFF0000),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 12),
             ],
           ),
         ),

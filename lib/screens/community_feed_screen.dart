@@ -41,7 +41,19 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   @override
   void initState() {
     super.initState();
+    _service.addListener(_onServiceUpdate);
+    _service.subscribeToRealtime();
     _loadFeed();
+  }
+
+  @override
+  void dispose() {
+    _service.removeListener(_onServiceUpdate);
+    super.dispose();
+  }
+
+  void _onServiceUpdate() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadFeed() async {
@@ -519,6 +531,54 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               Text(label, style: AppTypography.caption(color: color)),
             ],
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPostImage(String imagePath) {
+    // Check if it's a network URL (Appwrite storage) or local file
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        width: double.infinity,
+        height: 250,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: double.infinity,
+            height: 250,
+            color: AppColors.card(context),
+            child: Center(
+              child: Icon(
+                Icons.image_not_supported_outlined,
+                color: AppColors.tertiary(context),
+                size: 32,
+              ),
+            ),
+          );
+        },
+      );
+    }
+    // Local file
+    final file = File(imagePath);
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        width: double.infinity,
+        height: 250,
+        fit: BoxFit.cover,
+      );
+    }
+    return Container(
+      width: double.infinity,
+      height: 250,
+      color: AppColors.card(context),
+      child: Center(
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          color: AppColors.tertiary(context),
+          size: 32,
         ),
       ),
     );

@@ -1,14 +1,17 @@
-/// Service for DiceBear avatar creation and management.
+/// Service for avatar creation and management.
+/// Supports both DiceBear URL-based avatars (legacy) and custom AvatarConfig system.
 library;
 
 import 'dart:math';
+
+import '../models/avatar_config.dart';
 
 class AvatarService {
   static final AvatarService _instance = AvatarService._();
   factory AvatarService() => _instance;
   AvatarService._();
 
-  // Available avatar styles from DiceBear
+  // Available avatar styles from DiceBear (kept for backward compatibility)
   static const List<String> avatarStyles = [
     'avataaars',
     'avataaars-neutral',
@@ -49,13 +52,7 @@ class AvatarService {
     return avatarStyles[Random().nextInt(avatarStyles.length)];
   }
 
-  /// Generates the DiceBear API URL for an avatar
-  ///
-  /// Parameters:
-  /// - [style]: The avatar style (defaults to random style)
-  /// - [seed]: The unique seed for avatar generation
-  /// - [scale]: Size scale for the avatar (optional)
-  /// - [backgroundColor]: Background color in hex (optional)
+  /// Generates the DiceBear API URL for an avatar (legacy)
   String getAvatarUrl({
     required String seed,
     required String style,
@@ -82,5 +79,10 @@ class AvatarService {
   /// Gets a list of recommended styles for initial selection
   static List<String> getRecommendedStyles() {
     return const ['avataaars', 'big-smile', 'croodles', 'pixel-art', 'shapes'];
+  }
+
+  /// Generate a random AvatarConfig for the custom avatar system.
+  AvatarConfig generateRandomConfig() {
+    return AvatarConfig.random();
   }
 }

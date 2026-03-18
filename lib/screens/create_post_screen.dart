@@ -6,10 +6,11 @@ import 'package:image_picker/image_picker.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
+import '../services/auth_service.dart';
 import '../services/community_service.dart';
+import '../services/storage_service.dart';
 
-/// Create Post Screen — add caption, optional mood tag, and post.
-/// Camera/gallery integration placeholder (image_picker to be added later).
+/// Create Post Screen — add caption, optional image upload, mood tag, and post.
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
 
@@ -102,13 +103,32 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     setState(() => _isPosting = true);
 
-    // Simulate posting delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
     try {
+      String? imageFileId;
+
+      // Upload image to Appwrite Storage if selected
+      if (_imagePath != null) {
+        try {
+          final user = AuthService().currentUser;
+          if (user != null) {
+            final fileName = _imagePath!.split('/').last;
+            final file = await StorageService().uploadPostImage(
+              filePath: _imagePath!,
+              fileName: fileName,
+              userId: user.$id,
+            );
+            imageFileId = file.$id;
+          }
+        } catch (e, st) {
+          developer.log('Image upload failed', name: 'CreatePostScreen', error: e, stackTrace: st);
+          // Continue posting without image if upload fails
+        }
+      }
+
       await _service.addPost(
         caption: caption,
         imagePath: _imagePath,
+        imageFileId: imageFileId,
         moodTag: _selectedMoodTag >= 0
             ? _moodTags[_selectedMoodTag]['label'] as String
             : null,

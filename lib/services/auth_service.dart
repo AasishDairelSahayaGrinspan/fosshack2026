@@ -1,22 +1,22 @@
 import 'dart:developer' as developer;
-import 'dart:math';
 
+import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/enums.dart' as enums;
-import 'package:flutter/foundation.dart';
+import 'package:appwrite/models.dart' as models;
 
+import 'appwrite_service.dart';
 import 'local_data_service.dart';
-import 'notification_service.dart';
 
 class LocalUser {
   final String $id;
   String name;
-  final String? phone;
+  final String? email;
   final bool isGuest;
 
   LocalUser({
     required this.$id,
     required this.name,
-    this.phone,
+    this.email,
     this.isGuest = false,
   });
 
@@ -24,26 +24,27 @@ class LocalUser {
     return LocalUser(
       $id: json['id'] as String,
       name: (json['name'] as String?) ?? 'friend',
-      phone: json['phone'] as String?,
+      email: json['email'] as String?,
       isGuest: (json['isGuest'] as bool?) ?? false,
+    );
+  }
+
+  factory LocalUser.fromAppwriteUser(models.User user) {
+    return LocalUser(
+      $id: user.$id,
+      name: user.name.isNotEmpty ? user.name : 'friend',
+      email: user.email.isNotEmpty ? user.email : null,
+      isGuest: user.email.isEmpty,
     );
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'id': $id,
         'name': name,
-        'phone': phone,
+        'email': email,
         'isGuest': isGuest,
       };
 }
-
-class OtpToken {
-  final String userId;
-  OtpToken(this.userId);
-}
-
-/// OTP expiry duration — codes are invalid after this period.
-const Duration _otpExpiry = Duration(minutes: 5);
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -52,30 +53,34 @@ class AuthService {
 
   static const String _tag = 'AuthService';
 
+  final Account _account = AppwriteService().account;
+
   LocalUser? _currentUser;
   LocalUser? get currentUser => _currentUser;
 
-  String? _pendingOtpUserId;
-  String? _pendingOtpCode;
-  String? _pendingPhone;
-  DateTime? _pendingOtpCreatedAt;
-
+  /// Check if user has an active Appwrite session.
   Future<bool> isLoggedIn() async {
     try {
       await LocalDataService().init();
-      final userId = LocalDataService().getSessionUserId();
-      if (userId == null) {
-        _currentUser = null;
-        return false;
-      }
-      final userJson = LocalDataService().getUser(userId);
-      if (userJson == null) {
-        _currentUser = null;
-        await LocalDataService().setSessionUserId(null);
-        return false;
-      }
-      _currentUser = LocalUser.fromJson(userJson);
+      final user = await _account.get();
+      _currentUser = LocalUser.fromAppwriteUser(user);
+      // Cache locally
+      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
+      await LocalDataService().setSessionUserId(_currentUser!.$id);
       return true;
+    } on AppwriteException catch (e) {
+      developer.log('isLoggedIn: no session ($e)', name: _tag);
+      // Fall back to local cache
+      final userId = LocalDataService().getSessionUserId();
+      if (userId != null) {
+        final userJson = LocalDataService().getUser(userId);
+        if (userJson != null) {
+          _currentUser = LocalUser.fromJson(userJson);
+          return true;
+        }
+      }
+      _currentUser = null;
+      return false;
     } catch (e, st) {
       developer.log('isLoggedIn failed', name: _tag, error: e, stackTrace: st);
       _currentUser = null;
@@ -83,108 +88,92 @@ class AuthService {
     }
   }
 
-  /// Generates a cryptographically random 6-digit OTP.
-  String _generateOtp() {
-    final random = Random.secure();
-    return List.generate(6, (_) => random.nextInt(10)).join();
-  }
-
-  Future<OtpToken> sendOtp(String phone) async {
-    try {
-      await LocalDataService().init();
-      final userId = 'phone_${phone.replaceAll(RegExp(r'\D'), '')}';
-      _pendingOtpUserId = userId;
-      _pendingOtpCode = _generateOtp();
-      _pendingPhone = phone;
-      _pendingOtpCreatedAt = DateTime.now();
-
-      // In debug builds, log the OTP for testing purposes.
-      if (kDebugMode) {
-        developer.log('OTP for $phone: $_pendingOtpCode', name: _tag);
-      }
-
-      // Send OTP as a local notification so the user can see the code.
-      try {
-        await NotificationService().showOtpNotification(_pendingOtpCode!);
-      } catch (e) {
-        developer.log('OTP notification failed', name: _tag, error: e);
-      }
-
-      await LocalDataService().addAnalytics(
-        'otp_sent',
-        payload: <String, dynamic>{'phone': phone},
-      );
-      return OtpToken(userId);
-    } catch (e, st) {
-      developer.log('sendOtp failed', name: _tag, error: e, stackTrace: st);
-      rethrow;
-    }
-  }
-
-  Future<void> verifyOtp({
-    required String userId,
-    required String otp,
+  /// Sign up with email and password. Creates account + session.
+  Future<void> signup({
+    required String email,
+    required String password,
+    required String name,
   }) async {
     try {
       await LocalDataService().init();
-
-      // Check if OTP has expired.
-      if (_pendingOtpCreatedAt != null &&
-          DateTime.now().difference(_pendingOtpCreatedAt!) > _otpExpiry) {
-        _pendingOtpCode = null;
-        _pendingOtpCreatedAt = null;
-        throw Exception('OTP has expired. Please request a new one.');
-      }
-
-      if (_pendingOtpUserId != userId || _pendingOtpCode != otp) {
-        throw Exception('Invalid OTP');
-      }
-
-      // OTP verified — clear pending state.
-      _pendingOtpCode = null;
-      _pendingOtpCreatedAt = null;
-
-      final existing = LocalDataService().getUser(userId);
-      final user = LocalUser(
-        $id: userId,
-        name: existing?['name'] as String? ?? 'friend',
-        phone: _pendingPhone,
-        isGuest: false,
+      await _account.create(
+        userId: ID.unique(),
+        email: email,
+        password: password,
+        name: name,
       );
-      _currentUser = user;
-      await LocalDataService().saveUser(userId, user.toJson());
-      await LocalDataService().setSessionUserId(userId);
+      // Create session after signup
+      await _account.createEmailPasswordSession(
+        email: email,
+        password: password,
+      );
+      final user = await _account.get();
+      _currentUser = LocalUser.fromAppwriteUser(user);
+      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
+      await LocalDataService().setSessionUserId(_currentUser!.$id);
       await LocalDataService().addAnalytics(
-        'otp_verified',
-        payload: <String, dynamic>{'userId': userId},
+        'signup',
+        payload: <String, dynamic>{'userId': _currentUser!.$id},
       );
-    } on Exception {
-      rethrow;
+    } on AppwriteException catch (e) {
+      developer.log('signup failed: ${e.message}', name: _tag);
+      if (e.code == 409) {
+        throw Exception('An account with this email already exists.');
+      } else if (e.message?.contains('password') ?? false) {
+        throw Exception('Password must be at least 8 characters.');
+      }
+      throw Exception(e.message ?? 'Signup failed. Please try again.');
     } catch (e, st) {
-      developer.log('verifyOtp failed', name: _tag, error: e, stackTrace: st);
+      developer.log('signup failed', name: _tag, error: e, stackTrace: st);
       rethrow;
     }
   }
 
+  /// Log in with email and password.
+  Future<void> login({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await LocalDataService().init();
+      await _account.createEmailPasswordSession(
+        email: email,
+        password: password,
+      );
+      final user = await _account.get();
+      _currentUser = LocalUser.fromAppwriteUser(user);
+      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
+      await LocalDataService().setSessionUserId(_currentUser!.$id);
+      await LocalDataService().addAnalytics(
+        'login',
+        payload: <String, dynamic>{'userId': _currentUser!.$id},
+      );
+    } on AppwriteException catch (e) {
+      developer.log('login failed: ${e.message}', name: _tag);
+      if (e.code == 401) {
+        throw Exception('Invalid email or password.');
+      }
+      throw Exception(e.message ?? 'Login failed. Please try again.');
+    } catch (e, st) {
+      developer.log('login failed', name: _tag, error: e, stackTrace: st);
+      rethrow;
+    }
+  }
+
+  /// OAuth login (Google, Apple) — opens browser for real OAuth flow.
   Future<void> oAuthLogin(enums.OAuthProvider provider) async {
     try {
       await LocalDataService().init();
-      final random = Random.secure().nextInt(999999).toString().padLeft(6, '0');
-      final userId = '${provider.name}_$random';
-      final existing = LocalDataService().getUser(userId);
-      final user = LocalUser(
-        $id: userId,
-        name: existing?['name'] as String? ?? provider.name,
-        isGuest: false,
-      );
-      _currentUser = user;
-      await LocalDataService().saveUser(userId, user.toJson());
-      await LocalDataService().setSessionUserId(userId);
+      await _account.createOAuth2Session(provider: provider);
+      final user = await _account.get();
+      _currentUser = LocalUser.fromAppwriteUser(user);
+      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
+      await LocalDataService().setSessionUserId(_currentUser!.$id);
       await LocalDataService().addAnalytics(
         'oauth_login',
         payload: <String, dynamic>{
           'provider': provider.name,
-          'userId': userId,
+          'userId': _currentUser!.$id,
         },
       );
     } catch (e, st) {
@@ -193,14 +182,19 @@ class AuthService {
     }
   }
 
+  /// Guest login — creates an anonymous Appwrite session.
   Future<void> guestLogin() async {
     try {
       await LocalDataService().init();
-      final userId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
-      final user = LocalUser($id: userId, name: 'Guest', isGuest: true);
-      _currentUser = user;
-      await LocalDataService().saveUser(userId, user.toJson());
-      await LocalDataService().setSessionUserId(userId);
+      await _account.createAnonymousSession();
+      final user = await _account.get();
+      _currentUser = LocalUser(
+        $id: user.$id,
+        name: 'Guest',
+        isGuest: true,
+      );
+      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
+      await LocalDataService().setSessionUserId(_currentUser!.$id);
       await LocalDataService().addAnalytics('guest_login');
     } catch (e, st) {
       developer.log('guestLogin failed', name: _tag, error: e, stackTrace: st);
@@ -221,6 +215,11 @@ class AuthService {
     try {
       final user = _currentUser;
       if (user == null) return;
+      try {
+        await _account.updateName(name: name);
+      } on AppwriteException catch (e) {
+        developer.log('updateName remote failed: ${e.message}', name: _tag);
+      }
       user.name = name;
       await LocalDataService().saveUser(user.$id, user.toJson());
       await LocalDataService().addAnalytics(
@@ -235,6 +234,11 @@ class AuthService {
 
   Future<void> logout() async {
     try {
+      try {
+        await _account.deleteSession(sessionId: 'current');
+      } on AppwriteException catch (e) {
+        developer.log('logout remote failed: ${e.message}', name: _tag);
+      }
       await LocalDataService().setSessionUserId(null);
       _currentUser = null;
       await LocalDataService().addAnalytics('logout');
@@ -244,4 +248,3 @@ class AuthService {
     }
   }
 }
-

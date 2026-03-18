@@ -40,6 +40,8 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
     return _quotes[index];
   }
 
+  double get _clampedScore => widget.score.clamp(0.0, 1.0);
+
   @override
   void initState() {
     super.initState();
@@ -47,17 +49,31 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    _progressAnimation = Tween<double>(
-      begin: 0,
-      end: widget.score,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-    _countAnimation = Tween<double>(
-      begin: 0,
-      end: widget.score * 100,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _setupAnimations(from: 0.0);
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) _controller.forward();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant RecoveryScoreCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.score != widget.score) {
+      final oldClamped = oldWidget.score.clamp(0.0, 1.0);
+      _setupAnimations(from: oldClamped);
+      _controller.forward(from: 0);
+    }
+  }
+
+  void _setupAnimations({required double from}) {
+    _progressAnimation = Tween<double>(
+      begin: from,
+      end: _clampedScore,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _countAnimation = Tween<double>(
+      begin: from * 100,
+      end: _clampedScore * 100,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
 
   @override

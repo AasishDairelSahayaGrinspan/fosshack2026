@@ -7,10 +7,12 @@ import '../theme/app_typography.dart';
 /// Minimal weekly mood line chart with smooth animation.
 class MoodChart extends StatefulWidget {
   final List<double> moodData; // 7 values, 0.0 to 1.0
+  final List<String>? dayLabels; // optional custom labels
 
   const MoodChart({
     super.key,
     this.moodData = const [0.4, 0.55, 0.6, 0.45, 0.7, 0.8, 0.65],
+    this.dayLabels,
   });
 
   @override
@@ -44,10 +46,22 @@ class _MoodChartState extends State<MoodChart>
     super.dispose();
   }
 
-  static const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const _dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  List<String> _computeDayLabels() {
+    if (widget.dayLabels != null) return widget.dayLabels!;
+    final now = DateTime.now();
+    return List.generate(7, (i) {
+      final day = now.subtract(Duration(days: 6 - i));
+      return _dayNames[day.weekday - 1];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final labels = _computeDayLabels();
+    final todayIndex = 6; // last item is today
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -86,9 +100,15 @@ class _MoodChartState extends State<MoodChart>
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: _days
-                .map((day) => Text(day, style: AppTypography.captionC(context)))
-                .toList(),
+            children: List.generate(labels.length, (i) {
+              final isToday = i == todayIndex;
+              return Text(
+                labels[i],
+                style: AppTypography.captionC(context).copyWith(
+                  fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+                ),
+              );
+            }),
           ),
         ],
       ),

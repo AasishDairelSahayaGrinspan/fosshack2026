@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:just_audio/just_audio.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
 
-/// Breathing Screen — 8 mantra gradient colors, 4/4/6 breathing cycle,
-/// expanding circle, zen music toggle.
+/// Breathing Screen — relaxation intro → 4/4/6 breathing cycle,
+/// ripple animation around the circle, zen music toggle.
 class BreathingScreen extends StatefulWidget {
   const BreathingScreen({super.key});
 
@@ -15,23 +16,31 @@ class BreathingScreen extends StatefulWidget {
   State<BreathingScreen> createState() => _BreathingScreenState();
 }
 
+enum _BreathingPhase { idle, relaxIntro, active }
+
 class _BreathingScreenState extends State<BreathingScreen>
     with TickerProviderStateMixin {
   late AnimationController _breathController;
   late AnimationController _glowController;
   late AnimationController _colorController;
-  bool _isActive = false;
+  late AnimationController _ripple1Controller;
+  late AnimationController _ripple2Controller;
+  late AnimationController _ripple3Controller;
+
+  _BreathingPhase _phase = _BreathingPhase.idle;
   bool _ambientEnabled = true;
   DateTime? _sessionStart;
   String _phaseText = 'Tap to begin';
   String _phaseSubtext = 'Find a comfortable position.';
+
+  AudioPlayer? _audioPlayer;
 
   // 4s inhale + 4s hold + 6s exhale = 14s total
   static const _cycleDuration = Duration(seconds: 14);
   static const double _inhaleEnd = 4 / 14;
   static const double _holdEnd = 8 / 14;
 
-  // 8 mantra gradient colors mapped to the global palette
+  // 8 mantra gradient colors
   static const List<List<Color>> _mantraColors = [
     [AppColors.ink304057, AppColors.coralDa5e5a],
     [AppColors.coralDa5e5a, AppColors.orangeE2814d],
@@ -44,6 +53,13 @@ class _BreathingScreenState extends State<BreathingScreen>
   ];
 
   int _colorIndex = 0;
+
+  // Zen audio URLs (royalty-free ambient tones)
+  static const List<String> _zenAudioUrls = [
+    'https://cdn.pixabay.com/audio/2022/02/23/audio_ea70ad08e0.mp3',
+    'https://cdn.pixabay.com/audio/2021/11/13/audio_cb57bdd79e.mp3',
+    'https://cdn.pixabay.com/audio/2024/11/04/audio_6e69386af8.mp3',
+  ];
 
   @override
   void initState() {
@@ -58,7 +74,6 @@ class _BreathingScreenState extends State<BreathingScreen>
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
 
-    // Color transition: 15 seconds per color shift
     _colorController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 15),
@@ -71,11 +86,65 @@ class _BreathingScreenState extends State<BreathingScreen>
         }
       });
 
+    // Ripple controllers — staggered
+    _ripple1Controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    );
+    _ripple2Controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    );
+    _ripple3Controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    );
+
     _breathController.addListener(_updatePhaseText);
+    _initAudio();
+  }
+
+  Future<void> _initAudio() async {
+    try {
+      _audioPlayer = AudioPlayer();
+      await _audioPlayer!.setLoopMode(LoopMode.all);
+      await _audioPlayer!.setVolume(0.3);
+      // Try each URL until one works
+      for (final url in _zenAudioUrls) {
+        try {
+          await _audioPlayer!.setUrl(url);
+          break;
+        } catch (_) {
+          continue;
+        }
+      }
+    } catch (_) {
+      // Audio not available — breathing still works without it
+      _audioPlayer = null;
+    }
+  }
+
+  void _startRipples() {
+    _ripple1Controller.repeat();
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) _ripple2Controller.repeat();
+    });
+    Future.delayed(const Duration(milliseconds: 1600), () {
+      if (mounted) _ripple3Controller.repeat();
+    });
+  }
+
+  void _stopRipples() {
+    _ripple1Controller.stop();
+    _ripple1Controller.reset();
+    _ripple2Controller.stop();
+    _ripple2Controller.reset();
+    _ripple3Controller.stop();
+    _ripple3Controller.reset();
   }
 
   void _updatePhaseText() {
-    if (!_isActive) return;
+    if (_phase != _BreathingPhase.active) return;
     final progress = _breathController.value;
     String newPhase;
     String newSubtext;
@@ -99,37 +168,103 @@ class _BreathingScreenState extends State<BreathingScreen>
     }
   }
 
-  void _toggleBreathing() {
+  Future<void> _startSession() async {
+    if (_phase != _BreathingPhase.idle) return;
+
+    // Phase 1: Relaxation intro
     setState(() {
-      _isActive = !_isActive;
-      if (_isActive) {
-        _sessionStart = DateTime.now();
-        _breathController.repeat();
-        _colorController.forward(from: 0);
-        _phaseText = 'Inhale';
-        _phaseSubtext = 'Breathe in slowly...';
-      } else {
-        // Save completed session
-        if (_sessionStart != null) {
-          final duration = DateTime.now().difference(_sessionStart!).inSeconds;
-          final user = AuthService().currentUser;
-          if (user != null && duration > 2) {
-            DatabaseService().saveBreathingSession(
-              userId: user.$id,
-              durationSeconds: duration,
-              ambientEnabled: _ambientEnabled,
-            );
-          }
-          _sessionStart = null;
-        }
-        _breathController.stop();
-        _breathController.reset();
-        _colorController.stop();
-        _colorController.reset();
-        _phaseText = 'Tap to begin';
-        _phaseSubtext = 'Find a comfortable position.';
-      }
+      _phase = _BreathingPhase.relaxIntro;
+      _phaseText = 'Sit comfortably';
+      _phaseSubtext = 'Close your eyes and relax your shoulders.';
     });
+
+    _startRipples();
+
+    // Start zen music during intro
+    if (_ambientEnabled && _audioPlayer != null) {
+      try {
+        await _audioPlayer!.seek(Duration.zero);
+        _audioPlayer!.play();
+      } catch (_) {}
+    }
+
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted || _phase != _BreathingPhase.relaxIntro) return;
+
+    setState(() {
+      _phaseText = 'Relax your body';
+      _phaseSubtext = 'Let go of any tension...';
+    });
+
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted || _phase != _BreathingPhase.relaxIntro) return;
+
+    setState(() {
+      _phaseText = 'Ready';
+      _phaseSubtext = 'Let\'s begin breathing together.';
+    });
+
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted || _phase != _BreathingPhase.relaxIntro) return;
+
+    // Phase 2: Start breathing
+    setState(() {
+      _phase = _BreathingPhase.active;
+      _sessionStart = DateTime.now();
+      _phaseText = 'Inhale';
+      _phaseSubtext = 'Breathe in slowly...';
+    });
+
+    _breathController.repeat();
+    _colorController.forward(from: 0);
+  }
+
+  void _stopSession() {
+    // Save session
+    if (_sessionStart != null) {
+      final duration = DateTime.now().difference(_sessionStart!).inSeconds;
+      final user = AuthService().currentUser;
+      if (user != null && duration > 2) {
+        DatabaseService().saveBreathingSession(
+          userId: user.$id,
+          durationSeconds: duration,
+          ambientEnabled: _ambientEnabled,
+        );
+      }
+      _sessionStart = null;
+    }
+
+    _breathController.stop();
+    _breathController.reset();
+    _colorController.stop();
+    _colorController.reset();
+    _stopRipples();
+
+    // Stop music
+    _audioPlayer?.pause();
+
+    setState(() {
+      _phase = _BreathingPhase.idle;
+      _phaseText = 'Tap to begin';
+      _phaseSubtext = 'Find a comfortable position.';
+    });
+  }
+
+  void _onCircleTap() {
+    if (_phase == _BreathingPhase.idle) {
+      _startSession();
+    } else {
+      _stopSession();
+    }
+  }
+
+  void _toggleAmbient() {
+    setState(() => _ambientEnabled = !_ambientEnabled);
+    if (_ambientEnabled && _phase != _BreathingPhase.idle) {
+      _audioPlayer?.play();
+    } else {
+      _audioPlayer?.pause();
+    }
   }
 
   @override
@@ -137,16 +272,20 @@ class _BreathingScreenState extends State<BreathingScreen>
     _breathController.dispose();
     _glowController.dispose();
     _colorController.dispose();
+    _ripple1Controller.dispose();
+    _ripple2Controller.dispose();
+    _ripple3Controller.dispose();
+    _audioPlayer?.dispose();
     super.dispose();
   }
 
   double _circleScale(double progress) {
     if (progress < _inhaleEnd) {
-      return progress / _inhaleEnd; // 0 → 1
+      return progress / _inhaleEnd;
     } else if (progress < _holdEnd) {
-      return 1.0; // hold
+      return 1.0;
     } else {
-      return 1.0 - ((progress - _holdEnd) / (1 - _holdEnd)); // 1 → 0
+      return 1.0 - ((progress - _holdEnd) / (1 - _holdEnd));
     }
   }
 
@@ -175,10 +314,9 @@ class _BreathingScreenState extends State<BreathingScreen>
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: _isActive ? [c1, c2] : [
-                  AppColors.warmLavender,
-                  AppColors.softPeach,
-                ],
+                colors: _phase != _BreathingPhase.idle
+                    ? [c1, c2]
+                    : [AppColors.warmLavender, AppColors.softPeach],
               ),
             ),
             child: child,
@@ -191,8 +329,8 @@ class _BreathingScreenState extends State<BreathingScreen>
               Expanded(
                 child: Center(
                   child: GestureDetector(
-                    onTap: _toggleBreathing,
-                    child: _buildBreathCircle(),
+                    onTap: _onCircleTap,
+                    child: _buildBreathCircleWithRipples(),
                   ),
                 ),
               ),
@@ -203,7 +341,7 @@ class _BreathingScreenState extends State<BreathingScreen>
                   return FadeTransition(opacity: animation, child: child);
                 },
                 child: Column(
-                  key: ValueKey<String>(_phaseText),
+                  key: ValueKey<String>('$_phaseText$_phaseSubtext'),
                   children: [
                     Text(
                       _phaseText,
@@ -227,11 +365,54 @@ class _BreathingScreenState extends State<BreathingScreen>
     );
   }
 
+  Widget _buildBreathCircleWithRipples() {
+    return SizedBox(
+      width: 300,
+      height: 300,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Ripple 1
+          _buildRipple(_ripple1Controller),
+          // Ripple 2
+          _buildRipple(_ripple2Controller),
+          // Ripple 3
+          _buildRipple(_ripple3Controller),
+          // Main circle
+          _buildBreathCircle(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRipple(AnimationController controller) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        final value = controller.value;
+        final size = 140.0 + (value * 160.0);
+        final opacity = (1.0 - value) * 0.25;
+
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: opacity),
+              width: 1.5,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildBreathCircle() {
     return AnimatedBuilder(
       animation: _breathController,
       builder: (context, child) {
-        final scale = _isActive
+        final scale = _phase == _BreathingPhase.active
             ? 0.5 + (_circleScale(_breathController.value) * 0.5)
             : 0.5;
 
@@ -291,7 +472,10 @@ class _BreathingScreenState extends State<BreathingScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
+            onTap: () {
+              if (_phase != _BreathingPhase.idle) _stopSession();
+              Navigator.of(context).pop();
+            },
             child: Container(
               width: 42,
               height: 42,
@@ -326,26 +510,30 @@ class _BreathingScreenState extends State<BreathingScreen>
         children: [
           // Play/Pause
           GestureDetector(
-            onTap: _toggleBreathing,
+            onTap: _onCircleTap,
             child: AnimatedContainer(
               duration: AppTheme.fadeInDuration,
               width: 60,
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _isActive
+                color: _phase != _BreathingPhase.idle
                     ? AppColors.warmCoral.withValues(alpha: 0.15)
                     : AppColors.softIndigo.withValues(alpha: 0.15),
                 border: Border.all(
-                  color: _isActive
+                  color: _phase != _BreathingPhase.idle
                       ? AppColors.warmCoral.withValues(alpha: 0.3)
                       : AppColors.softIndigo.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
               child: Icon(
-                _isActive ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                color: _isActive ? AppColors.warmCoral : AppColors.softIndigo,
+                _phase != _BreathingPhase.idle
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                color: _phase != _BreathingPhase.idle
+                    ? AppColors.warmCoral
+                    : AppColors.softIndigo,
                 size: 28,
               ),
             ),
@@ -353,7 +541,7 @@ class _BreathingScreenState extends State<BreathingScreen>
           const SizedBox(width: 24),
           // Ambient sound toggle
           GestureDetector(
-            onTap: () => setState(() => _ambientEnabled = !_ambientEnabled),
+            onTap: _toggleAmbient,
             child: AnimatedContainer(
               duration: AppTheme.fadeInDuration,
               width: 60,

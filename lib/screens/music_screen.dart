@@ -8,8 +8,6 @@ import '../services/user_preferences_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
-import '../widgets/doodle_refresh.dart';
-
 /// Music Screen - mood-aware playlist companion.
 class MusicScreen extends StatefulWidget {
   const MusicScreen({super.key});
@@ -239,28 +237,25 @@ class _MusicScreenState extends State<MusicScreen> {
           ),
         ),
         child: SafeArea(
-          child: DoodleRefresh(
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
                   Text(
                     'Music',
                     style: AppTypography.heroHeading(color: Colors.white),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     'Playlists for your mood.',
                     style: AppTypography.subtitle(
                       color: Colors.white.withValues(alpha: 0.75),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   if (_recommendation != null) ...[
                     Container(
                       width: double.infinity,
@@ -286,29 +281,33 @@ class _MusicScreenState extends State<MusicScreen> {
                               style: AppTypography.caption(color: Colors.white),
                             ),
                           ),
-                          IconButton(
-                            onPressed: () =>
-                                AppNavigationService().clearMusicRecommendation(),
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              color: Colors.white70,
-                              size: 18,
+                          GestureDetector(
+                            onTap: () {
+                              AppNavigationService().clearMusicRecommendation();
+                              setState(() => _recommendation = null);
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(
+                                Icons.close_rounded,
+                                color: Colors.white70,
+                                size: 18,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                   ],
                   Text(
                     'For Your Mood',
                     style: AppTypography.sectionHeading(color: Colors.white),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   ..._playlists.map((pl) => _buildPlaylistCard(pl)),
-                  const SizedBox(height: 32),
-                ],
-              ),
+                const SizedBox(height: 20),
+              ],
             ),
           ),
         ),

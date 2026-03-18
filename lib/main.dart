@@ -10,6 +10,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LocalDataService().init();
   await NotificationService().init();
+  await ThemeProvider().loadSavedTheme();
+  // Schedule gentle engagement notifications for today.
+  NotificationService().scheduleEngagementNotifications();
+  // Reset inactivity reminder on each launch (48h from now).
+  NotificationService().scheduleInactivityReminder();
+  // Schedule default sleep & breathing reminders.
+  NotificationService().scheduleSleepReminder();
+  NotificationService().scheduleBreathingReminder();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

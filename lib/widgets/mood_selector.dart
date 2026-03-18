@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 
 /// Mood Selector — 5 emotional states with glow + scale animation.
 class MoodSelector extends StatefulWidget {
@@ -34,6 +35,8 @@ class _MoodSelectorState extends State<MoodSelector> {
       );
       // Also update streak on mood selection (counts as daily check-in)
       await DatabaseService().updateStreak(user.$id);
+      // Schedule a mood-based follow-up notification (2 hours later).
+      NotificationService().scheduleMoodFollowUp(_moodScores[index]);
       widget.onMoodSaved?.call(_moodScores[index]);
     } catch (e, st) {
       developer.log('Failed to save mood', name: 'MoodSelector', error: e, stackTrace: st);

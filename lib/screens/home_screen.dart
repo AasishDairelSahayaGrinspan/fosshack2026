@@ -15,10 +15,12 @@ import '../services/user_preferences_service.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
 import '../services/app_navigation_service.dart';
+import '../services/notification_service.dart';
 import 'breathing_screen.dart';
 import 'sleep_tracker_screen.dart';
 import 'journal_screen.dart';
 import 'timer_screen.dart';
+import 'insights_screen.dart';
 
 /// Unravel Home Screen - the emotional dashboard.
 class HomeScreen extends StatefulWidget {
@@ -33,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<double> _moodData = List<double>.filled(7, 0.5);
   int _streakDays = 0;
 
-  String? _needMessage;
+  List<_Suggestion> _needSuggestions = [];
   bool _highlightTimer = false;
 
   @override
@@ -54,18 +56,23 @@ class _HomeScreenState extends State<HomeScreen> {
     final results = await Future.wait<dynamic>([scoreFuture, moodFuture, streakFuture]);
     if (!mounted) return;
 
-    final score = (results[0] as num?)?.toDouble() ?? 100.0;
+    final rawScore = (results[0] as num?)?.toDouble() ?? 100.0;
     final moodResult = results[1] as LocalRowList;
     final streakDoc = results[2] as LocalRow;
 
     setState(() {
-      _recoveryScore = (score / 100.0).clamp(0.0, 1.0);
+      // rawScore is 0–100 from database; convert to 0.0–1.0 for the widget.
+      _recoveryScore = (rawScore / 100.0).clamp(0.0, 1.0);
       if (moodResult.rows.isNotEmpty) {
         _moodData = moodResult.rows
             .map<double>((d) => ((d.data['mood'] as num?)?.toDouble() ?? 0.5))
             .toList();
       }
       _streakDays = (streakDoc.data['currentStreak'] as num?)?.toInt() ?? 0;
+      // Schedule streak encouragement if streak >= 3
+      if (_streakDays >= 3) {
+        NotificationService().scheduleStreakEncouragement(_streakDays);
+      }
     });
   }
 
@@ -111,42 +118,55 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleNeedSelection(String need) {
+    setState(() {
+      _highlightTimer = false;
+    });
+
     switch (need) {
       case 'Focus':
         setState(() {
-          _highlightTimer = true;
-          _needMessage = 'Use Timer to gain focus, or open Music for lofi focus tracks.';
-        });
-        AppNavigationService().highlightTab(AppTabTarget.music);
-        AppNavigationService().setMusicRecommendation('Focus mood: Try Focus Mode / Instrumental calm.');
-        Future.delayed(const Duration(seconds: 3), () {
-          if (!mounted) return;
-          setState(() => _highlightTimer = false);
-          AppNavigationService().clearHighlight();
+          _needSuggestions = [
+            _Suggestion(Icons.timer_outlined, 'Try a focus timer session', AppColors.sageGreen, () => _navigate(context, const TimerScreen())),
+            _Suggestion(Icons.music_note_outlined, 'Listen to instrumental focus music', AppColors.softIndigo, () {
+              AppNavigationService().setMusicRecommendation('Focus mood: Try Focus Mode / Instrumental calm.');
+              AppNavigationService().requestTab(AppTabTarget.music);
+            }),
+            _Suggestion(Icons.air_rounded, 'Start with a short breathing exercise', AppColors.warmCoral, () => _navigate(context, const BreathingScreen())),
+          ];
         });
         break;
       case 'Calm':
         setState(() {
-          _needMessage = 'Calm mode: open Music and play gentle calming songs.';
-          _highlightTimer = false;
+          _needSuggestions = [
+            _Suggestion(Icons.air_rounded, 'Try a slow breathing session', AppColors.softIndigo, () => _navigate(context, const BreathingScreen())),
+            _Suggestion(Icons.music_note_outlined, 'Play gentle calming music', AppColors.sageGreen, () {
+              AppNavigationService().setMusicRecommendation('Calm mood: Try Soft Tamil Evenings or Deep Calm.');
+              AppNavigationService().requestTab(AppTabTarget.music);
+            }),
+            _Suggestion(Icons.edit_note_rounded, 'Write down what\'s on your mind', AppColors.orangeE2814d, () => _navigate(context, const JournalScreen())),
+          ];
         });
-        AppNavigationService().setMusicRecommendation('Calm mood: Try Soft Tamil Evenings or Deep Calm.');
-        AppNavigationService().requestTab(AppTabTarget.music);
         break;
       case 'Release thoughts':
         setState(() {
-          _needMessage = 'Opening Journal so you can release your thoughts.';
-          _highlightTimer = false;
+          _needSuggestions = [
+            _Suggestion(Icons.edit_note_rounded, 'Open your journal and write freely', AppColors.orangeE2814d, () => _navigate(context, const JournalScreen())),
+            _Suggestion(Icons.air_rounded, 'Breathe first, then write', AppColors.softIndigo, () => _navigate(context, const BreathingScreen())),
+            _Suggestion(Icons.people_outline_rounded, 'Share with the community', AppColors.warmCoral, () => AppNavigationService().requestTab(AppTabTarget.community)),
+          ];
         });
-        _navigate(context, const JournalScreen());
         break;
       case 'Rest':
         setState(() {
-          _needMessage = 'Rest mode: listen to mild, slow tracks in Music.';
-          _highlightTimer = false;
+          _needSuggestions = [
+            _Suggestion(Icons.nightlight_outlined, 'Log your sleep and wind down', AppColors.warmCoral, () => _navigate(context, const SleepTrackerScreen())),
+            _Suggestion(Icons.music_note_outlined, 'Play soft ambient tracks', AppColors.sageGreen, () {
+              AppNavigationService().setMusicRecommendation('Rest mood: Try Sleep Mode and soft ambient tracks.');
+              AppNavigationService().requestTab(AppTabTarget.music);
+            }),
+            _Suggestion(Icons.air_rounded, 'A gentle breathing session before rest', AppColors.softIndigo, () => _navigate(context, const BreathingScreen())),
+          ];
         });
-        AppNavigationService().setMusicRecommendation('Rest mood: Try Sleep Mode and soft ambient tracks.');
-        AppNavigationService().requestTab(AppTabTarget.music);
         break;
     }
   }
@@ -185,42 +205,68 @@ class _HomeScreenState extends State<HomeScreen> {
                         onNeedSelected: _handleNeedSelection,
                       ),
                     ),
-                    if (_needMessage != null) ...[
-                      const SizedBox(height: 12),
+                    if (_needSuggestions.isNotEmpty) ...[
+                      const SizedBox(height: 14),
                       Container(
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.softIndigo.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                          color: AppColors.card(context),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
                           border: Border.all(
-                            color: AppColors.softIndigo.withValues(alpha: 0.35),
+                            color: AppColors.softIndigo.withValues(alpha: 0.25),
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.softIndigo.withValues(alpha: 0.22),
-                              blurRadius: 16,
-                              spreadRadius: 1,
-                            ),
-                          ],
+                          boxShadow: AppColors.subtleShadow,
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.auto_awesome_rounded, size: 18, color: AppColors.softIndigo),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _needMessage!,
-                                style: AppTypography.caption(color: AppColors.primary(context)),
-                              ),
+                            Row(
+                              children: [
+                                const Icon(Icons.auto_awesome_rounded, size: 16, color: AppColors.softIndigo),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Here are some things you can try',
+                                  style: AppTypography.captionC(context).copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
-                            TextButton(
-                              onPressed: () => AppNavigationService().requestTab(AppTabTarget.music),
-                              child: Text(
-                                'Music',
-                                style: AppTypography.caption(color: AppColors.softIndigo)
-                                    .copyWith(fontWeight: FontWeight.w600),
+                            const SizedBox(height: 12),
+                            ..._needSuggestions.map((s) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: GestureDetector(
+                                onTap: s.onTap,
+                                behavior: HitTestBehavior.opaque,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        color: s.color.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(s.icon, color: s.color, size: 16),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        s.label,
+                                        style: AppTypography.captionC(context).copyWith(
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: AppColors.tertiary(context),
+                                      size: 18,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                            )),
                           ],
                         ),
                       ),
@@ -268,6 +314,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       label: 'Journal',
                       iconColor: AppColors.orangeE2814d,
                       onTap: () => _navigate(context, const JournalScreen()),
+                    ),
+                    QuickActionButton(
+                      icon: Icons.insights_rounded,
+                      label: 'Insights',
+                      iconColor: AppColors.coralDa5e5a,
+                      onTap: () => _navigate(context, const InsightsScreen()),
                     ),
                   ]),
                 ),
@@ -371,4 +423,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+}
+
+class _Suggestion {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _Suggestion(this.icon, this.label, this.color, this.onTap);
 }

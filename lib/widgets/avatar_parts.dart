@@ -6,6 +6,8 @@ import 'dart:ui';
 class AvatarParts {
   AvatarParts._();
 
+  static const List<String> presentationLabels = ['Female', 'Male'];
+
   // ─── Skin Tones (8 options) ───
   static const List<Color> skinTones = [
     Color(0xFFFDEBD0), // Very light
@@ -73,6 +75,13 @@ class AvatarParts {
     'Ponytail',
     'Bald',
   ];
+
+  static const List<int> feminineHairStyles = [5, 6, 7, 8, 10, 12, 13, 14, 9, 15, 4, 0];
+  static const List<int> masculineHairStyles = [0, 1, 2, 3, 4, 9, 10, 11, 12, 15, 14, 5];
+
+  static List<int> hairStyleIndicesForPresentation(int presentation) {
+    return presentation == 1 ? masculineHairStyles : feminineHairStyles;
+  }
 
   // ─── Eye Style Names (9 styles) ───
   static const List<String> eyeStyleNames = [

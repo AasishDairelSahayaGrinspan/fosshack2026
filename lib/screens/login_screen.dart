@@ -1,8 +1,5 @@
-import 'dart:developer' as developer;
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:appwrite/enums.dart' as enums;
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -17,7 +14,7 @@ import 'main_shell.dart';
 
 /// Unravel Login Screen
 /// "Welcome back." — spa-like entry experience.
-/// Frosted glass card with social login, email/password auth.
+/// Frosted glass card with email/password auth.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -115,46 +112,6 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  Future<void> _onSocialLogin(String provider) async {
-    setState(() {
-      _isVerifying = true;
-      _errorMessage = null;
-    });
-    try {
-      final oauthProvider = provider == 'google'
-          ? enums.OAuthProvider.google
-          : enums.OAuthProvider.apple;
-      await AuthService().oAuthLogin(oauthProvider);
-      if (!mounted) return;
-      setState(() {
-        _isVerifying = false;
-        _showSuccess = true;
-      });
-      await Future.delayed(const Duration(milliseconds: 900));
-      if (!mounted) return;
-      _navigateAfterAuth();
-    } catch (e) {
-      developer.log('Login screen caught error: ${e.runtimeType}: $e');
-      if (!mounted) return;
-      final errorStr = e.toString();
-      String errorMsg = 'Login failed. Please try again.';
-      if (errorStr.contains('Network') || errorStr.contains('socket')) {
-        errorMsg = 'Network error. Check your connection and try again.';
-      } else if (errorStr.contains('401') ||
-          errorStr.contains('unauthorized')) {
-        errorMsg = 'Google OAuth not configured. Contact support.';
-      } else if (errorStr.contains('Invalid OAuth2 Response')) {
-        errorMsg = 'OAuth redirect failed. Check Appwrite platform config.';
-      } else if (errorStr.contains('CANCELED') || errorStr.contains('cancel')) {
-        errorMsg = 'Login was cancelled.';
-      }
-      setState(() {
-        _isVerifying = false;
-        _errorMessage = errorMsg;
-      });
-    }
-  }
-
   Future<void> _navigateAfterAuth() async {
     await UserPreferencesService().loadFromRemote();
     CommunityService().communityPreference =
@@ -229,30 +186,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                                 const SizedBox(height: 32),
 
-                                // ─── Social Login Buttons ───
-                                PillButton(
-                                  label: 'Continue with Google',
-                                  width: double.infinity,
-                                  icon: _buildGoogleIcon(),
-                                  backgroundColor: Colors.white,
-                                  borderColor: AppColors.inputBorder,
-                                  onTap: () => _onSocialLogin('google'),
-                                ),
-                                const SizedBox(height: 12),
-                                PillButton(
-                                  label: 'Continue with Apple',
-                                  width: double.infinity,
-                                  icon: Icon(
-                                    Icons.apple,
-                                    color: AppColors.primary(context),
-                                    size: 20,
-                                  ),
-                                  backgroundColor: Colors.white,
-                                  borderColor: AppColors.inputBorder,
-                                  onTap: () => _onSocialLogin('apple'),
-                                ),
-
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 8),
                                 PillButton(
                                   label: 'Continue as Guest',
                                   width: double.infinity,
@@ -268,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   onTap: _onGuestLogin,
                                 ),
 
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 20),
 
                                 // ─── Divider ───
                                 Row(
@@ -284,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         horizontal: 16,
                                       ),
                                       child: Text(
-                                        'or',
+                                        'or use email',
                                         style: AppTypography.captionC(context),
                                       ),
                                     ),
@@ -507,60 +441,4 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
-
-  // ─── Google Icon ───
-  Widget _buildGoogleIcon() {
-    return const SizedBox(
-      width: 20,
-      height: 20,
-      child: CustomPaint(painter: _GoogleLogoPainter()),
-    );
-  }
-}
-
-/// Multicolor Google "G" logo painter.
-class _GoogleLogoPainter extends CustomPainter {
-  const _GoogleLogoPainter();
-
-  static const Color _blue = Color(0xFF4285F4);
-  static const Color _red = Color(0xFFEA4335);
-  static const Color _yellow = Color(0xFFFBBC05);
-  static const Color _green = Color(0xFF34A853);
-
-  double _deg(double d) => d * (math.pi / 180);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = size.width * 0.2;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - stroke) / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-
-    Paint arcPaint(Color c) => Paint()
-      ..color = c
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.butt;
-
-    canvas.drawArc(rect, _deg(-45), _deg(85), false, arcPaint(_blue));
-    canvas.drawArc(rect, _deg(40), _deg(95), false, arcPaint(_red));
-    canvas.drawArc(rect, _deg(135), _deg(95), false, arcPaint(_yellow));
-    canvas.drawArc(rect, _deg(230), _deg(95), false, arcPaint(_green));
-
-    final barPaint = Paint()
-      ..color = _blue
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromLTWH(
-        size.width * 0.50,
-        size.height * 0.42,
-        size.width * 0.36,
-        stroke * 0.55,
-      ),
-      barPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

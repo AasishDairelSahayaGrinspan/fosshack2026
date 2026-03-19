@@ -302,6 +302,10 @@ class DatabaseService {
 
   Future<void> _recomputeRecoveryFromMood(String userId) async {
     final entries = LocalDataService().getMoodEntries(userId);
+    final prefs = LocalDataService().getUserPrefs(userId);
+    final baseline = ((prefs['moodBaseline'] as num?)?.toDouble() ?? 0.5)
+        .clamp(0.0, 1.0);
+
     final byDay = <String, List<double>>{};
     for (final entry in entries) {
       final ts = DateTime.tryParse((entry['timestamp'] as String?) ?? '');
@@ -311,24 +315,43 @@ class DatabaseService {
       byDay[key]!.add((entry['mood'] as num).toDouble());
     }
     final keys = byDay.keys.toList()..sort();
-    double score = 100.0;
+    double score = (50.0 + (baseline * 35.0)).clamp(0.0, 100.0);
+    double? prevAvg;
     final history = <Map<String, dynamic>>[];
+
     for (final key in keys) {
       final values = byDay[key]!;
       final avg = values.reduce((a, b) => a + b) / values.length;
-      final delta = (avg - 0.5) * 18.0;
-      score = (score + delta).clamp(0.0, 100.0);
+
+      final baselineShift = (avg - baseline) * 22.0;
+      final trend = prevAvg == null ? 0.0 : (avg - prevAvg) * 18.0;
+      final volatilityPenalty =
+          prevAvg == null ? 0.0 : (avg - prevAvg).abs() * 6.0;
+      final consistencyBonus = min(values.length, 3) * 1.2;
+      final delta =
+          baselineShift + trend + consistencyBonus - volatilityPenalty;
+
+      final nextScore = (score + delta).clamp(0.0, 100.0);
+      // Smooth updates to avoid abrupt score spikes from a single mood entry.
+      score = ((score * 0.88) + (nextScore * 0.12)).clamp(0.0, 100.0);
+      prevAvg = avg;
+
       history.add(<String, dynamic>{
         'date': key,
         'score': double.parse(score.toStringAsFixed(2)),
         'avgMood': double.parse(avg.toStringAsFixed(3)),
+        'baseline': double.parse(baseline.toStringAsFixed(3)),
+        'entries': values.length,
       });
     }
+
     if (history.isEmpty) {
       history.add(<String, dynamic>{
         'date': _dayKey(DateTime.now()),
-        'score': 100.0,
-        'avgMood': 0.5,
+        'score': double.parse(score.toStringAsFixed(2)),
+        'avgMood': baseline,
+        'baseline': baseline,
+        'entries': 0,
       });
     }
     await LocalDataService().saveRecoveryHistory(userId, history);

@@ -415,6 +415,12 @@ class _AvatarPainter extends CustomPainter {
 
     if (hairStyle == 15) return; // Bald
 
+    // Keep long hair inside upper avatar region to avoid spilling over face/body.
+    canvas.save();
+    canvas.clipRect(
+      Rect.fromLTWH(cx - s * 0.26, cy - s * 0.32, s * 0.52, s * 0.48),
+    );
+
     switch (hairStyle) {
       case 0: // Short Crop
         final path = Path();
@@ -581,6 +587,8 @@ class _AvatarPainter extends CustomPainter {
         canvas.drawPath(tailPath, hairPaint);
         break;
     }
+
+      canvas.restore();
   }
 
   void _drawAccessory(Canvas canvas, double s, double cx, double cy) {

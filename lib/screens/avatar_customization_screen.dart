@@ -301,6 +301,22 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildSectionLabel('Presentation'),
+          _buildOptionRow(
+            itemCount: AvatarParts.presentationLabels.length,
+            selectedIndex: _config.presentation,
+            labels: AvatarParts.presentationLabels,
+            onSelect: (i) {
+              setState(() {
+                _config.presentation = i;
+                final allowed = AvatarParts.hairStyleIndicesForPresentation(i);
+                if (!allowed.contains(_config.hairStyle)) {
+                  _config.hairStyle = allowed.first;
+                }
+              });
+            },
+          ),
+          const SizedBox(height: 20),
           _buildSectionLabel('Face Shape'),
           _buildOptionRow(
             itemCount: AvatarParts.faceShapeNames.length,
@@ -321,17 +337,59 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
   }
 
   Widget _buildHairOptions() {
+    final allowedStyles = AvatarParts.hairStyleIndicesForPresentation(
+      _config.presentation,
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionLabel('Hair Style'),
-          _buildOptionRow(
-            itemCount: AvatarParts.hairStyleNames.length,
-            selectedIndex: _config.hairStyle,
-            labels: AvatarParts.hairStyleNames,
-            onSelect: (i) => setState(() => _config.hairStyle = i),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: allowedStyles.map((styleIndex) {
+              final isSelected = _config.hairStyle == styleIndex;
+              return GestureDetector(
+                onTap: () {
+                  setState(() => _config.hairStyle = styleIndex);
+                  _syncToPrefsIfCompact();
+                },
+                child: AnimatedContainer(
+                  duration: AppTheme.fadeInDuration,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.softIndigo.withValues(alpha: 0.15)
+                        : AppColors.card(context),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.softIndigo.withValues(alpha: 0.5)
+                          : AppColors.dividerColor(context),
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Text(
+                    AvatarParts.hairStyleNames[styleIndex],
+                    style: AppTypography.caption(
+                      color: isSelected
+                          ? AppColors.softIndigo
+                          : AppColors.secondary(context),
+                    ).copyWith(
+                      fontWeight:
+                          isSelected ? FontWeight.w500 : FontWeight.w300,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
           const SizedBox(height: 20),
           _buildSectionLabel('Hair Color'),

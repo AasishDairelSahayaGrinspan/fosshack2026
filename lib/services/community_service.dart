@@ -19,7 +19,7 @@ class CommunityService extends ChangeNotifier {
   static const String _tag = 'CommunityService';
 
   String communityPreference = 'yes';
-  bool get canPost => communityPreference != 'no';
+  bool get canPost => communityPreference == 'yes';
 
   final DatabaseService _db = DatabaseService();
   List<Post> _posts = <Post>[];

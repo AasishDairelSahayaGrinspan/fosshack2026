@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../models/community_models.dart';
 import '../services/community_service.dart';
+import '../services/user_preferences_service.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/doodle_refresh.dart';
 import 'create_post_screen.dart';
@@ -41,6 +42,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   @override
   void initState() {
     super.initState();
+    _service.communityPreference = UserPreferencesService().communityPreference;
     _service.addListener(_onServiceUpdate);
     _service.subscribeToRealtime();
     _loadFeed();

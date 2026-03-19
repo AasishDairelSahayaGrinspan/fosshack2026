@@ -4,6 +4,7 @@ import 'dart:math';
 /// Configuration for the custom Snapchat-like avatar system.
 /// Each field indexes into a list of predefined options.
 class AvatarConfig {
+  int presentation; // 0=female, 1=male
   int faceShape; // 0-5 options
   int skinTone; // 0-7 (predefined hex colors)
   int hairStyle; // 0-15 styles
@@ -15,6 +16,7 @@ class AvatarConfig {
   int clothingColor; // 0-7 colors
 
   AvatarConfig({
+    this.presentation = 0,
     this.faceShape = 0,
     this.skinTone = 2,
     this.hairStyle = 0,
@@ -29,10 +31,15 @@ class AvatarConfig {
   /// Generate a random avatar config.
   factory AvatarConfig.random() {
     final rng = Random();
+    final presentation = rng.nextBool() ? 1 : 0;
+    final hairPool = presentation == 1
+        ? AvatarHairPools.masculine
+        : AvatarHairPools.feminine;
     return AvatarConfig(
+      presentation: presentation,
       faceShape: rng.nextInt(6),
       skinTone: rng.nextInt(8),
-      hairStyle: rng.nextInt(16),
+      hairStyle: hairPool[rng.nextInt(hairPool.length)],
       hairColor: rng.nextInt(10),
       eyeStyle: rng.nextInt(9),
       mouthStyle: rng.nextInt(7),
@@ -44,6 +51,7 @@ class AvatarConfig {
 
   factory AvatarConfig.fromJson(Map<String, dynamic> json) {
     return AvatarConfig(
+      presentation: (json['presentation'] as num?)?.toInt() ?? 0,
       faceShape: (json['faceShape'] as num?)?.toInt() ?? 0,
       skinTone: (json['skinTone'] as num?)?.toInt() ?? 2,
       hairStyle: (json['hairStyle'] as num?)?.toInt() ?? 0,
@@ -66,6 +74,7 @@ class AvatarConfig {
   }
 
   Map<String, dynamic> toJson() => {
+      'presentation': presentation,
         'faceShape': faceShape,
         'skinTone': skinTone,
         'hairStyle': hairStyle,
@@ -80,6 +89,7 @@ class AvatarConfig {
   String toJsonString() => jsonEncode(toJson());
 
   AvatarConfig copyWith({
+    int? presentation,
     int? faceShape,
     int? skinTone,
     int? hairStyle,
@@ -91,6 +101,7 @@ class AvatarConfig {
     int? clothingColor,
   }) {
     return AvatarConfig(
+      presentation: presentation ?? this.presentation,
       faceShape: faceShape ?? this.faceShape,
       skinTone: skinTone ?? this.skinTone,
       hairStyle: hairStyle ?? this.hairStyle,
@@ -102,4 +113,11 @@ class AvatarConfig {
       clothingColor: clothingColor ?? this.clothingColor,
     );
   }
+}
+
+class AvatarHairPools {
+  AvatarHairPools._();
+
+  static const List<int> feminine = [5, 6, 7, 8, 10, 12, 13, 14, 9, 15, 4, 0];
+  static const List<int> masculine = [0, 1, 2, 3, 4, 9, 10, 11, 12, 15, 14, 5];
 }

@@ -8,6 +8,7 @@ import '../widgets/gradient_background.dart';
 import '../widgets/doodle_refresh.dart';
 import '../models/avatar_config.dart';
 import '../services/auth_service.dart';
+import '../services/community_service.dart';
 import '../services/database_service.dart';
 import '../services/user_preferences_service.dart';
 import '../services/notification_service.dart';
@@ -69,6 +70,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showCommunityDialog(BuildContext context) {
+    final prefs = UserPreferencesService();
+
+    Future<void> savePreference(String value) async {
+      prefs.communityPreference = value;
+      CommunityService().communityPreference = value;
+      await prefs.saveToRemote();
+      if (mounted) setState(() {});
+      if (context.mounted) Navigator.pop(context);
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.card(context),
@@ -89,24 +100,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 title: Text('Public - Share insights', style: AppTypography.uiLabelC(context)),
                 leading: const Icon(Icons.public_rounded, color: AppColors.softIndigo),
-                trailing: UserPreferencesService().communityPreference == 'yes' ? const Icon(Icons.check_circle, color: AppColors.sageGreen) : null,
-                onTap: () async {
-                  UserPreferencesService().communityPreference = 'yes';
-                  await UserPreferencesService().saveToRemote();
-                  if (mounted) setState(() {});
-                  if (context.mounted) Navigator.pop(context);
-                },
+                trailing: prefs.communityPreference == 'yes' ? const Icon(Icons.check_circle, color: AppColors.sageGreen) : null,
+                onTap: () => savePreference('yes'),
+              ),
+              ListTile(
+                title: Text('Browse only', style: AppTypography.uiLabelC(context)),
+                leading: Icon(Icons.visibility_outlined, color: AppColors.tertiary(context)),
+                trailing: prefs.communityPreference == 'browsing' ? const Icon(Icons.check_circle, color: AppColors.sageGreen) : null,
+                onTap: () => savePreference('browsing'),
               ),
               ListTile(
                 title: Text('Private - Just for me', style: AppTypography.uiLabelC(context)),
                 leading: Icon(Icons.lock_outline_rounded, color: AppColors.tertiary(context)),
-                trailing: UserPreferencesService().communityPreference != 'yes' ? const Icon(Icons.check_circle, color: AppColors.sageGreen) : null,
-                onTap: () async {
-                  UserPreferencesService().communityPreference = 'no';
-                  await UserPreferencesService().saveToRemote();
-                  if (mounted) setState(() {});
-                  if (context.mounted) Navigator.pop(context);
-                },
+                trailing: prefs.communityPreference == 'no' ? const Icon(Icons.check_circle, color: AppColors.sageGreen) : null,
+                onTap: () => savePreference('no'),
               ),
               const SizedBox(height: 16),
             ],
@@ -307,12 +314,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: AppColors.tertiary(context),
                       ),
                       onTap: () async {
+                        final prefs = UserPreferencesService();
                         final granted =
                             await NotificationService().requestPermissionIfNeeded();
                         await NotificationService().openAppNotificationSettings();
                         if (granted) {
-                          await NotificationService()
-                              .showTrackerEnabledGreeting();
+                          final service = NotificationService();
+                          await service.showTrackerEnabledGreeting();
+                          await service.schedulePersonalizedReminders(
+                            sleepSchedule: prefs.sleepSchedule,
+                            concerns: prefs.concerns,
+                            moodBaseline: prefs.moodBaseline,
+                            communityPreference: prefs.communityPreference,
+                          );
                         }
                       },
                     )

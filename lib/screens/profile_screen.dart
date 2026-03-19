@@ -68,6 +68,154 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _showCommunityDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Community Participation', style: AppTypography.heroHeadingC(context)),
+              const SizedBox(height: 8),
+              Text('Share your recovery scores and mood trends anonymously with the Unravel community.', style: AppTypography.captionC(context)),
+              const SizedBox(height: 24),
+              ListTile(
+                title: Text('Public - Share insights', style: AppTypography.uiLabelC(context)),
+                leading: const Icon(Icons.public_rounded, color: AppColors.softIndigo),
+                trailing: UserPreferencesService().communityPreference == 'yes' ? const Icon(Icons.check_circle, color: AppColors.sageGreen) : null,
+                onTap: () async {
+                  UserPreferencesService().communityPreference = 'yes';
+                  await UserPreferencesService().saveToRemote();
+                  if (mounted) setState(() {});
+                  if (context.mounted) Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: Text('Private - Just for me', style: AppTypography.uiLabelC(context)),
+                leading: Icon(Icons.lock_outline_rounded, color: AppColors.tertiary(context)),
+                trailing: UserPreferencesService().communityPreference != 'yes' ? const Icon(Icons.check_circle, color: AppColors.sageGreen) : null,
+                onTap: () async {
+                  UserPreferencesService().communityPreference = 'no';
+                  await UserPreferencesService().saveToRemote();
+                  if (mounted) setState(() {});
+                  if (context.mounted) Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showIntendedUseDialog(BuildContext context) {
+    final prefs = UserPreferencesService();
+    final Set<String> selected = Set.from(prefs.concerns);
+    final List<Map<String, dynamic>> allConcerns = [
+      {'label': 'Stress', 'icon': Icons.bolt_rounded},
+      {'label': 'Sleep', 'icon': Icons.nightlight_outlined},
+      {'label': 'Anxiety', 'icon': Icons.waves_rounded},
+      {'label': 'Focus', 'icon': Icons.center_focus_strong_outlined},
+      {'label': 'Healing', 'icon': Icons.favorite_outline_rounded},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card(context),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24.0, right: 24.0, top: 24.0,
+                bottom: MediaQuery.of(context).padding.bottom + 24.0,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('My Goals', style: AppTypography.heroHeadingC(context)),
+                  const SizedBox(height: 8),
+                  Text('Select all the areas you want to focus on.', style: AppTypography.captionC(context)),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: allConcerns.map((c) {
+                      final label = c['label'] as String;
+                      final isSelected = selected.contains(label);
+                      return GestureDetector(
+                        onTap: () {
+                          setModalState(() {
+                            if (isSelected) {
+                              selected.remove(label);
+                            } else {
+                              selected.add(label);
+                            }
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: AppTheme.fadeInDuration,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.softIndigo.withValues(alpha: 0.1) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected ? AppColors.softIndigo : AppColors.dividerColor(context),
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(c['icon'] as IconData, size: 18, color: isSelected ? AppColors.softIndigo : AppColors.tertiary(context)),
+                              const SizedBox(width: 8),
+                              Text(label, style: AppTypography.buttonText(color: isSelected ? AppColors.softIndigo : AppColors.primary(context))),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.softIndigo,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      onPressed: () async {
+                        prefs.concerns = selected.toList();
+                        await prefs.saveToRemote();
+                        if (mounted) setState(() {});
+                        if (context.mounted) Navigator.pop(context);
+                      },
+                      child: Text('Save Goals', style: AppTypography.buttonText(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -177,11 +325,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       context,
                       icon: Icons.people_outline_rounded,
                       title: 'Community',
-                      subtitle: 'Participation settings',
+                      subtitle: UserPreferencesService().communityPreference == 'yes' ? 'Public - Sharing insights' : 'Private',
                       trailing: Icon(
                         Icons.chevron_right_rounded,
                         color: AppColors.tertiary(context),
                       ),
+                      onTap: () => _showCommunityDialog(context),
                     )
                     .animate(delay: const Duration(milliseconds: 400))
                     .fadeIn(duration: const Duration(milliseconds: 400)),
@@ -191,12 +340,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _buildSettingsTile(
                       context,
                       icon: Icons.info_outline_rounded,
-                      title: 'About Unravel',
-                      subtitle: 'Version 1.0.0',
+                      title: 'Intended Use',
+                      subtitle: UserPreferencesService().concerns.isNotEmpty ? UserPreferencesService().concerns.join(', ') : 'Set your goals',
                       trailing: Icon(
                         Icons.chevron_right_rounded,
                         color: AppColors.tertiary(context),
                       ),
+                      onTap: () => _showIntendedUseDialog(context),
                     )
                     .animate(delay: const Duration(milliseconds: 450))
                     .fadeIn(duration: const Duration(milliseconds: 400)),
@@ -398,7 +548,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     const SizedBox(height: 2),
                     Text(
-                      'Taking it one day at a time.',
+                      prefs.concerns.isNotEmpty ? prefs.concerns.join(' • ') : 'Taking it one day at a time.',
                       style: AppTypography.captionC(context),
                     ),
                   ],

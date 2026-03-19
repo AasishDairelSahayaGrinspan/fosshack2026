@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lottie/lottie.dart';
+import '../constants/lottie_urls.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/gradient_background.dart';
@@ -109,11 +111,19 @@ class _SplashScreenState extends State<SplashScreen> {
               right: 0,
               child: Center(
                 child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 1.8,
-                    color: AppColors.softIndigo.withValues(alpha: 0.5),
+                  width: 60,
+                  height: 60,
+                  child: Lottie.network(
+                    LottieUrls.loading,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.8,
+                        color: AppColors.softIndigo.withValues(alpha: 0.5),
+                      ),
+                    ),
                   ),
                 ),
               ),

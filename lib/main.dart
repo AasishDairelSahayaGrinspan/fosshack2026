@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'screens/splash_screen.dart';
+import 'services/activity_service.dart';
 import 'services/local_data_service.dart';
 import 'services/notification_service.dart';
 
@@ -18,6 +19,7 @@ Future<void> main() async {
   // Schedule default sleep & breathing reminders.
   NotificationService().scheduleSleepReminder();
   NotificationService().scheduleBreathingReminder();
+  await ActivityService().init();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

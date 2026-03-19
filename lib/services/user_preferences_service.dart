@@ -10,11 +10,14 @@ class UserPreferencesService {
 
   String? name;
   String? ageGroup;
+  String? gender;
+  String? relationshipStatus;
   List<String> concerns = <String>[];
   String? sleepSchedule;
   double moodBaseline = 0.5;
   String communityPreference = 'yes';
   List<String> musicLanguages = <String>[];
+  Map<String, dynamic>? avatarConfigMap;
 
   late String avatarSeed = AvatarService().generateRandomSeed();
   late String avatarStyle = AvatarService().getRandomStyle();
@@ -50,6 +53,8 @@ class UserPreferencesService {
     final data = LocalDataService().getUserPrefs(user.$id);
     name = data['name'] as String?;
     ageGroup = data['ageGroup'] as String?;
+    gender = data['gender'] as String?;
+    relationshipStatus = data['relationshipStatus'] as String?;
     concerns = (data['concerns'] as List<dynamic>? ?? <dynamic>[])
         .map((e) => e.toString())
         .toList();
@@ -61,6 +66,10 @@ class UserPreferencesService {
         .toList();
     avatarSeed = (data['avatarSeed'] as String?) ?? avatarSeed;
     avatarStyle = (data['avatarStyle'] as String?) ?? avatarStyle;
+    final rawAvatar = data['avatarConfig'];
+    if (rawAvatar is Map<String, dynamic>) {
+      avatarConfigMap = Map<String, dynamic>.from(rawAvatar);
+    }
   }
 
   Future<void> saveToLocal() async {
@@ -70,6 +79,8 @@ class UserPreferencesService {
     await LocalDataService().saveUserPrefs(user.$id, <String, dynamic>{
       'name': name,
       'ageGroup': ageGroup,
+      'gender': gender,
+      'relationshipStatus': relationshipStatus,
       'concerns': concerns,
       'sleepSchedule': sleepSchedule,
       'moodBaseline': moodBaseline,
@@ -78,6 +89,7 @@ class UserPreferencesService {
       'avatarSeed': avatarSeed,
       'avatarStyle': avatarStyle,
       'avatarUrl': getAvatarUrl(),
+      'avatarConfig': avatarConfigMap,
     });
     await LocalDataService().addAnalytics(
       'user_prefs_saved',

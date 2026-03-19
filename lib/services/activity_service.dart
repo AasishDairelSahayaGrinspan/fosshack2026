@@ -44,7 +44,7 @@ class ActivityService {
       ValueNotifier<ActivityData>(const ActivityData());
   final ValueNotifier<bool> permissionGranted = ValueNotifier<bool>(false);
 
-  StreamSubscription<StepCount>? _stepSub;
+  StreamSubscription<int>? _stepSub;
   StreamSubscription<Position>? _positionSub;
   int _baseSteps = 0;
   bool _baseSet = false;
@@ -97,17 +97,18 @@ class ActivityService {
     if (_stepSub != null) return; // already tracking
 
     try {
-      _stepSub = Pedometer.stepCountStream.listen((event) {
+      final pedometer = Pedometer();
+      _stepSub = pedometer.stepCountStream().listen((stepCount) {
         if (!_baseSet) {
-          _baseSteps = event.steps;
+          _baseSteps = stepCount;
           _baseSet = true;
         }
-        final sessionSteps = event.steps - _baseSteps;
+        final sessionSteps = stepCount - _baseSteps;
         final totalSteps = todayData.value.steps + sessionSteps.clamp(0, 999999);
-        _baseSteps = event.steps;
+        _baseSteps = stepCount;
         final dist = totalSteps * 0.0007;
         final cal = totalSteps * 0.04;
-        todayData.value = ActivityData(steps: totalSteps, distanceKm: dist, calories: cal);
+        todayData.value = ActivityData(steps: totalSteps.toInt(), distanceKm: dist, calories: cal);
         _saveTodayData();
         _detectWalking();
       }, onError: (e) {

@@ -171,16 +171,16 @@ class _BreathingScreenState extends State<BreathingScreen>
   Future<void> _startSession() async {
     if (_phase != _BreathingPhase.idle) return;
 
-    // Phase 1: Relaxation intro
+    // Phase 1: Ask user to sit relaxed
     setState(() {
       _phase = _BreathingPhase.relaxIntro;
-      _phaseText = 'Sit comfortably';
-      _phaseSubtext = 'Close your eyes and relax your shoulders.';
+      _phaseText = 'Sit relaxed';
+      _phaseSubtext = 'Find a quiet spot and sit comfortably.';
     });
 
     _startRipples();
 
-    // Start zen music during intro
+    // Start zen music softly during intro
     if (_ambientEnabled && _audioPlayer != null) {
       try {
         await _audioPlayer!.seek(Duration.zero);
@@ -188,15 +188,17 @@ class _BreathingScreenState extends State<BreathingScreen>
       } catch (_) {}
     }
 
-    await Future.delayed(const Duration(seconds: 3));
+    // Wait 5 seconds
+    await Future.delayed(const Duration(seconds: 5));
     if (!mounted || _phase != _BreathingPhase.relaxIntro) return;
 
+    // Phase 2: Ask to relax
     setState(() {
-      _phaseText = 'Relax your body';
-      _phaseSubtext = 'Let go of any tension...';
+      _phaseText = 'Relax';
+      _phaseSubtext = 'Close your eyes. Let go of all tension...';
     });
 
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(const Duration(seconds: 5));
     if (!mounted || _phase != _BreathingPhase.relaxIntro) return;
 
     setState(() {

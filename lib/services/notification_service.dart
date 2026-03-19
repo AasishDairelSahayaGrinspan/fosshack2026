@@ -336,6 +336,42 @@ class NotificationService {
     await _plugin.cancel(4003);
   }
 
+  /// Walking check-in notification.
+  Future<void> showWalkingCheckIn() async {
+    const androidDetails = AndroidNotificationDetails(
+      'unravel_activity',
+      'Activity Check-ins',
+      channelDescription: 'Walking and activity notifications',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      autoCancel: true,
+    );
+    await _plugin.show(
+      5000,
+      'You\'re on the move!',
+      'Great walk! Keep going — your body and mind will thank you.',
+      const NotificationDetails(android: androidDetails),
+    );
+  }
+
+  /// Hydration reminder notification.
+  Future<void> showHydrationReminder() async {
+    const androidDetails = AndroidNotificationDetails(
+      'unravel_hydration',
+      'Hydration Reminders',
+      channelDescription: 'Reminders to stay hydrated',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      autoCancel: true,
+    );
+    await _plugin.show(
+      5001,
+      'Stay hydrated',
+      'Take a moment to drink some water. Your body needs it.',
+      const NotificationDetails(android: androidDetails),
+    );
+  }
+
   /// Schedules a follow-up notification 2 hours after the user logs a mood.
   /// - Low/Anxious/Overwhelmed moods get a caring check-in.
   /// - Happy/Calm moods get a music/celebration nudge.

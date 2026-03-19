@@ -22,7 +22,8 @@ dependencies:
   timezone: ^0.10.0
   lottie: ^3.3.1
   geolocator: ^13.0.2
-  pedometer_2: ^2.0.2
+  pedometer_2: ^5.0.4
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:

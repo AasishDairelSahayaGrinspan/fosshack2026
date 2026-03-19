@@ -11,6 +11,8 @@ import '../services/auth_service.dart';
 import '../services/community_service.dart';
 import '../services/user_preferences_service.dart';
 import '../services/notification_service.dart';
+import '../models/avatar_config.dart';
+import '../widgets/custom_avatar.dart';
 import 'login_screen.dart';
 
 /// Profile Screen with settings and theme toggle.
@@ -354,20 +356,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
             child: ClipOval(
-              child: Image.network(
-                prefs.getAvatarUrl(),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.card(context),
-                    child: Icon(
-                      Icons.person_outline_rounded,
-                      color: AppColors.softIndigo.withValues(alpha: 0.5),
-                      size: 28,
+              child: prefs.avatarConfigMap != null
+                  ? CustomAvatar(
+                      config: AvatarConfig.fromMap(prefs.avatarConfigMap!),
+                      size: 60,
+                    )
+                  : Image.network(
+                      prefs.getAvatarUrl(),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: AppColors.card(context),
+                          child: Icon(
+                            Icons.person_outline_rounded,
+                            color: AppColors.softIndigo.withValues(alpha: 0.5),
+                            size: 28,
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ),
           const SizedBox(width: 16),

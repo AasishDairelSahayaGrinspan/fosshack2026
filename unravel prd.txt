@@ -1,0 +1,1285 @@
+PRODUCT REQUIREMENT DOCUMENT
+
+Product Name: Unravel
+Platform: Flutter (iOS & Android)
+Scope: Frontend UI Only
+Goal: Award-quality calm interface that reduces mental tension
+
+Core philosophy:
+When a user opens Unravel, their breathing should slow down.
+
+Not because the app tells them to — but because the interface itself is calm.
+
+DESIGN LANGUAGE
+Emotional Tone
+
+Soft
+Slow
+Breathable
+Reflective
+
+Every screen must feel safe and uncluttered.
+
+TYPOGRAPHY SYSTEM
+
+Primary Display Font
+Playfair Display
+Used for emotional text, titles, reflections
+
+Secondary Reading Font
+Lora
+Used for journal text and longer reading
+
+UI Label Font
+Lusitana / Inter Light
+
+Guidelines
+• Large spacing between lines
+• Avoid bold-heavy UI
+• Use italics for quotes and reflective text
+
+The typography should feel editorial, like a thoughtful book.
+
+COLOR SYSTEM
+
+Primary Gradient Themes
+
+Morning Calm
+Lavender → Peach
+
+Evening Reflection
+Indigo → Dusty Blue
+
+Neutral Calm
+Warm Cream → Pale Blush
+
+Accent Colors
+
+Sage Green
+Warm Coral
+Dusty Indigo
+
+Avoid
+
+Pure black
+Sharp neon
+Harsh shadows
+
+Use soft shadows only.
+
+ANIMATION PRINCIPLES
+
+Motion must be slow and organic.
+
+Recommended duration
+300ms – 500ms
+
+Use
+
+Fade transitions
+Soft slide transitions
+Scale micro-interactions
+
+Lottie animations for
+
+Breathing guidance
+Streak celebrations
+Loading screens
+Floating background shapes
+
+Never use aggressive bouncing or fast animations.
+
+USER DATA COLLECTION (ONBOARDING)
+
+To guide the user gently through the app, some basic information is needed.
+
+Collected during onboarding.
+
+User Inputs
+
+Name or nickname
+Age group
+Sleep schedule (approx)
+Main concern
+
+Options for concern
+
+Stress
+Anxiety
+Sleep issues
+Overthinking
+Focus problems
+Emotional healing
+
+Mood baseline
+
+“How do you usually feel lately?”
+
+Slider scale
+
+Optional interests
+
+Music
+Meditation
+Journaling
+Social connection
+
+These inputs personalize the UI experience.
+
+PHASE STRUCTURE
+PHASE 1
+
+ENTRY EXPERIENCE
+
+Goal
+Immediate emotional comfort.
+
+Splash Screen
+
+Gradient animated background
+Floating abstract shapes (Lottie)
+
+Text
+
+Unravel
+Subtitle
+“Slow down. You’re safe here.”
+
+Fade transition to login.
+
+Login Screen
+
+Frosted glass centered card
+
+Heading
+
+“Welcome back.”
+
+Fonts
+
+Playfair heading
+Lora subtitle
+
+Buttons
+
+Continue with Google
+Continue with Apple
+
+Mobile login
+
+OTP verification screen
+
+Animations
+
+Loading Lottie
+Success check animation
+
+The login experience must feel luxury calm, not transactional.
+
+PHASE 2
+
+ONBOARDING EXPERIENCE
+
+Purpose
+Understand the user's mental baseline.
+
+Screens
+
+Welcome
+
+“What brings you here?”
+
+Selectable cards
+
+Stress
+Sleep
+Anxiety
+Focus
+Healing
+
+Sleep schedule selection
+
+Morning person
+Night person
+
+Mood baseline slider
+
+“How have you been feeling lately?”
+
+Avatar creation
+
+Minimal customization
+
+Hair
+Skin tone
+Outfit
+
+Finish onboarding
+
+“Your space is ready.”
+
+Add a new optional question during onboarding.
+
+Question
+
+“Would you like to participate in the community?”
+
+Options
+
+Yes
+Just browsing
+No thanks
+
+If user selects "No thanks":
+
+Community tab still exists but posting is disabled.
+
+
+PHASE 3
+
+HOME EXPERIENCE
+
+The emotional dashboard.
+
+Top Section
+
+Greeting
+
+“Good evening.”
+
+Subtext
+
+“How is your mind today?”
+
+Avatar with soft glow.
+
+Mood Selector
+
+5 emotional states
+
+Calm
+Okay
+Low
+Anxious
+Overwhelmed
+
+Selection animation
+
+Glow + scale.
+
+Recovery Score
+
+Circular progress indicator
+
+Score based on
+
+Mood tracking
+Sleep logs
+Breathing sessions
+Journal activity
+
+Quote beneath
+
+Playfair italic
+
+Example
+
+“Even storms run out of rain.”
+
+Daily Check-in
+
+Simple question
+
+“What do you need today?”
+
+Options
+
+Focus
+Calm
+Release thoughts
+Rest
+
+Charts
+
+Weekly mood line chart
+
+Minimal visual noise.
+
+Streak Indicator
+
+Animated flame icon
+
+Text
+
+“7 days of showing up.”
+
+Add a small Community Activity Card.
+
+Example
+
+“Someone shared a story today.”
+
+Button
+
+“Visit Community”
+
+This subtly invites engagement without pressure.
+
+
+
+PHASE 4 – COMMUNITY EXPERIENCE (Social Reflection Feed)
+Purpose
+
+The community section of Unravel allows users to share emotional reflections, achievements, and life experiences in a supportive environment.
+
+The design should resemble a minimal Instagram-style feed, but without competitive social signals like follower counts or popularity rankings.
+
+The tone must remain empathetic and safe.
+
+Core Community Features
+
+Users can:
+
+• View posts in a scrolling feed
+• Like posts by double tapping
+• Comment on posts
+• Share posts via link
+• Upload their own posts
+• View comments under each post
+
+There will be no direct messaging system.
+
+Community Feed Layout
+
+Visual inspiration: Instagram feed style but calmer.
+
+Feed Structure
+
+Vertical scroll feed containing post cards.
+
+Each post card includes:
+
+User avatar
+Username
+Timestamp
+Post image
+Caption text
+Like button
+Comment button
+Share button
+
+UI Style
+
+Rounded image corners
+Soft shadows
+Minimal icons
+Calm spacing between posts
+
+Font
+
+Post captions: Lora
+Usernames: Lusitana Medium
+Section titles: Playfair Display
+
+Post Interaction
+Double Tap Like
+
+Users can double tap on the post image.
+
+Animation
+
+Soft heart animation appears briefly.
+
+Like counter increases visually.
+
+Comment Interaction
+
+Clicking the comment icon opens a Comments Screen.
+
+Comment Layout
+
+User avatar
+Username
+Comment text
+Timestamp
+
+Input field at bottom:
+
+“Write something kind…”
+
+Submit button
+
+New comments appear instantly.
+
+Share Feature
+
+Users can share posts externally using a generated link.
+
+Share sheet opens with options such as:
+
+Copy Link
+WhatsApp
+Instagram
+Other apps
+
+For now, the link will only represent the post locally.
+
+Future backend integration will enable real sharing.
+
+Creating a Post
+
+At the top right of the community screen there will be a plus (+) icon.
+
+Clicking this opens the Create Post screen.
+
+Options
+
+Select from Gallery
+Take Photo using Camera
+
+The user can add:
+
+Image
+Caption text
+Optional mood tag
+
+Example mood tags
+
+Grateful
+Healing
+Struggling
+Progress
+
+Button
+
+“Post”
+
+After posting, the new post appears at the top of the feed.
+
+Device Permissions
+
+The app must request permission from the user before accessing:
+
+Camera
+Device storage (gallery)
+
+Permission prompts should appear when the user first attempts to create a post.
+
+Permission messaging should be friendly and transparent.
+
+Example message:
+
+“Unravel needs access to your camera so you can share moments with the community.”
+
+Local Storage System (Temporary)
+
+Since backend services are not implemented yet:
+
+All community data will be stored locally on the device.
+
+Stored data includes
+
+Posts
+Images
+Captions
+Likes
+Comments
+Mood tags
+
+Recommended local storage options
+
+Hive
+SharedPreferences (for simple data)
+Local JSON storage
+
+Images can be stored in the app directory.
+
+Community Feed Data Model (Frontend)
+
+Post Object
+
+Post ID
+Username
+Avatar
+Image path
+Caption
+Mood tag
+Timestamp
+Likes count
+Comments list
+
+Comment Object
+
+Comment ID
+Username
+Avatar
+Text
+Timestamp
+
+UI Behavior
+
+Feed should support
+
+Smooth infinite scrolling
+Subtle loading animations
+Lazy loading for images
+
+Animations
+
+Heart animation on like
+Comment sheet slide-up transition
+Post upload loading animation
+
+Moderation Reminder UI
+
+Because the app focuses on mental wellbeing:
+
+Display a small message above the feed:
+
+“This space is for kindness and support.”
+
+No harsh or competitive language.
+
+PHASE 5
+
+COMMUNITY (SAFE SOCIAL)
+
+Tone
+
+Supportive, not competitive.
+
+Community Feed
+
+Large rounded cards
+
+Post types
+
+Achievements
+Heartbreak reflections
+Daily struggles
+Small victories
+
+Interaction
+
+Like
+Comment
+
+No follower counts.
+
+Messages
+
+Minimal chat UI
+
+Soft bubbles
+
+Typing animation.
+
+PHASE 6 – Mood-Aware Music Companion
+Core Idea
+
+The music feature in Unravel recommends playlists based on:
+
+• User’s preferred language
+• User’s current mood (from daily mood tracker)
+
+Instead of playing individual songs directly, the app generates curated playlists to guide emotional states.
+
+Actual music streaming will later be connected using the Spotify API.
+For now, the UI should display song names only.
+
+First Time Music Setup (User Preference)
+
+When the user opens the Music tab for the first time:
+
+Show a calm onboarding screen.
+
+Heading (Playfair Display)
+
+“Music can shift the mind.”
+
+Subtext (Lora)
+
+“Choose the languages you enjoy listening to.”
+
+Language Selection Options
+
+• English
+• Tamil
+• Hindi
+• Telugu
+• Malayalam
+• Korean
+• Japanese
+• Instrumental
+• Others
+
+UI Style
+
+Large rounded selection chips
+Soft glow when selected
+
+Users can select multiple languages.
+
+Store this preference locally for later recommendation logic.
+
+Mood-Based Music Recommendation
+
+The app should read the user's today's mood from the Mood Tracker.
+
+Based on mood, the music tab dynamically shows recommended playlists.
+
+Example Mood → Playlist Mapping
+Happy Mood
+
+Playlist Title
+
+“Feel Good Energy”
+
+Example Songs
+
+Good as Hell – Lizzo
+Happy – Pharrell Williams
+On Top of the World – Imagine Dragons
+Best Day of My Life – American Authors
+
+Playlist Button
+
+▶ View Playlist
+
+Calm Mood
+
+Playlist Title
+
+“Quiet Mind”
+
+Example Songs
+
+Weightless – Marconi Union
+Sunset Lover – Petit Biscuit
+Bloom – ODESZA
+Experience – Ludovico Einaudi
+
+Sad Mood
+
+Playlist Title
+
+“Gentle Healing”
+
+Example Songs
+
+Fix You – Coldplay
+Let It Be – The Beatles
+Vienna – Billy Joel
+Better Days – Dermot Kennedy
+
+Breakup / Emotional Pain
+
+Playlist Title
+
+“Rise Again”
+
+Example Songs
+
+Stronger – Kanye West
+Shake It Off – Taylor Swift
+Titanium – David Guetta
+Unstoppable – Sia
+
+Stressed / Anxious
+
+Playlist Title
+
+“Slow Breathing”
+
+Example Songs
+
+Night Owl – Galimatias
+River Flows In You – Yiruma
+Nuvole Bianche – Ludovico Einaudi
+Comptine d’un autre été – Yann Tiersen
+
+Playlist Screen UI
+
+Layout
+
+Large playlist cards.
+
+Each card contains
+
+Playlist title
+Mood icon
+Short description
+Playlist button
+
+Example
+
+Playlist: Calm Ocean
+Mood: Relaxation
+Songs: 10 tracks
+
+Button
+
+▶ View Playlist
+
+Playlist Details Screen
+
+Displays list of songs.
+
+Each row contains
+
+Song title
+Artist name
+Minimal play icon (disabled for now)
+
+Example
+
+Sunset Lover – Petit Biscuit
+
+Bloom – ODESZA
+
+Experience – Ludovico Einaudi
+
+River Flows In You – Yiruma
+
+At bottom
+
+Button
+
+“Play on Spotify”
+
+(This will later connect to the Spotify API.)
+
+Visual Style for Music Section
+
+Background
+
+Soft gradient
+
+Indigo → Lavender
+
+Cards
+
+Glassmorphism style
+
+Album artwork placeholders.
+
+Micro animations
+
+Playlist card hover glow
+Soft fade when switching playlists.
+
+Additional Smart Playlists
+
+Apart from mood-based playlists, the app should also show:
+
+Daily Reset
+
+Music for morning energy.
+
+Sleep Mode
+
+Slow ambient music.
+
+Focus Mode
+
+Instrumental concentration music.
+
+Deep Calm
+
+Meditation-style soundscapes.
+
+Future Integration (Spotify)
+
+Later phases will include:
+
+Spotify API integration
+Auto playlist creation
+Direct streaming
+Saving playlists
+
+But currently the UI should only show:
+
+Song names
+Playlist structure
+Play button placeholder.
+
+UI Philosophy for Music
+
+The music tab must feel like:
+
+Opening a personal record collection designed for your emotions.
+
+Not a noisy streaming service.
+
+Minimal
+Intentional
+Emotion-driven.
+
+PHASE 7
+
+INSIGHTS & TRACKING
+
+Tracking Screen
+
+Weekly overview
+
+Metrics
+
+Mood consistency
+Sleep hours
+App engagement
+
+Charts
+
+Minimal bar charts
+Circular progress visuals
+
+Tone
+
+Reflective, not judgmental.
+
+Add optional metric:
+
+Community engagement
+
+Tracks
+
+Posts shared
+Supportive comments written
+Days active in community
+
+Display this gently.
+
+Example
+
+“You supported others 3 times this week.”
+
+
+
+PHASE 8
+
+APP HABIT TRACKING
+
+Track
+
+Mood entries
+Breathing sessions
+Journal activity
+Sleep logging
+
+Display
+
+Soft habit streak cards.
+
+PHASE 9
+
+NOTIFICATIONS
+
+Examples
+
+“Hey. Just checking in. 🌿”
+
+“Take a slow breath.”
+
+“Your mind deserves a pause.”
+
+Never push aggressively.
+
+Bottom Navigation Tabs
+
+Home
+Journal
+Community
+Music
+Profile
+
+
+TECHNICAL UI STRUCTURE
+
+Flutter Components
+
+Required packages
+
+Image picker (camera/gallery)
+Local storage package
+Animated icons
+Lottie animations
+
+Key widgets
+
+ListView.builder
+Hero animation for post image
+ModalBottomSheet for comments
+
+Use
+
+Google Fonts integration
+Component-based UI structure
+Separate screen files
+
+Maintain
+
+Consistent padding
+Consistent font hierarchy
+Consistent animation speed.
+
+DESIGN PRINCIPLES
+
+The app must
+
+Never overwhelm
+Never guilt the user
+Never rush interaction
+
+Every screen must feel like a quiet page in a journal.
+
+Here’s the interesting twist about apps like this.
+
+The most powerful feature isn’t charts or breathing exercises.
+
+It’s the feeling that someone built the space carefully.
+
+When software feels calm, the nervous system notices.
+
+That’s design psychology.
+
+And if Unravel gets that right, people won’t just open it.
+
+They’ll return to it when life gets loud.
+
+NOTE: 
+Social media usually compresses people into performances. Filters, metrics, followers. It pushes comparison.
+
+But a space designed differently can do the opposite. It can let people unravel instead of perform.
+
+
+UPDATED CHANGES DO CONSIDER:
+
+Global UI Updates (Applies to Entire App)
+Light Mode & Dark Mode
+
+The app must support two complete themes.
+
+Light Mode
+Background: warm cream / soft pastel gradients
+Cards: off-white
+Text: dark charcoal (#2E2E2E)
+
+Dark Mode
+Background: deep indigo / midnight gradient
+Cards: dark slate with blur
+Text: soft white (#F5F5F5)
+
+Accent colors remain:
+
+Sage green
+Dusty lavender
+Soft coral
+
+Theme switching should be available in Profile → Settings.
+
+Transitions between themes must be smooth animated fades.
+
+Text Visibility Adjustment
+
+Current design uses very light text.
+
+Update rule:
+
+Primary text: high contrast
+Secondary text: medium contrast
+Hints: soft gray
+
+Example
+
+Primary: #2E2E2E
+Secondary: #5F5F5F
+Hints: #8A8A8A
+
+The UI must remain calm but readable.
+
+Elastic Scrolling Effect
+
+All scrollable pages must support elastic overscroll behavior.
+
+When the user scrolls past the top:
+
+A subtle stretch effect appears.
+
+After stretching, a refresh doodle animation appears.
+
+Design
+
+Small rotating doodle icon
+Minimal line illustration
+Snapchat-style refresh behavior
+
+Animation behavior
+
+User pulls down → doodle appears
+Release → rotation animation
+Page refresh animation plays
+
+This improves tactile feedback and makes the app feel alive.
+
+Flutter approach
+
+Custom scroll physics + refresh indicator with custom animation.
+
+Music Feature Update (Tamil Songs Only)
+
+Because users are primarily Tamil speakers, playlists should contain Tamil songs only.
+
+Each playlist must contain 10–15 songs.
+
+These songs are placeholders for now until Spotify API integration.
+
+Mood Based Tamil Playlists
+Happy Mood Playlist
+
+Title: Feel Good Tamil
+
+Example songs
+
+Rowdy Baby – Maari 2
+Vaathi Coming – Master
+Arabic Kuthu – Beast
+Aalaporan Thamizhan – Mersal
+Enjoy Enjaami – Dhee
+Otha Sollaala – Aadukalam
+Udhungada Sangu – Velai Illa Pattathari
+Why This Kolaveri – 3
+Sodakku – Thaanaa Serndha Koottam
+Vaanga Machan – Vada Chennai
+
+Calm Mood Playlist
+
+Title: Soft Tamil Evenings
+
+Songs
+
+Munbe Vaa – Sillunu Oru Kadhal
+New York Nagaram – Sillunu Oru Kadhal
+Nallai Allai – Kaatru Veliyidai
+Vaseegara – Minnale
+Anbil Avan – Vinnaithaandi Varuvaayaa
+Pachai Nirame – Alaipayuthey
+Enna Solla Pogirai – Kandukondain
+Nenjukkul Peidhidum – Vaaranam Aayiram
+Moongil Thottam – Kadal
+Vellai Pookal – Kannathil Muthamittal
+
+Breakup / Emotional Healing
+
+Title: Rise Again
+
+Songs
+
+Thalli Pogathey – Achcham Yenbadhu Madamaiyada
+Po Nee Po – 3
+Kadhal Kan Kattudhe – Kaaki Sattai
+Aaromale – Vinnaithaandi Varuvaayaa
+Ennodu Nee Irundhaal – I
+Unakkenna Venum Sollu – Yennai Arindhaal
+Kanave Kanave – David
+Theera Ulaa – O Kadhal Kanmani
+Usure Pogudhey – Raavanan
+Nenjame – Doctor
+
+Stress Relief / Focus
+
+Title: Tamil Instrumental Calm
+
+Songs
+
+Bombay Theme – A.R. Rahman
+Alaipayuthey Theme
+Vinnaithaandi Varuvaayaa Instrumental
+Yanni Inspired Tamil Piano Mix
+Roja Theme Instrumental
+Interstellar Tamil Piano Tribute
+Uyire Background Theme
+Minnale Violin Theme
+Anjali Theme Instrumental
+Kaatru Veliyidai Instrumental
+
+Sleep Tracker UI Update
+
+The sleep chart must use glowing bars.
+
+Design
+
+White glowing bars
+Soft halo effect around bars
+Dark background contrast
+
+Bar animation
+
+Bars grow smoothly when chart loads.
+
+Glow parameters
+
+Opacity: low
+Blur: subtle
+
+This creates a calm night-like effect.
+
+Breathing Exercise Enhancements
+
+Breathing page must be one of the most beautiful screens in the app.
+
+Zen Background Music
+
+When breathing exercise begins:
+
+Play soft ambient zen music.
+
+Examples
+
+Wind chimes
+Soft temple bells
+Bamboo flute
+Nature ambience
+
+Music volume should be low and calming.
+
+Toggle switch
+
+User can turn sound on/off.
+
+8 Mantra Gradient Colors
+
+Background must transition between eight calming colors.
+
+Colors
+
+Lavender
+Sky blue
+Soft teal
+Pale peach
+Warm pink
+Light indigo
+Mist gray
+Cream
+
+Transition behavior
+
+Colors must shift extremely slowly.
+
+The user should not notice sudden change.
+
+Instead it feels like a living sky.
+
+Transition time
+
+10–20 seconds between colors.
+
+Breathing Animation
+
+Center expanding circle.
+
+Pulse rhythm
+
+4 seconds inhale
+4 seconds hold
+6 seconds exhale
+
+Circle glow softly during inhale.
+
+Background Activity & Notifications
+
+Unravel should run light background processes.
+
+Purpose
+
+Send gentle reminders
+Encourage mood tracking
+Promote breathing sessions
+
+Notification Types
+
+Mood Check
+
+“Hey… how are you feeling today?”
+
+Breathing Reminder
+
+“Take a slow breath with Unravel.”
+
+Sleep Reminder
+
+“Your mind deserves rest tonight.”
+
+Streak Encouragement
+
+“You’ve shown up 5 days in a row.”
+
+Background Tasks
+
+Track
+
+App usage frequency
+Mood entries
+Sleep logs
+Breathing sessions
+
+Based on inactivity:
+
+Send gentle reminder notifications.
+
+Example
+
+If user inactive for 3 days:
+
+“We haven't seen you in a while. How are you doing?”
+
+Performance Requirement
+
+Animations must remain smooth even with effects.
+
+Target
+
+60fps UI transitions
+
+Avoid heavy CPU use.
+
+Use optimized Flutter animation controllers.
+
+Final Design Principle
+
+Unravel must feel like
+
+Opening a quiet window
+Taking a deep breath
+Watching the sky change colors
+
+Not like using software.
+
+When the interface disappears, the experience begins.
+
+That’s when a wellness app truly works.
+
+new ideas:
+
+ask whether the user is male/female. 
+
+then the age.
+
+then ask for relationship status like married, single, broke up, missing husband/wife.
+
+then a big improvement: avatar creation like snapchat. the user can create his/her own avatar with body structure, color, shirts, pants, trousers, shoes, cooling glasses, 
+chains.
+
+use lottie animations wherever necessary, like scrolling animations, no data page, sleeping animations. 
+
+get the location access and track whether the user is moving or not. if he's moving then show like the user's avatar walking in the home page and also get the walking distance to calculate the calories burnt during the walk. also if u recognize the person is walking send a notification reminding to check in for walking to calculate calories burnt durin that time and remind to drink water and refresh.
+
+UI Tip (important)
+
+Your app should feel calm, not techy.
+
+
+A mental health app should feel like a quiet room, not a dashboard of numbers.
+
+** rounded cards must have shadows and transition effects while clicking on the buttons, should feel like floating buttons on the screen. graphics must be clear and must have clarity.
+

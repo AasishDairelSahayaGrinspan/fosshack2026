@@ -54,6 +54,7 @@ class LocalDataService {
     _root.putIfAbsent('breathingLogs', () => <String, dynamic>{});
     _root.putIfAbsent('listenedSongs', () => <String, dynamic>{});
     _root.putIfAbsent('communityPosts', () => <dynamic>[]);
+    _root.putIfAbsent('activityLogs', () => <String, dynamic>{});
     _root.putIfAbsent('analytics', () => <dynamic>[]);
     ready.value = true;
     await _persist();
@@ -285,6 +286,27 @@ class LocalDataService {
 
   Future<void> saveCommunityPosts(List<Map<String, dynamic>> posts) async {
     _root['communityPosts'] = posts;
+    await _persist();
+  }
+
+  List<Map<String, dynamic>> getActivityLogs(String userId) {
+    final bucket = _bucketMap('activityLogs');
+    final raw = bucket[userId];
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    return <Map<String, dynamic>>[];
+  }
+
+  Future<void> saveActivityLogs(
+    String userId,
+    List<Map<String, dynamic>> logs,
+  ) async {
+    final bucket = _bucketMap('activityLogs');
+    bucket[userId] = logs;
     await _persist();
   }
 

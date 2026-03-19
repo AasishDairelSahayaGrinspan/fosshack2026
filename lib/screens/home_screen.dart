@@ -16,6 +16,9 @@ import '../services/database_service.dart';
 import '../services/auth_service.dart';
 import '../services/app_navigation_service.dart';
 import '../services/notification_service.dart';
+import '../models/avatar_config.dart';
+import '../widgets/custom_avatar.dart';
+import '../services/activity_service.dart';
 import 'breathing_screen.dart';
 import 'sleep_tracker_screen.dart';
 import 'journal_screen.dart';
@@ -34,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double _recoveryScore = 100.0;
   List<double> _moodData = List<double>.filled(7, 0.5);
   int _streakDays = 0;
+  bool _activityPermissionDismissed = false;
 
   List<_Suggestion> _needSuggestions = [];
   bool _highlightTimer = false;
@@ -199,6 +203,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     RepaintBoundary(
                       child: RecoveryScoreCard(score: _recoveryScore),
                     ),
+                    const SizedBox(height: 28),
+                    RepaintBoundary(child: _buildActivityCard(context)),
                     const SizedBox(height: 28),
                     RepaintBoundary(
                       child: DailyCheckin(
@@ -390,36 +396,167 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           child: ClipOval(
-            child: Image.network(
-              UserPreferencesService().getAvatarUrl(),
-              fit: BoxFit.cover,
-              cacheWidth: 108,
-              cacheHeight: 108,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.softIndigo.withValues(alpha: 0.25),
-                        AppColors.paleLilac.withValues(alpha: 0.5),
-                      ],
+            child: UserPreferencesService().avatarConfigMap != null
+                ? ValueListenableBuilder<bool>(
+                    valueListenable: ActivityService().isWalking,
+                    builder: (_, walking, __) => CustomAvatar(
+                      config: AvatarConfig.fromMap(UserPreferencesService().avatarConfigMap!),
+                      size: 54,
+                      isWalking: walking,
                     ),
+                  )
+                : Image.network(
+                    UserPreferencesService().getAvatarUrl(),
+                    fit: BoxFit.cover,
+                    cacheWidth: 108,
+                    cacheHeight: 108,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.softIndigo.withValues(alpha: 0.25),
+                              AppColors.paleLilac.withValues(alpha: 0.5),
+                            ],
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.person_outline_rounded,
+                            color: AppColors.secondary(context),
+                            size: 24,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                  child: Center(
-                    child: Icon(
-                      Icons.person_outline_rounded,
-                      color: AppColors.secondary(context),
-                      size: 24,
-                    ),
-                  ),
-                );
-              },
-            ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildActivityCard(BuildContext context) {
+    return ValueListenableBuilder<ActivityData>(
+      valueListenable: ActivityService().todayData,
+      builder: (context, data, _) {
+        final hasPermission = ActivityService().permissionGranted.value;
+
+        // Permission prompt card
+        if (!hasPermission && !_activityPermissionDismissed) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.card(context),
+              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+              border: Border.all(color: AppColors.softIndigo.withValues(alpha: 0.2)),
+              boxShadow: AppColors.subtleShadow,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.directions_walk_rounded, color: AppColors.sageGreen, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Track your walks', style: AppTypography.captionC(context).copyWith(fontWeight: FontWeight.w600)),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => setState(() => _activityPermissionDismissed = true),
+                      child: Icon(Icons.close_rounded, size: 18, color: AppColors.tertiary(context)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Allow location access to track steps, distance, and calories.',
+                  style: AppTypography.captionC(context),
+                ),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () async {
+                    final granted = await ActivityService().requestPermissions();
+                    if (granted) {
+                      await ActivityService().startTracking();
+                      if (mounted) setState(() {});
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.softIndigo,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                    ),
+                    child: Text('Allow', style: AppTypography.buttonText(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (!hasPermission) return const SizedBox.shrink();
+
+        // Activity data card
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.card(context),
+            borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+            border: Border.all(color: AppColors.sageGreen.withValues(alpha: 0.2)),
+            boxShadow: AppColors.subtleShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.directions_walk_rounded, color: AppColors.sageGreen, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Today\'s Activity', style: AppTypography.captionC(context).copyWith(fontWeight: FontWeight.w600)),
+                  const Spacer(),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: ActivityService().isWalking,
+                    builder: (_, walking, __) {
+                      if (!walking) return const SizedBox.shrink();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.sageGreen.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text('Walking', style: AppTypography.caption(color: AppColors.sageGreen).copyWith(fontSize: 10)),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _activityStat(context, Icons.directions_walk_rounded, '${data.steps}', 'Steps'),
+                  _activityStat(context, Icons.straighten_rounded, '${data.distanceKm.toStringAsFixed(1)} km', 'Distance'),
+                  _activityStat(context, Icons.local_fire_department_rounded, data.calories.toStringAsFixed(0), 'Calories'),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _activityStat(BuildContext context, IconData icon, String value, String label) {
+    return Column(
+      children: [
+        Icon(icon, color: AppColors.sageGreen, size: 20),
+        const SizedBox(height: 4),
+        Text(value, style: AppTypography.uiLabelC(context).copyWith(fontWeight: FontWeight.w600, fontSize: 15)),
+        Text(label, style: AppTypography.captionC(context).copyWith(fontSize: 10)),
       ],
     );
   }

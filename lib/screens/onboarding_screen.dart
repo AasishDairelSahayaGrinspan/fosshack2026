@@ -10,7 +10,7 @@ import '../services/auth_service.dart';
 import '../services/avatar_service.dart';
 import 'community_onboarding_screen.dart';
 
-/// Multi-step onboarding — 7 pages via PageView.
+/// Multi-step onboarding — 9 pages via PageView.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -23,6 +23,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final UserPreferencesService _prefs = UserPreferencesService();
   final TextEditingController _nameController = TextEditingController();
   int _currentPage = 0;
+
+  // Page 1 — gender
+  String? _selectedGender;
+  static const List<Map<String, dynamic>> _genders = [
+    {'label': 'Male', 'icon': Icons.male_rounded},
+    {'label': 'Female', 'icon': Icons.female_rounded},
+    {'label': 'Other', 'icon': Icons.transgender_rounded},
+  ];
+
+  // Page 3 — relationship
+  String? _selectedRelationship;
+  static const List<Map<String, dynamic>> _relationships = [
+    {'label': 'Married', 'icon': Icons.favorite_rounded},
+    {'label': 'Single', 'icon': Icons.person_outline_rounded},
+    {'label': 'Broke up', 'icon': Icons.heart_broken_rounded},
+    {'label': 'Missing partner', 'icon': Icons.people_outline_rounded},
+  ];
 
   // Page 2 — age slider
   double _ageValue = 22;
@@ -85,7 +102,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _isLoadingAvatar = false;
 
   void _nextPage() {
-    if (_currentPage < 6) {
+    if (_currentPage < 8) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: AppTheme.defaultCurve,
@@ -95,7 +112,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _finish() async {
     _prefs.name = _nameController.text.trim();
+    _prefs.gender = _selectedGender;
     _prefs.ageGroup = _ageGroupLabel;
+    _prefs.relationshipStatus = _selectedRelationship;
     _prefs.concerns = _selectedConcerns
         .map((i) => _concerns[i]['label'] as String)
         .toList();
@@ -137,16 +156,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       case 0:
         return _nameController.text.trim().isNotEmpty;
       case 1:
-        return true; // slider always has a value
+        return _selectedGender != null;
       case 2:
-        return _selectedConcerns.isNotEmpty;
+        return true; // age slider always has a value
       case 3:
-        return _selectedSleep >= 0;
+        return _selectedRelationship != null;
       case 4:
-        return true; // slider always has a value
+        return _selectedConcerns.isNotEmpty;
       case 5:
-        return true; // avatar always has defaults
+        return _selectedSleep >= 0;
       case 6:
+        return true; // mood slider always has a value
+      case 7:
+        return true; // avatar always has defaults
+      case 8:
         return true;
       default:
         return false;
@@ -180,7 +203,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPageChanged: (i) => setState(() => _currentPage = i),
                   children: [
                     _buildNamePage(),
+                    _buildGenderPage(),
                     _buildAgeGroupPage(),
+                    _buildRelationshipPage(),
                     _buildConcernsPage(),
                     _buildSleepPage(),
                     _buildMoodBaselinePage(),
@@ -200,13 +225,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Row(
-        children: List.generate(7, (i) {
+        children: List.generate(9, (i) {
           final isActive = i <= _currentPage;
           return Expanded(
             child: AnimatedContainer(
               duration: AppTheme.fadeInDuration,
               height: 3,
-              margin: EdgeInsets.only(right: i < 6 ? 4 : 0),
+              margin: EdgeInsets.only(right: i < 8 ? 4 : 0),
               decoration: BoxDecoration(
                 color: isActive
                     ? AppColors.softIndigo.withValues(alpha: 0.7)
@@ -247,6 +272,116 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // ─── Page 1: Gender ───
+  Widget _buildGenderPage() {
+    return _pageWrapper(
+      heading: 'How do you\nidentify?',
+      subtitle: 'This helps us personalize your experience.',
+      child: Column(
+        children: _genders.map((g) {
+          final isSelected = _selectedGender == g['label'];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedGender = g['label'] as String),
+              child: AnimatedContainer(
+                duration: AppTheme.fadeInDuration,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.softIndigo.withValues(alpha: 0.1)
+                      : AppColors.card(context),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.softIndigo.withValues(alpha: 0.4)
+                        : AppColors.dividerColor(context),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      g['icon'] as IconData,
+                      size: 28,
+                      color: isSelected ? AppColors.softIndigo : AppColors.tertiary(context),
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      g['label'] as String,
+                      style: AppTypography.buttonText(
+                        color: isSelected ? AppColors.softIndigo : AppColors.primary(context),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (isSelected)
+                      Icon(Icons.check_circle_rounded, color: AppColors.softIndigo, size: 22),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ─── Page 3: Relationship ───
+  Widget _buildRelationshipPage() {
+    return _pageWrapper(
+      heading: 'What\'s your\nrelationship status?',
+      subtitle: 'We\'ll tailor content that feels right for you.',
+      child: Column(
+        children: _relationships.map((r) {
+          final isSelected = _selectedRelationship == r['label'];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedRelationship = r['label'] as String),
+              child: AnimatedContainer(
+                duration: AppTheme.fadeInDuration,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.softIndigo.withValues(alpha: 0.1)
+                      : AppColors.card(context),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.softIndigo.withValues(alpha: 0.4)
+                        : AppColors.dividerColor(context),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      r['icon'] as IconData,
+                      size: 28,
+                      color: isSelected ? AppColors.softIndigo : AppColors.tertiary(context),
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      r['label'] as String,
+                      style: AppTypography.buttonText(
+                        color: isSelected ? AppColors.softIndigo : AppColors.primary(context),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (isSelected)
+                      Icon(Icons.check_circle_rounded, color: AppColors.softIndigo, size: 22),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

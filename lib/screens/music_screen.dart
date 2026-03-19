@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/app_navigation_service.dart';
 import '../services/auth_service.dart';
@@ -37,6 +38,7 @@ class _MusicScreenState extends State<MusicScreen> {
     {
       'title': 'Feel Good Tamil',
       'mood': 'Happy',
+      'language': 'Tamil',
       'icon': Icons.sentiment_very_satisfied_rounded,
       'color': AppColors.warmCoral,
       'description': 'Uplifting energy for bright moments.',
@@ -49,6 +51,7 @@ class _MusicScreenState extends State<MusicScreen> {
     {
       'title': 'Soft Tamil Evenings',
       'mood': 'Calm',
+      'language': 'Tamil',
       'icon': Icons.spa_outlined,
       'color': AppColors.sageGreen,
       'description': 'Gentle melodies for quiet moments.',
@@ -61,6 +64,7 @@ class _MusicScreenState extends State<MusicScreen> {
     {
       'title': 'Rise Again',
       'mood': 'Healing',
+      'language': 'Tamil',
       'icon': Icons.healing_outlined,
       'color': AppColors.orangeE2814d,
       'description': 'Songs for mending and moving forward.',
@@ -73,6 +77,7 @@ class _MusicScreenState extends State<MusicScreen> {
     {
       'title': 'Focus Instrumentals',
       'mood': 'Focus',
+      'language': 'Instrumental',
       'icon': Icons.center_focus_strong_outlined,
       'color': AppColors.softIndigo,
       'description': 'Instrumental peace for deep focus.',
@@ -83,6 +88,14 @@ class _MusicScreenState extends State<MusicScreen> {
       ],
     },
   ];
+
+  List<Map<String, dynamic>> get _filteredPlaylists {
+    if (_selectedLanguages.isEmpty) return _playlists;
+    final filtered = _playlists
+        .where((pl) => _selectedLanguages.contains(pl['language']))
+        .toList();
+    return filtered.isEmpty ? _playlists : filtered;
+  }
 
   @override
   void initState() {
@@ -305,7 +318,7 @@ class _MusicScreenState extends State<MusicScreen> {
                     style: AppTypography.sectionHeading(color: Colors.white),
                   ),
                   const SizedBox(height: 10),
-                  ..._playlists.map((pl) => _buildPlaylistCard(pl)),
+                  ..._filteredPlaylists.map((pl) => _buildPlaylistCard(pl)),
                 const SizedBox(height: 20),
               ],
             ),
@@ -515,32 +528,41 @@ class _PlaylistDetailScreen extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1DB954).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-                    border: Border.all(
-                      color: const Color(0xFF1DB954).withValues(alpha: 0.3),
+                child: GestureDetector(
+                  onTap: () {
+                    final title = Uri.encodeComponent(playlist['title'] as String);
+                    launchUrl(
+                      Uri.parse('https://open.spotify.com/search/$title'),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1DB954).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                      border: Border.all(
+                        color: const Color(0xFF1DB954).withValues(alpha: 0.3),
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.music_note_rounded,
-                        color: Color(0xFF1DB954),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Play on Spotify',
-                        style: AppTypography.buttonText(
-                          color: const Color(0xFF1DB954),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.music_note_rounded,
+                          color: Color(0xFF1DB954),
+                          size: 18,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Text(
+                          'Play on Spotify',
+                          style: AppTypography.buttonText(
+                            color: const Color(0xFF1DB954),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

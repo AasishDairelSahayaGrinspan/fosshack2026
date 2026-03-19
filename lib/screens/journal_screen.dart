@@ -1,6 +1,8 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lottie/lottie.dart';
+import '../constants/lottie_urls.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -375,13 +377,21 @@ class _JournalScreenState extends State<JournalScreen>
     if (_entries.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 60),
+          padding: const EdgeInsets.symmetric(vertical: 40),
           child: Column(
             children: [
-              Icon(
-                Icons.book_outlined,
-                color: AppColors.tertiary(context).withValues(alpha: 0.4),
-                size: 48,
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: Lottie.network(
+                  LottieUrls.emptyState,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.book_outlined,
+                    color: AppColors.tertiary(context).withValues(alpha: 0.4),
+                    size: 48,
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               Text(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:appwrite/enums.dart' as enums;
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -112,6 +113,39 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<void> _onGoogleLogin() async {
+    setState(() {
+      _isVerifying = true;
+      _errorMessage = null;
+    });
+    try {
+      await AuthService().oAuthLogin(enums.OAuthProvider.google);
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _showSuccess = true;
+      });
+      await Future.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
+      _navigateAfterAuth();
+    } catch (e) {
+      if (!mounted) return;
+      final errorStr = e.toString().toLowerCase();
+      String message = 'Google login failed. Please try again.';
+      if (errorStr.contains('network') || errorStr.contains('socket')) {
+        message = 'Network error. Check your connection and try again.';
+      } else if (errorStr.contains('cancel')) {
+        message = 'Google login was cancelled.';
+      } else if (errorStr.contains('oauth')) {
+        message = 'Google OAuth is not fully configured in Appwrite yet.';
+      }
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = message;
+      });
+    }
+  }
+
   Future<void> _navigateAfterAuth() async {
     await UserPreferencesService().loadFromRemote();
     CommunityService().communityPreference =
@@ -185,6 +219,35 @@ class _LoginScreenState extends State<LoginScreen>
                                   style: AppTypography.subtitleC(context),
                                 ),
                                 const SizedBox(height: 32),
+
+                                PillButton(
+                                  label: 'Continue with Google',
+                                  width: double.infinity,
+                                  icon: Container(
+                                    width: 20,
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: AppColors.inputBorder,
+                                      ),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: const Text(
+                                      'G',
+                                      style: TextStyle(
+                                        color: Color(0xFF4285F4),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                  backgroundColor: Colors.white,
+                                  borderColor: AppColors.inputBorder,
+                                  onTap: _onGoogleLogin,
+                                ),
+                                const SizedBox(height: 12),
 
                                 const SizedBox(height: 8),
                                 PillButton(

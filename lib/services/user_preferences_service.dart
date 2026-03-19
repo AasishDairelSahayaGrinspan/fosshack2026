@@ -27,6 +27,15 @@ class UserPreferencesService {
   String communityPreference = 'yes';
   List<String> musicLanguages = <String>[];
   Map<String, dynamic>? avatarConfigMap;
+  
+  // New fields for backend integration
+  String? employmentStatus; // 'student', 'employee', 'retired'
+  String? shiftPreference; // 'day', 'night'
+  int? age; // actual age value
+  String? heightCm; // height in cm
+  String? weightKg; // weight in kg
+  double? bmi; // calculated BMI
+  String? bmiStatus; // 'underweight', 'normal', 'overweight', 'obese'
 
   late String avatarSeed = AvatarService().generateRandomSeed();
   late String avatarStyle = AvatarService().getRandomStyle();
@@ -37,7 +46,9 @@ class UserPreferencesService {
   bool get hasMusicSetup => musicLanguages.isNotEmpty;
   bool get hasCompletedOnboarding => name != null && name!.isNotEmpty;
   String get displayName => name ?? 'friend';
-  String get displayAbout => (about != null && about!.isNotEmpty) ? about! : "Hey there! I'm using Unravel.";
+  String get displayAbout => (about != null && about!.isNotEmpty)
+      ? about!
+      : "Hey there! I'm using Unravel.";
 
   String getAvatarUrl() {
     return AvatarService().getAvatarUrl(seed: avatarSeed, style: avatarStyle);
@@ -167,23 +178,39 @@ class UserPreferencesService {
     if (rawAvatar is Map<String, dynamic>) {
       avatarConfigMap = Map<String, dynamic>.from(rawAvatar);
     }
+    // New fields
+    employmentStatus = data['employmentStatus'] as String?;
+    shiftPreference = data['shiftPreference'] as String?;
+    age = (data['age'] as num?)?.toInt();
+    heightCm = data['heightCm'] as String?;
+    weightKg = data['weightKg'] as String?;
+    bmi = (data['bmi'] as num?)?.toDouble();
+    bmiStatus = data['bmiStatus'] as String?;
   }
 
   Map<String, dynamic> _toMap() => <String, dynamic>{
-        'name': name,
-        'about': about,
-        'ageGroup': ageGroup,
-        'gender': gender,
-        'relationshipStatus': relationshipStatus,
-        'concerns': concerns,
-        'sleepSchedule': sleepSchedule,
-        'moodBaseline': moodBaseline,
-        'communityPreference': communityPreference,
-        'musicLanguages': musicLanguages,
-        'avatarSeed': avatarSeed,
-        'avatarStyle': avatarStyle,
-        'avatarData': avatarData,
-        'avatarUrl': getAvatarUrl(),
-        'avatarConfig': avatarConfigMap,
-      };
+    'name': name,
+    'about': about,
+    'ageGroup': ageGroup,
+    'gender': gender,
+    'relationshipStatus': relationshipStatus,
+    'concerns': concerns,
+    'sleepSchedule': sleepSchedule,
+    'moodBaseline': moodBaseline,
+    'communityPreference': communityPreference,
+    'musicLanguages': musicLanguages,
+    'avatarSeed': avatarSeed,
+    'avatarStyle': avatarStyle,
+    'avatarData': avatarData,
+    'avatarUrl': getAvatarUrl(),
+    'avatarConfig': avatarConfigMap,
+    // New fields
+    'employmentStatus': employmentStatus,
+    'shiftPreference': shiftPreference,
+    'age': age,
+    'heightCm': heightCm,
+    'weightKg': weightKg,
+    'bmi': bmi,
+    'bmiStatus': bmiStatus,
+  };
 }

@@ -64,11 +64,13 @@ class _UnravelAppState extends State<UnravelApp> {
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness:
-            _themeProvider.isDark ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness: _themeProvider.isDark
+            ? Brightness.light
+            : Brightness.dark,
         systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness:
-            _themeProvider.isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness: _themeProvider.isDark
+            ? Brightness.light
+            : Brightness.dark,
       ),
     );
   }

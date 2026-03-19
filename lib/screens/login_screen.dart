@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:appwrite/enums.dart' as enums;
+import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -34,6 +36,40 @@ class _LoginScreenState extends State<LoginScreen>
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // On web, check if we're returning from an OAuth callback
+    if (kIsWeb) {
+      _handleOAuthCallbackOnWeb();
+    }
+  }
+
+  /// Handle OAuth callback on web platform after redirect from OAuth provider.
+  /// Automatically completes login if session was established.
+  Future<void> _handleOAuthCallbackOnWeb() async {
+    try {
+      // Check if user is already authenticated after OAuth redirect
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      final isLoggedIn = await AuthService().isLoggedIn();
+      if (isLoggedIn && mounted) {
+        developer.log('OAuth callback: User authenticated successfully');
+        setState(() {
+          _isVerifying = false;
+          _showSuccess = true;
+        });
+        await Future.delayed(const Duration(milliseconds: 900));
+        if (mounted) {
+          _navigateAfterAuth();
+        }
+      }
+    } catch (e) {
+      developer.log('OAuth callback handling error: $e');
+      // Not an error - user might not have completed OAuth flow
+    }
+  }
 
   @override
   void dispose() {
@@ -223,26 +259,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 PillButton(
                                   label: 'Continue with Google',
                                   width: double.infinity,
-                                  icon: Container(
-                                    width: 20,
-                                    height: 20,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: AppColors.inputBorder,
-                                      ),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      'G',
-                                      style: TextStyle(
-                                        color: Color(0xFF4285F4),
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
+                                  icon: _buildGoogleLogo(),
                                   backgroundColor: Colors.white,
                                   borderColor: AppColors.inputBorder,
                                   onTap: _onGoogleLogin,
@@ -349,6 +366,16 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  // ─── Google Logo Builder ───
+  Widget _buildGoogleLogo() {
+    return Image.asset(
+      'assets/google_icon.png',
+      width: 20,
+      height: 20,
+      fit: BoxFit.contain,
+    );
+  }
+
   // ─── Email/Password Auth Section ───
   Widget _buildEmailAuthSection() {
     return AnimatedSwitcher(
@@ -449,8 +476,7 @@ class _LoginScreenState extends State<LoginScreen>
                     _isSignUp
                         ? 'Already have an account? Log in'
                         : 'Don\'t have an account? Sign up',
-                    style:
-                        AppTypography.caption(color: AppColors.softIndigo),
+                    style: AppTypography.caption(color: AppColors.softIndigo),
                   ),
                 ),
               ],
@@ -496,10 +522,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
           if (suffix != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: suffix,
-            ),
+            Padding(padding: const EdgeInsets.only(right: 12), child: suffix),
         ],
       ),
     );

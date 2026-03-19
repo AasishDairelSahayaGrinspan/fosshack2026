@@ -51,7 +51,8 @@ class MusicService {
       title: 'Soft Background',
       artist: 'Free Music For Video',
       mood: 'Release thoughts',
-      sourceUrl: 'assets/music/freemusicforvideo-soft-background-music-409193.mp3',
+      sourceUrl:
+          'assets/music/freemusicforvideo-soft-background-music-409193.mp3',
       fromCloud: false,
     ),
     MusicTrackData(
@@ -59,7 +60,8 @@ class MusicService {
       title: 'Calm Journey',
       artist: 'Happiness In Music',
       mood: 'Calm',
-      sourceUrl: 'assets/music/happinessinmusic-music-calm-no-copyright-463752.mp3',
+      sourceUrl:
+          'assets/music/happinessinmusic-music-calm-no-copyright-463752.mp3',
       fromCloud: false,
     ),
     MusicTrackData(
@@ -75,7 +77,8 @@ class MusicService {
       title: '258 Hz Focus',
       artist: 'PoorArtistt',
       mood: 'Focus',
-      sourceUrl: 'assets/music/poorartistt-258hz-frequency-music-no-copyright-music-for-meditation-amp-focus-339016.mp3',
+      sourceUrl:
+          'assets/music/poorartistt-258hz-frequency-music-no-copyright-music-for-meditation-amp-focus-339016.mp3',
       fromCloud: false,
     ),
   ];
@@ -144,10 +147,10 @@ class MusicService {
     final mood = lower.contains('focus')
         ? 'Focus'
         : lower.contains('calm')
-            ? 'Calm'
-            : lower.contains('relax')
-                ? 'Rest'
-                : 'Calm';
+        ? 'Calm'
+        : lower.contains('relax')
+        ? 'Rest'
+        : 'Calm';
 
     return (title, 'Unravel Cloud', mood);
   }

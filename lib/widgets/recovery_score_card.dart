@@ -10,11 +10,7 @@ class RecoveryScoreCard extends StatefulWidget {
   final double score; // 0.0 to 1.0
   final String? quote;
 
-  const RecoveryScoreCard({
-    super.key,
-    this.score = 0.78,
-    this.quote,
-  });
+  const RecoveryScoreCard({super.key, this.score = 0.78, this.quote});
 
   @override
   State<RecoveryScoreCard> createState() => _RecoveryScoreCardState();
@@ -75,7 +71,6 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
       end: _clampedScore * 100,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
-
 
   @override
   void dispose() {
@@ -144,7 +139,9 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
                 return LinearProgressIndicator(
                   value: _progressAnimation.value,
                   minHeight: 6,
-                  backgroundColor: AppColors.dividerColor(context).withValues(alpha: 0.5),
+                  backgroundColor: AppColors.dividerColor(
+                    context,
+                  ).withValues(alpha: 0.5),
                   valueColor: const AlwaysStoppedAnimation<Color>(
                     AppColors.softIndigo,
                   ),

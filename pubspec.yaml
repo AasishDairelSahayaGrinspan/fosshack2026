@@ -39,6 +39,7 @@ flutter:
     - assets/animations/
     - assets/lottie/
     - assets/logo.png
+    - assets/google_icon.png
     - assets/music/
 
 flutter_icons:

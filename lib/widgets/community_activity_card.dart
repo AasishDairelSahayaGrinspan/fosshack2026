@@ -50,13 +50,14 @@ class CommunityActivityCard extends StatelessWidget {
                   onTap: onTap,
                   child: Text(
                     'Visit Community',
-                    style: AppTypography.caption(
-                      color: AppColors.softIndigo,
-                    ).copyWith(
-                      fontWeight: FontWeight.w500,
-                      decoration: TextDecoration.underline,
-                      decorationColor: AppColors.softIndigo.withValues(alpha: 0.4),
-                    ),
+                    style: AppTypography.caption(color: AppColors.softIndigo)
+                        .copyWith(
+                          fontWeight: FontWeight.w500,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.softIndigo.withValues(
+                            alpha: 0.4,
+                          ),
+                        ),
                   ),
                 ),
               ],

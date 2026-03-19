@@ -109,7 +109,10 @@ class _CommentsSheetState extends State<CommentsSheet> {
             decoration: BoxDecoration(
               color: AppColors.card(context),
               border: Border(
-                top: BorderSide(color: AppColors.dividerColor(context), width: 0.5),
+                top: BorderSide(
+                  color: AppColors.dividerColor(context),
+                  width: 0.5,
+                ),
               ),
             ),
             child: Row(
@@ -125,8 +128,9 @@ class _CommentsSheetState extends State<CommentsSheet> {
                   child: Center(
                     child: Text(
                       'Y',
-                      style: AppTypography.caption(color: AppColors.softIndigo)
-                          .copyWith(fontWeight: FontWeight.w500),
+                      style: AppTypography.caption(
+                        color: AppColors.softIndigo,
+                      ).copyWith(fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
@@ -139,11 +143,15 @@ class _CommentsSheetState extends State<CommentsSheet> {
                     decoration: InputDecoration(
                       hintText: 'Write something kind...',
                       hintStyle: AppTypography.body(
-                        color: AppColors.tertiary(context).withValues(alpha: 0.5),
+                        color: AppColors.tertiary(
+                          context,
+                        ).withValues(alpha: 0.5),
                       ),
                       border: InputBorder.none,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                     ),
                     onSubmitted: (_) => _submitComment(),
                   ),
@@ -215,8 +223,9 @@ class _CommentsSheetState extends State<CommentsSheet> {
             child: Center(
               child: Text(
                 comment.avatar.toUpperCase(),
-                style: AppTypography.caption(color: AppColors.softIndigo)
-                    .copyWith(fontWeight: FontWeight.w500, fontSize: 11),
+                style: AppTypography.caption(
+                  color: AppColors.softIndigo,
+                ).copyWith(fontWeight: FontWeight.w500, fontSize: 11),
               ),
             ),
           ),
@@ -237,26 +246,23 @@ class _CommentsSheetState extends State<CommentsSheet> {
                     const SizedBox(width: 8),
                     Text(
                       _service.formatTimeAgo(comment.timestamp),
-                      style: AppTypography.captionC(context).copyWith(fontSize: 10),
+                      style: AppTypography.captionC(
+                        context,
+                      ).copyWith(fontSize: 10),
                     ),
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  comment.text,
-                  style: AppTypography.bodyC(context),
-                ),
+                Text(comment.text, style: AppTypography.bodyC(context)),
               ],
             ),
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(
-          delay: Duration(milliseconds: index * 60),
-          duration: const Duration(milliseconds: 300),
-          curve: AppTheme.gentleCurve,
-        );
+    ).animate().fadeIn(
+      delay: Duration(milliseconds: index * 60),
+      duration: const Duration(milliseconds: 300),
+      curve: AppTheme.gentleCurve,
+    );
   }
 }

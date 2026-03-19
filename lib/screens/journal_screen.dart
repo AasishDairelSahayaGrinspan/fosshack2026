@@ -25,13 +25,10 @@ class _JournalScreenState extends State<JournalScreen>
   int _selectedMoodTag = -1;
   int _selectedPrompt = -1;
   bool _saved = false;
-<<<<<<< HEAD
   bool _showHistory = false;
   List<Map<String, dynamic>> _entries = [];
-=======
   List<Map<String, dynamic>> _journalHistory = [];
-  bool _isLoadingHistory = true;
->>>>>>> 2cd334db71e3651b94277102c4b7cdfb5704a9c3
+  bool _isLoadingHistory = false;
 
   late AnimationController _saveAnimController;
 
@@ -59,9 +56,7 @@ class _JournalScreenState extends State<JournalScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-<<<<<<< HEAD
     _loadEntries();
-=======
     _loadHistory();
   }
 
@@ -73,14 +68,16 @@ class _JournalScreenState extends State<JournalScreen>
       if (mounted) {
         setState(() {
           _journalHistory = result.rows.map((row) => row.data).toList();
-          _journalHistory.sort((a, b) => (b['timestamp'] as String).compareTo(a['timestamp'] as String));
+          _journalHistory.sort(
+            (a, b) =>
+                (b['timestamp'] as String).compareTo(a['timestamp'] as String),
+          );
           _isLoadingHistory = false;
         });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoadingHistory = false);
     }
->>>>>>> 2cd334db71e3651b94277102c4b7cdfb5704a9c3
   }
 
   @override
@@ -95,13 +92,21 @@ class _JournalScreenState extends State<JournalScreen>
     final user = AuthService().currentUser;
     if (user == null) return;
     try {
-      final result = await DatabaseService().getJournalEntries(user.$id, limit: 50);
+      final result = await DatabaseService().getJournalEntries(
+        user.$id,
+        limit: 50,
+      );
       if (!mounted) return;
       setState(() {
         _entries = result.rows.map((r) => r.data).toList();
       });
     } catch (e, st) {
-      developer.log('Failed to load journal entries', name: 'JournalScreen', error: e, stackTrace: st);
+      developer.log(
+        'Failed to load journal entries',
+        name: 'JournalScreen',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -125,7 +130,12 @@ class _JournalScreenState extends State<JournalScreen>
         _selectedPrompt = -1;
         await _loadEntries();
       } catch (e, st) {
-        developer.log('Failed to save journal entry', name: 'JournalScreen', error: e, stackTrace: st);
+        developer.log(
+          'Failed to save journal entry',
+          name: 'JournalScreen',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
 
@@ -143,7 +153,12 @@ class _JournalScreenState extends State<JournalScreen>
       await DatabaseService().deleteJournalEntry(entryId);
       await _loadEntries();
     } catch (e, st) {
-      developer.log('Failed to delete journal entry', name: 'JournalScreen', error: e, stackTrace: st);
+      developer.log(
+        'Failed to delete journal entry',
+        name: 'JournalScreen',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -161,6 +176,7 @@ class _JournalScreenState extends State<JournalScreen>
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -171,12 +187,12 @@ class _JournalScreenState extends State<JournalScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: isDark
-                ? [AppColors.darkBg, AppColors.darkBgSecondary, AppColors.darkSurface]
-                : [
-                    AppColors.cream,
-                    AppColors.lightBlush,
-                    AppColors.softPeach,
-                  ],
+                ? [
+                    AppColors.darkBg,
+                    AppColors.darkBgSecondary,
+                    AppColors.darkSurface,
+                  ]
+                : [AppColors.cream, AppColors.lightBlush, AppColors.softPeach],
           ),
         ),
         child: SafeArea(
@@ -185,209 +201,152 @@ class _JournalScreenState extends State<JournalScreen>
               _buildTopBar(),
               Expanded(
                 child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-
-                        // Heading
-                        Text(
-                          _showHistory ? 'Past Reflections' : 'Today\'s Reflection',
-                          style: AppTypography.heroHeadingC(context),
-                        )
-                            .animate()
-                            .fadeIn(
-                              duration: const Duration(milliseconds: 600),
-                              curve: AppTheme.gentleCurve,
-                            ),
-
-                        const SizedBox(height: 4),
-                        Text(
-                          _formattedDate(),
-                          style: AppTypography.captionC(context),
-                        )
-                            .animate()
-                            .fadeIn(
-                              duration: const Duration(milliseconds: 600),
-                              curve: AppTheme.gentleCurve,
-                            ),
-
-                        const SizedBox(height: 16),
-
-                        // Toggle Write / History
-                        _buildViewToggle(),
-
-                        const SizedBox(height: 20),
-
-                        if (_showHistory)
-                          _buildEntriesList()
-                        else ...[
-                          _buildMoodTags()
-                              .animate(delay: const Duration(milliseconds: 150))
-                              .fadeIn(
-                                duration: const Duration(milliseconds: 500),
-                                curve: AppTheme.gentleCurve,
-                              ),
-                          const SizedBox(height: 24),
-                          _buildWritingField()
-                              .animate(delay: const Duration(milliseconds: 250))
-                              .fadeIn(
-                                duration: const Duration(milliseconds: 500),
-                                curve: AppTheme.gentleCurve,
-                              )
-                              .slideY(
-                                begin: 0.04,
-                                end: 0,
-                                duration: const Duration(milliseconds: 500),
-                                curve: AppTheme.gentleCurve,
-                              ),
-                          const SizedBox(height: 20),
-                          _buildPrompts()
-                              .animate(delay: const Duration(milliseconds: 350))
-                              .fadeIn(
-                                duration: const Duration(milliseconds: 500),
-                                curve: AppTheme.gentleCurve,
-                              ),
-                        ],
-
-                        const SizedBox(height: 32),
-                      ],
-                    ),
-                  ),
-<<<<<<< HEAD
-              ),
-            ],
-=======
+                  physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 8),
-
-                      // ─── Heading ───
                       Text(
-                        'Today\'s Reflection',
+                        _showHistory
+                            ? 'Past Reflections'
+                            : 'Today\'s Reflection',
                         style: AppTypography.heroHeadingC(context),
-                      )
-                          .animate()
-                          .fadeIn(
-                            duration: const Duration(milliseconds: 600),
-                            curve: AppTheme.gentleCurve,
-                          ),
-
+                      ).animate().fadeIn(
+                        duration: const Duration(milliseconds: 600),
+                        curve: AppTheme.gentleCurve,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         _formattedDate(),
                         style: AppTypography.captionC(context),
-                      )
-                          .animate()
-                          .fadeIn(
-                            duration: const Duration(milliseconds: 600),
-                            curve: AppTheme.gentleCurve,
-                          ),
-
-                      const SizedBox(height: 24),
-
-                      // ─── Mood Tags ───
-                      _buildMoodTags()
-                          .animate(delay: const Duration(milliseconds: 150))
-                          .fadeIn(
-                            duration: const Duration(milliseconds: 500),
-                            curve: AppTheme.gentleCurve,
-                          ),
-
-                      const SizedBox(height: 24),
-
-                      // ─── Writing Field ───
-                      _buildWritingField()
-                          .animate(delay: const Duration(milliseconds: 250))
-                          .fadeIn(
-                            duration: const Duration(milliseconds: 500),
-                            curve: AppTheme.gentleCurve,
-                          )
-                          .slideY(
-                            begin: 0.04,
-                            end: 0,
-                            duration: const Duration(milliseconds: 500),
-                            curve: AppTheme.gentleCurve,
-                          ),
-
+                      ).animate().fadeIn(
+                        duration: const Duration(milliseconds: 600),
+                        curve: AppTheme.gentleCurve,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildViewToggle(),
                       const SizedBox(height: 20),
-
-                      // ─── Prompt Suggestions ───
-                      _buildPrompts()
-                          .animate(delay: const Duration(milliseconds: 350))
-                          .fadeIn(
-                            duration: const Duration(milliseconds: 500),
-                            curve: AppTheme.gentleCurve,
-                          ),
-
-                      const SizedBox(height: 32),
-
-                      // ─── Your Journey ───
-                      if (!_isLoadingHistory && _journalHistory.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'Your Journey',
-                          style: AppTypography.heroHeadingC(context),
-                        ).animate().fadeIn(duration: const Duration(milliseconds: 600)),
-                        const SizedBox(height: 16),
-                        ..._journalHistory.map((entry) {
-                          final date = DateTime.tryParse(entry['timestamp'] as String? ?? '') ?? DateTime.now();
-                          final mood = entry['moodTag'] as String?;
-                          final content = entry['content'] as String? ?? '';
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.card(context).withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-                              border: Border.all(color: AppColors.dividerColor(context).withValues(alpha: 0.3)),
+                      if (_showHistory)
+                        _buildEntriesList()
+                      else ...[
+                        _buildMoodTags()
+                            .animate(delay: const Duration(milliseconds: 150))
+                            .fadeIn(
+                              duration: const Duration(milliseconds: 500),
+                              curve: AppTheme.gentleCurve,
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '${date.day}/${date.month}/${date.year}',
-                                      style: AppTypography.caption(color: AppColors.secondary(context)),
-                                    ),
-                                    if (mood != null)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.softIndigo.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          mood,
-                                          style: AppTypography.caption(color: AppColors.softIndigo).copyWith(fontSize: 10),
+                        const SizedBox(height: 24),
+                        _buildWritingField()
+                            .animate(delay: const Duration(milliseconds: 250))
+                            .fadeIn(
+                              duration: const Duration(milliseconds: 500),
+                              curve: AppTheme.gentleCurve,
+                            )
+                            .slideY(
+                              begin: 0.04,
+                              end: 0,
+                              duration: const Duration(milliseconds: 500),
+                              curve: AppTheme.gentleCurve,
+                            ),
+                        const SizedBox(height: 20),
+                        _buildPrompts()
+                            .animate(delay: const Duration(milliseconds: 350))
+                            .fadeIn(
+                              duration: const Duration(milliseconds: 500),
+                              curve: AppTheme.gentleCurve,
+                            ),
+                        const SizedBox(height: 32),
+                        if (!_isLoadingHistory &&
+                            _journalHistory.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Your Journey',
+                            style: AppTypography.heroHeadingC(context),
+                          ).animate().fadeIn(
+                            duration: const Duration(milliseconds: 600),
+                          ),
+                          const SizedBox(height: 16),
+                          ..._journalHistory.map((entry) {
+                            final date =
+                                DateTime.tryParse(
+                                  entry['timestamp'] as String? ?? '',
+                                ) ??
+                                DateTime.now();
+                            final mood = entry['moodTag'] as String?;
+                            final content = entry['content'] as String? ?? '';
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.card(
+                                  context,
+                                ).withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radiusCard,
+                                ),
+                                border: Border.all(
+                                  color: AppColors.dividerColor(
+                                    context,
+                                  ).withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '${date.day}/${date.month}/${date.year}',
+                                        style: AppTypography.caption(
+                                          color: AppColors.secondary(context),
                                         ),
                                       ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  content,
-                                  style: AppTypography.journalBodyC(context).copyWith(fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ).animate().fadeIn(duration: const Duration(milliseconds: 400));
-                        }),
-                        const SizedBox(height: 32),
+                                      if (mood != null)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.softIndigo
+                                                .withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            mood,
+                                            style: AppTypography.caption(
+                                              color: AppColors.softIndigo,
+                                            ).copyWith(fontSize: 10),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    content,
+                                    style: AppTypography.journalBodyC(
+                                      context,
+                                    ).copyWith(fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            ).animate().fadeIn(
+                              duration: const Duration(milliseconds: 400),
+                            );
+                          }),
+                          const SizedBox(height: 32),
+                        ],
                       ],
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
->>>>>>> 2cd334db71e3651b94277102c4b7cdfb5704a9c3
+            ],
           ),
         ),
       ),
@@ -397,12 +356,27 @@ class _JournalScreenState extends State<JournalScreen>
   String _formattedDate() {
     final now = DateTime.now();
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     const days = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-      'Friday', 'Saturday', 'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
     ];
     return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
   }
@@ -410,7 +384,11 @@ class _JournalScreenState extends State<JournalScreen>
   Widget _buildViewToggle() {
     return Row(
       children: [
-        _buildToggleChip('Write', !_showHistory, () => setState(() => _showHistory = false)),
+        _buildToggleChip(
+          'Write',
+          !_showHistory,
+          () => setState(() => _showHistory = false),
+        ),
         const SizedBox(width: 8),
         _buildToggleChip(
           'Past entries${_entries.isNotEmpty ? ' (${_entries.length})' : ''}',
@@ -442,7 +420,9 @@ class _JournalScreenState extends State<JournalScreen>
         child: Text(
           label,
           style: AppTypography.caption(
-            color: isActive ? AppColors.softIndigo : AppColors.secondary(context),
+            color: isActive
+                ? AppColors.softIndigo
+                : AppColors.secondary(context),
           ).copyWith(fontWeight: isActive ? FontWeight.w500 : FontWeight.w300),
         ),
       ),
@@ -485,15 +465,15 @@ class _JournalScreenState extends State<JournalScreen>
                 color: _saved
                     ? AppColors.sageGreen.withValues(alpha: 0.15)
                     : _showHistory
-                        ? Colors.transparent
-                        : AppColors.softIndigo.withValues(alpha: 0.1),
+                    ? Colors.transparent
+                    : AppColors.softIndigo.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppTheme.radiusButton),
                 border: Border.all(
                   color: _saved
                       ? AppColors.sageGreen.withValues(alpha: 0.3)
                       : _showHistory
-                          ? Colors.transparent
-                          : AppColors.softIndigo.withValues(alpha: 0.2),
+                      ? Colors.transparent
+                      : AppColors.softIndigo.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
@@ -552,10 +532,7 @@ class _JournalScreenState extends State<JournalScreen>
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                'No entries yet.',
-                style: AppTypography.subtitleC(context),
-              ),
+              Text('No entries yet.', style: AppTypography.subtitleC(context)),
               const SizedBox(height: 6),
               Text(
                 'Write your first reflection today.',
@@ -586,88 +563,115 @@ class _JournalScreenState extends State<JournalScreen>
     if (timestamp != null) {
       final dt = DateTime.tryParse(timestamp);
       if (dt != null) {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
         const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         dateStr = '${days[dt.weekday - 1]}, ${months[dt.month - 1]} ${dt.day}';
       }
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: AppColors.card(context).withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-          border: Border.all(
-            color: AppColors.dividerColor(context).withValues(alpha: 0.5),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadowColor(context),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row — date + mood tag + delete
-            Row(
-              children: [
-                if (dateStr.isNotEmpty)
-                  Text(
-                    dateStr,
-                    style: AppTypography.caption(
-                      color: AppColors.tertiary(context),
-                    ).copyWith(fontSize: 11),
-                  ),
-                if (moodTag != null) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.softIndigo.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-                    ),
-                    child: Text(
-                      moodTag,
-                      style: AppTypography.caption(
-                        color: AppColors.softIndigo,
-                      ).copyWith(fontSize: 10),
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                if (entryId != null)
-                  GestureDetector(
-                    onTap: () => _confirmDelete(entryId),
-                    child: Icon(
-                      Icons.delete_outline_rounded,
-                      color: AppColors.tertiary(context).withValues(alpha: 0.4),
-                      size: 18,
-                    ),
-                  ),
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.card(context).withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+              border: Border.all(
+                color: AppColors.dividerColor(context).withValues(alpha: 0.5),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadowColor(context),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
-            const SizedBox(height: 10),
-            // Content
-            Text(
-              content,
-              style: AppTypography.journalBodyC(context),
-              maxLines: 6,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header row — date + mood tag + delete
+                Row(
+                  children: [
+                    if (dateStr.isNotEmpty)
+                      Text(
+                        dateStr,
+                        style: AppTypography.caption(
+                          color: AppColors.tertiary(context),
+                        ).copyWith(fontSize: 11),
+                      ),
+                    if (moodTag != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.softIndigo.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusButton,
+                          ),
+                        ),
+                        child: Text(
+                          moodTag,
+                          style: AppTypography.caption(
+                            color: AppColors.softIndigo,
+                          ).copyWith(fontSize: 10),
+                        ),
+                      ),
+                    ],
+                    const Spacer(),
+                    if (entryId != null)
+                      GestureDetector(
+                        onTap: () => _confirmDelete(entryId),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppColors.tertiary(
+                            context,
+                          ).withValues(alpha: 0.4),
+                          size: 18,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Content
+                Text(
+                  content,
+                  style: AppTypography.journalBodyC(context),
+                  maxLines: 6,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    )
+          ),
+        )
         .animate(delay: Duration(milliseconds: 50 * index))
-        .fadeIn(duration: const Duration(milliseconds: 300), curve: AppTheme.gentleCurve)
-        .slideY(begin: 0.03, end: 0, duration: const Duration(milliseconds: 300));
+        .fadeIn(
+          duration: const Duration(milliseconds: 300),
+          curve: AppTheme.gentleCurve,
+        )
+        .slideY(
+          begin: 0.03,
+          end: 0,
+          duration: const Duration(milliseconds: 300),
+        );
   }
 
   void _confirmDelete(String entryId) {
@@ -683,14 +687,20 @@ class _JournalScreenState extends State<JournalScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel', style: AppTypography.caption(color: AppColors.tertiary(context))),
+            child: Text(
+              'Cancel',
+              style: AppTypography.caption(color: AppColors.tertiary(context)),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               _deleteEntry(entryId);
             },
-            child: Text('Delete', style: AppTypography.caption(color: AppColors.warmCoral)),
+            child: Text(
+              'Delete',
+              style: AppTypography.caption(color: AppColors.warmCoral),
+            ),
           ),
         ],
       ),
@@ -715,8 +725,10 @@ class _JournalScreenState extends State<JournalScreen>
               onTap: () => setState(() => _selectedMoodTag = i),
               child: AnimatedContainer(
                 duration: AppTheme.fadeInDuration,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.softIndigo.withValues(alpha: 0.12)
@@ -731,14 +743,16 @@ class _JournalScreenState extends State<JournalScreen>
                 ),
                 child: Text(
                   _moodTags[i],
-                  style: AppTypography.caption(
-                    color: isSelected
-                        ? AppColors.softIndigo
-                        : AppColors.secondary(context),
-                  ).copyWith(
-                    fontWeight:
-                        isSelected ? FontWeight.w500 : FontWeight.w300,
-                  ),
+                  style:
+                      AppTypography.caption(
+                        color: isSelected
+                            ? AppColors.softIndigo
+                            : AppColors.secondary(context),
+                      ).copyWith(
+                        fontWeight: isSelected
+                            ? FontWeight.w500
+                            : FontWeight.w300,
+                      ),
                 ),
               ),
             );
@@ -802,8 +816,10 @@ class _JournalScreenState extends State<JournalScreen>
               onTap: () => _usePrompt(i),
               child: AnimatedContainer(
                 duration: AppTheme.fadeInDuration,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.sageGreen.withValues(alpha: 0.08)
@@ -812,7 +828,9 @@ class _JournalScreenState extends State<JournalScreen>
                   border: Border.all(
                     color: isSelected
                         ? AppColors.sageGreen.withValues(alpha: 0.3)
-                        : AppColors.dividerColor(context).withValues(alpha: 0.4),
+                        : AppColors.dividerColor(
+                            context,
+                          ).withValues(alpha: 0.4),
                     width: 1,
                   ),
                 ),
@@ -833,9 +851,7 @@ class _JournalScreenState extends State<JournalScreen>
                           color: isSelected
                               ? AppColors.sageGreen
                               : AppColors.secondary(context),
-                        ).copyWith(
-                          fontStyle: FontStyle.italic,
-                        ),
+                        ).copyWith(fontStyle: FontStyle.italic),
                       ),
                     ),
                   ],

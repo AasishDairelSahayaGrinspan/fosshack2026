@@ -4,6 +4,9 @@ class AppwriteConstants {
   AppwriteConstants._();
 
   // ─── Project ───
+  // For web: Use your Appwrite server endpoint (can be cloud.appwrite.io or self-hosted)
+  // For development: If running Appwrite locally, use http://localhost/v1
+  // For production: Use your domain
   static const String endpoint = 'https://cloud.appwrite.io/v1';
   static const String projectId = 'unravel-app';
 

@@ -8,18 +8,16 @@ class DoodleRefresh extends StatelessWidget {
   final Widget child;
   final Future<void> Function()? onRefresh;
 
-  const DoodleRefresh({
-    super.key,
-    required this.child,
-    this.onRefresh,
-  });
+  const DoodleRefresh({super.key, required this.child, this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: onRefresh ?? () async {
-        await Future.delayed(const Duration(milliseconds: 800));
-      },
+      onRefresh:
+          onRefresh ??
+          () async {
+            await Future.delayed(const Duration(milliseconds: 800));
+          },
       displacement: 50,
       color: AppColors.softIndigo,
       backgroundColor: AppColors.card(context),
@@ -35,11 +33,7 @@ class DoodleRefreshCustom extends StatefulWidget {
   final Widget child;
   final Future<void> Function()? onRefresh;
 
-  const DoodleRefreshCustom({
-    super.key,
-    required this.child,
-    this.onRefresh,
-  });
+  const DoodleRefreshCustom({super.key, required this.child, this.onRefresh});
 
   @override
   State<DoodleRefreshCustom> createState() => _DoodleRefreshCustomState();
@@ -91,8 +85,10 @@ class _DoodleRefreshCustomState extends State<DoodleRefreshCustom>
         if (notification is OverscrollNotification &&
             notification.overscroll < 0) {
           setState(() {
-            _pullDistance = (_pullDistance - notification.overscroll)
-                .clamp(0.0, 100.0);
+            _pullDistance = (_pullDistance - notification.overscroll).clamp(
+              0.0,
+              100.0,
+            );
           });
           if (_pullDistance >= 80 && !_isRefreshing) {
             _handleRefresh();

@@ -49,7 +49,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.card(context),
-        title: Text('Permission needed', style: AppTypography.uiLabelC(context)),
+        title: Text(
+          'Permission needed',
+          style: AppTypography.uiLabelC(context),
+        ),
         content: Text(message, style: AppTypography.bodyC(context)),
         actions: [
           TextButton(
@@ -103,10 +106,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         }
         final ext = image.path.split('.').last;
         final uniqueName = 'img_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        final permanentFile = await File(image.path).copy('${imagesDir.path}/$uniqueName');
+        final permanentFile = await File(
+          image.path,
+        ).copy('${imagesDir.path}/$uniqueName');
         setState(() => _imagePath = permanentFile.path);
       } catch (e, st) {
-        developer.log('Failed to copy image to permanent storage', name: 'CreatePostScreen', error: e, stackTrace: st);
+        developer.log(
+          'Failed to copy image to permanent storage',
+          name: 'CreatePostScreen',
+          error: e,
+          stackTrace: st,
+        );
         // Fall back to original temp path
         setState(() => _imagePath = image.path);
       }
@@ -136,7 +146,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             imageFileId = file.$id;
           }
         } catch (e, st) {
-          developer.log('Image upload failed', name: 'CreatePostScreen', error: e, stackTrace: st);
+          developer.log(
+            'Image upload failed',
+            name: 'CreatePostScreen',
+            error: e,
+            stackTrace: st,
+          );
           // Continue posting without image if upload fails
         }
       }
@@ -150,7 +165,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             : null,
       );
     } catch (e, st) {
-      developer.log('Failed to create post', name: 'CreatePostScreen', error: e, stackTrace: st);
+      developer.log(
+        'Failed to create post',
+        name: 'CreatePostScreen',
+        error: e,
+        stackTrace: st,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -208,23 +228,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       Text(
                         'Share a moment',
                         style: AppTypography.heroHeadingC(context),
-                      )
-                          .animate()
-                          .fadeIn(
-                            duration: const Duration(milliseconds: 500),
-                            curve: AppTheme.gentleCurve,
-                          ),
+                      ).animate().fadeIn(
+                        duration: const Duration(milliseconds: 500),
+                        curve: AppTheme.gentleCurve,
+                      ),
 
                       const SizedBox(height: 4),
                       Text(
                         'Your words matter here.',
                         style: AppTypography.subtitleC(context),
-                      )
-                          .animate()
-                          .fadeIn(
-                            duration: const Duration(milliseconds: 500),
-                            curve: AppTheme.gentleCurve,
-                          ),
+                      ).animate().fadeIn(
+                        duration: const Duration(milliseconds: 500),
+                        curve: AppTheme.gentleCurve,
+                      ),
 
                       const SizedBox(height: 24),
 
@@ -381,7 +397,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Gallery',
-                    style: AppTypography.caption(color: AppColors.secondary(context)),
+                    style: AppTypography.caption(
+                      color: AppColors.secondary(context),
+                    ),
                   ),
                 ],
               ),
@@ -414,7 +432,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Camera',
-                    style: AppTypography.caption(color: AppColors.secondary(context)),
+                    style: AppTypography.caption(
+                      color: AppColors.secondary(context),
+                    ),
                   ),
                 ],
               ),
@@ -478,9 +498,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             final isSelected = _selectedMoodTag == i;
             final color = _moodTags[i]['color'] as Color;
             return GestureDetector(
-              onTap: () => setState(
-                () => _selectedMoodTag = isSelected ? -1 : i,
-              ),
+              onTap: () =>
+                  setState(() => _selectedMoodTag = isSelected ? -1 : i),
               child: AnimatedContainer(
                 duration: AppTheme.fadeInDuration,
                 padding: const EdgeInsets.symmetric(
@@ -501,11 +520,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 ),
                 child: Text(
                   _moodTags[i]['label'] as String,
-                  style: AppTypography.caption(
-                    color: isSelected ? color : AppColors.secondary(context),
-                  ).copyWith(
-                    fontWeight: isSelected ? FontWeight.w500 : FontWeight.w300,
-                  ),
+                  style:
+                      AppTypography.caption(
+                        color: isSelected
+                            ? color
+                            : AppColors.secondary(context),
+                      ).copyWith(
+                        fontWeight: isSelected
+                            ? FontWeight.w500
+                            : FontWeight.w300,
+                      ),
                 ),
               ),
             );

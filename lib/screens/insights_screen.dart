@@ -63,20 +63,28 @@ class _InsightsScreenState extends State<InsightsScreen> {
     // --- Insights ---
     // Mood entries for 7 days
     final moodResult = await db.getMoodEntries(userId, days: 7);
-    final moodValues = moodResult.rows.map((r) => (r.data['mood'] as num).toDouble()).toList();
+    final moodValues = moodResult.rows
+        .map((r) => (r.data['mood'] as num).toDouble())
+        .toList();
     _moodLogCount = moodValues.length;
 
     // Mood consistency
     if (moodValues.isNotEmpty) {
       final mean = moodValues.reduce((a, b) => a + b) / moodValues.length;
-      final variance = moodValues.map((v) => (v - mean) * (v - mean)).reduce((a, b) => a + b) / moodValues.length;
+      final variance =
+          moodValues
+              .map((v) => (v - mean) * (v - mean))
+              .reduce((a, b) => a + b) /
+          moodValues.length;
       final stddev = sqrt(variance);
       _moodConsistency = (1.0 - (stddev / 0.5)).clamp(0.0, 1.0);
     }
 
     // Sleep
     final sleepLogs = await db.getSleepLogs(userId, days: 7);
-    _sleepHours = sleepLogs.map((l) => (l['hours'] as num?)?.toDouble() ?? 0.0).toList();
+    _sleepHours = sleepLogs
+        .map((l) => (l['hours'] as num?)?.toDouble() ?? 0.0)
+        .toList();
     _sleepLabels = List.generate(7, (i) {
       final day = now.subtract(Duration(days: 6 - i));
       return _dayNames[day.weekday - 1];
@@ -140,7 +148,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
     if (mounted) setState(() {});
   }
 
-  List<bool> _computeHabitDays(List<Map<String, dynamic>> entries, String tsKey, int days, DateTime now) {
+  List<bool> _computeHabitDays(
+    List<Map<String, dynamic>> entries,
+    String tsKey,
+    int days,
+    DateTime now,
+  ) {
     final daySet = <String>{};
     for (final e in entries) {
       final ts = DateTime.tryParse(e[tsKey] as String? ?? '');
@@ -152,7 +165,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
     });
   }
 
-  List<bool> _computeHabitDaysFromDateKey(List<Map<String, dynamic>> entries, String dateKey, int days, DateTime now) {
+  List<bool> _computeHabitDaysFromDateKey(
+    List<Map<String, dynamic>> entries,
+    String dateKey,
+    int days,
+    DateTime now,
+  ) {
     final daySet = <String>{};
     for (final e in entries) {
       final date = e[dateKey] as String?;
@@ -180,7 +198,20 @@ class _InsightsScreenState extends State<InsightsScreen> {
   String _dateRange() {
     final now = DateTime.now();
     final start = now.subtract(const Duration(days: 6));
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${months[start.month - 1]} ${start.day} - ${months[now.month - 1]} ${now.day}';
   }
 
@@ -239,7 +270,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 color: AppColors.primary(context).withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(Icons.arrow_back_rounded, color: AppColors.secondary(context), size: 20),
+              child: Icon(
+                Icons.arrow_back_rounded,
+                color: AppColors.secondary(context),
+                size: 20,
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -250,7 +285,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
   }
 
   Widget _buildInsightsTab(BuildContext context) {
-    final avgSleep = _sleepHours.isEmpty ? 0.0 : _sleepHours.reduce((a, b) => a + b) / _sleepHours.length;
+    final avgSleep = _sleepHours.isEmpty
+        ? 0.0
+        : _sleepHours.reduce((a, b) => a + b) / _sleepHours.length;
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -258,24 +295,34 @@ class _InsightsScreenState extends State<InsightsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Your week at a glance', style: AppTypography.heroHeadingC(context))
-              .animate().fadeIn(duration: const Duration(milliseconds: 500), curve: AppTheme.gentleCurve),
+          Text(
+            'Your week at a glance',
+            style: AppTypography.heroHeadingC(context),
+          ).animate().fadeIn(
+            duration: const Duration(milliseconds: 500),
+            curve: AppTheme.gentleCurve,
+          ),
           const SizedBox(height: 4),
-          Text(_dateRange(), style: AppTypography.captionC(context))
-              .animate().fadeIn(duration: const Duration(milliseconds: 500)),
+          Text(
+            _dateRange(),
+            style: AppTypography.captionC(context),
+          ).animate().fadeIn(duration: const Duration(milliseconds: 500)),
           const SizedBox(height: 20),
 
           // Mood consistency
           CircularProgressCard(
-            progress: _moodConsistency,
-            title: 'Mood Consistency',
-            subtitle: _moodConsistency > 0.7
-                ? 'Your mood has been steady this week.'
-                : _moodConsistency > 0.4
+                progress: _moodConsistency,
+                title: 'Mood Consistency',
+                subtitle: _moodConsistency > 0.7
+                    ? 'Your mood has been steady this week.'
+                    : _moodConsistency > 0.4
                     ? 'Some ups and downs — that\'s okay.'
                     : 'Your mood varied a lot. Be gentle with yourself.',
-            progressColor: AppColors.softIndigo,
-          ).animate(delay: const Duration(milliseconds: 100)).fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.03, end: 0),
+                progressColor: AppColors.softIndigo,
+              )
+              .animate(delay: const Duration(milliseconds: 100))
+              .fadeIn(duration: const Duration(milliseconds: 400))
+              .slideY(begin: 0.03, end: 0),
 
           const SizedBox(height: 14),
 
@@ -283,12 +330,15 @@ class _InsightsScreenState extends State<InsightsScreen> {
           Text('Sleep Overview', style: AppTypography.uiLabelC(context)),
           const SizedBox(height: 8),
           MiniBarChart(
-            values: _sleepHours,
-            maxValue: 10,
-            labels: _sleepLabels,
-            barColor: AppColors.warmCoral,
-            caption: 'Avg: ${avgSleep.toStringAsFixed(1)}h per night',
-          ).animate(delay: const Duration(milliseconds: 200)).fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.03, end: 0),
+                values: _sleepHours,
+                maxValue: 10,
+                labels: _sleepLabels,
+                barColor: AppColors.warmCoral,
+                caption: 'Avg: ${avgSleep.toStringAsFixed(1)}h per night',
+              )
+              .animate(delay: const Duration(milliseconds: 200))
+              .fadeIn(duration: const Duration(milliseconds: 400))
+              .slideY(begin: 0.03, end: 0),
 
           const SizedBox(height: 20),
 
@@ -296,42 +346,73 @@ class _InsightsScreenState extends State<InsightsScreen> {
           Text('App Engagement', style: AppTypography.uiLabelC(context)),
           const SizedBox(height: 10),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              StatPill(icon: Icons.emoji_emotions_outlined, value: '$_moodLogCount', label: 'moods', color: AppColors.softIndigo),
-              StatPill(icon: Icons.air_rounded, value: '$_breathingSessions', label: 'breaths', color: AppColors.sageGreen),
-              StatPill(icon: Icons.edit_note_rounded, value: '$_journalEntries', label: 'journals', color: AppColors.orangeE2814d),
-              StatPill(icon: Icons.music_note_outlined, value: '$_songsListened', label: 'songs', color: AppColors.warmCoral),
-            ],
-          ).animate(delay: const Duration(milliseconds: 300)).fadeIn(duration: const Duration(milliseconds: 400)),
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  StatPill(
+                    icon: Icons.emoji_emotions_outlined,
+                    value: '$_moodLogCount',
+                    label: 'moods',
+                    color: AppColors.softIndigo,
+                  ),
+                  StatPill(
+                    icon: Icons.air_rounded,
+                    value: '$_breathingSessions',
+                    label: 'breaths',
+                    color: AppColors.sageGreen,
+                  ),
+                  StatPill(
+                    icon: Icons.edit_note_rounded,
+                    value: '$_journalEntries',
+                    label: 'journals',
+                    color: AppColors.orangeE2814d,
+                  ),
+                  StatPill(
+                    icon: Icons.music_note_outlined,
+                    value: '$_songsListened',
+                    label: 'songs',
+                    color: AppColors.warmCoral,
+                  ),
+                ],
+              )
+              .animate(delay: const Duration(milliseconds: 300))
+              .fadeIn(duration: const Duration(milliseconds: 400)),
 
           const SizedBox(height: 20),
 
           // Community
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.card(context),
-              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-              border: Border.all(color: AppColors.dividerColor(context), width: 0.8),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.people_outline_rounded, color: AppColors.softIndigo, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _communityInteractions > 0
-                        ? 'You supported others $_communityInteractions time${_communityInteractions == 1 ? '' : 's'} this week.'
-                        : 'Share some kindness in the community this week.',
-                    style: AppTypography.captionC(context),
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.card(context),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+                  border: Border.all(
+                    color: AppColors.dividerColor(context),
+                    width: 0.8,
                   ),
                 ),
-              ],
-            ),
-          ).animate(delay: const Duration(milliseconds: 400)).fadeIn(duration: const Duration(milliseconds: 400)),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.people_outline_rounded,
+                      color: AppColors.softIndigo,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _communityInteractions > 0
+                            ? 'You supported others $_communityInteractions time${_communityInteractions == 1 ? '' : 's'} this week.'
+                            : 'Share some kindness in the community this week.',
+                        style: AppTypography.captionC(context),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              .animate(delay: const Duration(milliseconds: 400))
+              .fadeIn(duration: const Duration(milliseconds: 400)),
 
           const SizedBox(height: 32),
         ],
@@ -346,47 +427,72 @@ class _InsightsScreenState extends State<InsightsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Your habits', style: AppTypography.heroHeadingC(context))
-              .animate().fadeIn(duration: const Duration(milliseconds: 500), curve: AppTheme.gentleCurve),
+          Text(
+            'Your habits',
+            style: AppTypography.heroHeadingC(context),
+          ).animate().fadeIn(
+            duration: const Duration(milliseconds: 500),
+            curve: AppTheme.gentleCurve,
+          ),
           const SizedBox(height: 4),
           Text('Last 14 days', style: AppTypography.captionC(context)),
           const SizedBox(height: 20),
 
           HabitStreakCard(
-            icon: Icons.emoji_emotions_outlined,
-            name: 'Mood Check-in',
-            streak: _moodStreak,
-            last14Days: _moodHabit,
-            accentColor: AppColors.softIndigo,
-            message: _moodStreak > 3 ? 'Great consistency! Keep checking in.' : 'Log your mood daily to build this habit.',
-          ).animate(delay: const Duration(milliseconds: 100)).fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.03, end: 0),
+                icon: Icons.emoji_emotions_outlined,
+                name: 'Mood Check-in',
+                streak: _moodStreak,
+                last14Days: _moodHabit,
+                accentColor: AppColors.softIndigo,
+                message: _moodStreak > 3
+                    ? 'Great consistency! Keep checking in.'
+                    : 'Log your mood daily to build this habit.',
+              )
+              .animate(delay: const Duration(milliseconds: 100))
+              .fadeIn(duration: const Duration(milliseconds: 400))
+              .slideY(begin: 0.03, end: 0),
 
           HabitStreakCard(
-            icon: Icons.nightlight_outlined,
-            name: 'Sleep Tracking',
-            streak: _sleepStreak,
-            last14Days: _sleepHabit,
-            accentColor: AppColors.warmCoral,
-            message: _sleepStreak > 3 ? 'Your sleep routine is strong.' : 'Track your sleep to see patterns.',
-          ).animate(delay: const Duration(milliseconds: 200)).fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.03, end: 0),
+                icon: Icons.nightlight_outlined,
+                name: 'Sleep Tracking',
+                streak: _sleepStreak,
+                last14Days: _sleepHabit,
+                accentColor: AppColors.warmCoral,
+                message: _sleepStreak > 3
+                    ? 'Your sleep routine is strong.'
+                    : 'Track your sleep to see patterns.',
+              )
+              .animate(delay: const Duration(milliseconds: 200))
+              .fadeIn(duration: const Duration(milliseconds: 400))
+              .slideY(begin: 0.03, end: 0),
 
           HabitStreakCard(
-            icon: Icons.air_rounded,
-            name: 'Breathing',
-            streak: _breathingStreak,
-            last14Days: _breathingHabit,
-            accentColor: AppColors.sageGreen,
-            message: _breathingStreak > 3 ? 'Wonderful breathing practice.' : 'Even one session a day helps.',
-          ).animate(delay: const Duration(milliseconds: 300)).fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.03, end: 0),
+                icon: Icons.air_rounded,
+                name: 'Breathing',
+                streak: _breathingStreak,
+                last14Days: _breathingHabit,
+                accentColor: AppColors.sageGreen,
+                message: _breathingStreak > 3
+                    ? 'Wonderful breathing practice.'
+                    : 'Even one session a day helps.',
+              )
+              .animate(delay: const Duration(milliseconds: 300))
+              .fadeIn(duration: const Duration(milliseconds: 400))
+              .slideY(begin: 0.03, end: 0),
 
           HabitStreakCard(
-            icon: Icons.edit_note_rounded,
-            name: 'Journal',
-            streak: _journalStreak,
-            last14Days: _journalHabit,
-            accentColor: AppColors.orangeE2814d,
-            message: _journalStreak > 3 ? 'Your journaling habit is growing.' : 'Write a few lines each day.',
-          ).animate(delay: const Duration(milliseconds: 400)).fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.03, end: 0),
+                icon: Icons.edit_note_rounded,
+                name: 'Journal',
+                streak: _journalStreak,
+                last14Days: _journalHabit,
+                accentColor: AppColors.orangeE2814d,
+                message: _journalStreak > 3
+                    ? 'Your journaling habit is growing.'
+                    : 'Write a few lines each day.',
+              )
+              .animate(delay: const Duration(milliseconds: 400))
+              .fadeIn(duration: const Duration(milliseconds: 400))
+              .slideY(begin: 0.03, end: 0),
 
           const SizedBox(height: 32),
         ],

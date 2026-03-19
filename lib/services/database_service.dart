@@ -100,10 +100,17 @@ class DatabaseService {
             data: data,
           );
         } catch (updateErr) {
-          developer.log('createUserProfile update fallback failed', name: _tag, error: updateErr);
+          developer.log(
+            'createUserProfile update fallback failed',
+            name: _tag,
+            error: updateErr,
+          );
         }
       } else {
-        developer.log('createUserProfile remote failed: ${e.message}', name: _tag);
+        developer.log(
+          'createUserProfile remote failed: ${e.message}',
+          name: _tag,
+        );
       }
     } catch (e) {
       developer.log('createUserProfile remote failed', name: _tag, error: e);
@@ -158,7 +165,10 @@ class DatabaseService {
         data: data,
       );
     } on AppwriteException catch (e) {
-      developer.log('updateUserProfile remote failed: ${e.message}', name: _tag);
+      developer.log(
+        'updateUserProfile remote failed: ${e.message}',
+        name: _tag,
+      );
     } catch (e) {
       developer.log('updateUserProfile remote failed', name: _tag, error: e);
     }
@@ -212,7 +222,9 @@ class DatabaseService {
     row['id'] = docId;
     final entries = LocalDataService().getMoodEntries(userId);
     entries.add(row);
-    entries.sort((a, b) => (a['timestamp'] as String).compareTo(b['timestamp'] as String));
+    entries.sort(
+      (a, b) => (a['timestamp'] as String).compareTo(b['timestamp'] as String),
+    );
     await LocalDataService().saveMoodEntries(userId, entries);
     await _recomputeRecoveryFromMood(userId);
     await LocalDataService().addAnalytics(
@@ -222,10 +234,7 @@ class DatabaseService {
     return LocalRow($id: docId, data: row);
   }
 
-  Future<LocalRowList> getMoodEntries(
-    String userId, {
-    int days = 7,
-  }) async {
+  Future<LocalRowList> getMoodEntries(String userId, {int days = 7}) async {
     await _ensureUserId(userId);
 
     // Try to fetch from Appwrite
@@ -255,7 +264,10 @@ class DatabaseService {
           ...remoteEntries,
           ...localEntries.where((e) => !remoteIds.contains(e['id'])),
         ];
-        merged.sort((a, b) => (a['timestamp'] as String).compareTo(b['timestamp'] as String));
+        merged.sort(
+          (a, b) =>
+              (a['timestamp'] as String).compareTo(b['timestamp'] as String),
+        );
         await LocalDataService().saveMoodEntries(userId, merged);
       }
     } on AppwriteException catch (e) {
@@ -303,8 +315,10 @@ class DatabaseService {
   Future<void> _recomputeRecoveryFromMood(String userId) async {
     final entries = LocalDataService().getMoodEntries(userId);
     final prefs = LocalDataService().getUserPrefs(userId);
-    final baseline = ((prefs['moodBaseline'] as num?)?.toDouble() ?? 0.5)
-        .clamp(0.0, 1.0);
+    final baseline = ((prefs['moodBaseline'] as num?)?.toDouble() ?? 0.5).clamp(
+      0.0,
+      1.0,
+    );
 
     final byDay = <String, List<double>>{};
     for (final entry in entries) {
@@ -325,8 +339,9 @@ class DatabaseService {
 
       final baselineShift = (avg - baseline) * 22.0;
       final trend = prevAvg == null ? 0.0 : (avg - prevAvg) * 18.0;
-      final volatilityPenalty =
-          prevAvg == null ? 0.0 : (avg - prevAvg).abs() * 6.0;
+      final volatilityPenalty = prevAvg == null
+          ? 0.0
+          : (avg - prevAvg).abs() * 6.0;
       final consistencyBonus = min(values.length, 3) * 1.2;
       final delta =
           baselineShift + trend + consistencyBonus - volatilityPenalty;
@@ -443,7 +458,10 @@ class DatabaseService {
             ...remoteEntries,
             ...localEntries.where((e) => !remoteIds.contains(e['id'])),
           ];
-          merged.sort((a, b) => (b['timestamp'] as String).compareTo(a['timestamp'] as String));
+          merged.sort(
+            (a, b) =>
+                (b['timestamp'] as String).compareTo(a['timestamp'] as String),
+          );
           await LocalDataService().saveJournalEntries(userId, merged);
         }
         return LocalRowList(
@@ -453,7 +471,10 @@ class DatabaseService {
         );
       }
     } on AppwriteException catch (e) {
-      developer.log('getJournalEntries remote failed: ${e.message}', name: _tag);
+      developer.log(
+        'getJournalEntries remote failed: ${e.message}',
+        name: _tag,
+      );
     } catch (e) {
       developer.log('getJournalEntries remote failed', name: _tag, error: e);
     }
@@ -480,7 +501,10 @@ class DatabaseService {
         documentId: rowId,
       );
     } on AppwriteException catch (e) {
-      developer.log('deleteJournalEntry remote failed: ${e.message}', name: _tag);
+      developer.log(
+        'deleteJournalEntry remote failed: ${e.message}',
+        name: _tag,
+      );
     } catch (e) {
       developer.log('deleteJournalEntry remote failed', name: _tag, error: e);
     }
@@ -532,7 +556,10 @@ class DatabaseService {
         await LocalDataService().saveStreak(userId, streak);
         return LocalRow($id: userId, data: streak);
       }
-      developer.log('getOrCreateStreak remote failed: ${e.message}', name: _tag);
+      developer.log(
+        'getOrCreateStreak remote failed: ${e.message}',
+        name: _tag,
+      );
     } catch (e) {
       developer.log('getOrCreateStreak remote failed', name: _tag, error: e);
     }
@@ -644,7 +671,10 @@ class DatabaseService {
         ],
       );
     } on AppwriteException catch (e) {
-      developer.log('saveRecoveryScore remote failed: ${e.message}', name: _tag);
+      developer.log(
+        'saveRecoveryScore remote failed: ${e.message}',
+        name: _tag,
+      );
     } catch (e) {
       developer.log('saveRecoveryScore remote failed', name: _tag, error: e);
     }
@@ -671,18 +701,28 @@ class DatabaseService {
         ],
       );
       if (result.documents.isNotEmpty) {
-        return (result.documents.first.data['score'] as num?)?.toDouble() ?? 100.0;
+        return (result.documents.first.data['score'] as num?)?.toDouble() ??
+            100.0;
       }
     } on AppwriteException catch (e) {
-      developer.log('getLatestRecoveryScore remote failed: ${e.message}', name: _tag);
+      developer.log(
+        'getLatestRecoveryScore remote failed: ${e.message}',
+        name: _tag,
+      );
     } catch (e) {
-      developer.log('getLatestRecoveryScore remote failed', name: _tag, error: e);
+      developer.log(
+        'getLatestRecoveryScore remote failed',
+        name: _tag,
+        error: e,
+      );
     }
 
     // Fallback to local
     final history = LocalDataService().getRecoveryHistory(userId);
     if (history.isEmpty) return 100.0;
-    history.sort((a, b) => (a['date'] as String).compareTo(b['date'] as String));
+    history.sort(
+      (a, b) => (a['date'] as String).compareTo(b['date'] as String),
+    );
     return (history.last['score'] as num?)?.toDouble() ?? 100.0;
   }
 
@@ -706,7 +746,9 @@ class DatabaseService {
       'username': username,
       'avatar': avatar,
       'imageFileId': imageFileId,
-      'imagePath': imageFileId != null ? StorageService().getPostImageUrl(imageFileId) : null,
+      'imagePath': imageFileId != null
+          ? StorageService().getPostImageUrl(imageFileId)
+          : null,
       'caption': caption,
       'moodTag': moodTag,
       'postType': postType,
@@ -748,10 +790,7 @@ class DatabaseService {
     return LocalRow($id: docId, data: row);
   }
 
-  Future<LocalRowList> getPosts({
-    int limit = 20,
-    int offset = 0,
-  }) async {
+  Future<LocalRowList> getPosts({int limit = 20, int offset = 0}) async {
     await LocalDataService().init();
 
     // Try Appwrite — returns ALL users' posts
@@ -768,11 +807,13 @@ class DatabaseService {
 
       if (result.documents.isNotEmpty) {
         final remotePosts = result.documents
-            .map((doc) => <String, dynamic>{
-                  ...doc.data,
-                  'id': doc.$id,
-                  'comments': <Map<String, dynamic>>[],
-                })
+            .map(
+              (doc) => <String, dynamic>{
+                ...doc.data,
+                'id': doc.$id,
+                'comments': <Map<String, dynamic>>[],
+              },
+            )
             .toList();
 
         // Update local cache
@@ -783,8 +824,10 @@ class DatabaseService {
             ...remotePosts,
             ...localPosts.where((e) => !remoteIds.contains(e['id'])),
           ];
-          merged.sort((a, b) =>
-              (b['timestamp'] as String).compareTo(a['timestamp'] as String));
+          merged.sort(
+            (a, b) =>
+                (b['timestamp'] as String).compareTo(a['timestamp'] as String),
+          );
           await LocalDataService().saveCommunityPosts(merged);
         }
 
@@ -802,8 +845,9 @@ class DatabaseService {
 
     // Fallback to local
     final posts = LocalDataService().getCommunityPosts();
-    posts.sort((a, b) =>
-        (b['timestamp'] as String).compareTo(a['timestamp'] as String));
+    posts.sort(
+      (a, b) => (b['timestamp'] as String).compareTo(a['timestamp'] as String),
+    );
     final sliced = posts.skip(offset).take(limit).toList();
     return LocalRowList(
       rows: sliced
@@ -845,10 +889,7 @@ class DatabaseService {
         databaseId: _dbId,
         collectionId: AppwriteConstants.postsCollection,
         documentId: postId,
-        data: {
-          'likedBy': likedBy,
-          'likesCount': likes,
-        },
+        data: {'likedBy': likedBy, 'likesCount': likes},
       );
     } on AppwriteException catch (e) {
       developer.log('togglePostLike remote failed: ${e.message}', name: _tag);
@@ -936,10 +977,12 @@ class DatabaseService {
       if (result.documents.isNotEmpty) {
         return LocalRowList(
           rows: result.documents
-              .map((doc) => LocalRow(
-                    $id: doc.$id,
-                    data: <String, dynamic>{...doc.data, 'id': doc.$id},
-                  ))
+              .map(
+                (doc) => LocalRow(
+                  $id: doc.$id,
+                  data: <String, dynamic>{...doc.data, 'id': doc.$id},
+                ),
+              )
               .toList(),
         );
       }
@@ -960,8 +1003,9 @@ class DatabaseService {
         .whereType<Map>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
-    comments.sort((a, b) =>
-        (a['timestamp'] as String).compareTo(b['timestamp'] as String));
+    comments.sort(
+      (a, b) => (a['timestamp'] as String).compareTo(b['timestamp'] as String),
+    );
     return LocalRowList(
       rows: comments
           .map((e) => LocalRow($id: e['id'] as String, data: e))

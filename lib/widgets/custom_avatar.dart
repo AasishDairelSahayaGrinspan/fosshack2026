@@ -78,8 +78,7 @@ class _AvatarPainter extends CustomPainter {
     final shoePaint = Paint()..color = config.shoeColor;
 
     // ── Drop shadow beneath character ──
-    final shadowPaint = Paint()
-      ..color = const Color(0x33000000);
+    final shadowPaint = Paint()..color = const Color(0x33000000);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(cx, s * 0.88),
@@ -91,17 +90,27 @@ class _AvatarPainter extends CustomPainter {
 
     // ── Hat (accessory, drawn behind head) ──
     if (config.accessories.contains('hat')) {
-      final hatPaint = Paint()..color = config.shirtColor.withValues(alpha: 0.85);
+      final hatPaint = Paint()
+        ..color = config.shirtColor.withValues(alpha: 0.85);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(cx, headCy - headR * 0.6), width: headR * 2.6, height: headR * 0.35),
+          Rect.fromCenter(
+            center: Offset(cx, headCy - headR * 0.6),
+            width: headR * 2.6,
+            height: headR * 0.35,
+          ),
           Radius.circular(headR * 0.15),
         ),
         hatPaint,
       );
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(cx - headR * 0.85, headCy - headR * 1.5, headR * 1.7, headR * 1.0),
+          Rect.fromLTWH(
+            cx - headR * 0.85,
+            headCy - headR * 1.5,
+            headR * 1.7,
+            headR * 1.0,
+          ),
           Radius.circular(headR * 0.3),
         ),
         hatPaint,
@@ -116,7 +125,10 @@ class _AvatarPainter extends CustomPainter {
         ..strokeWidth = s * 0.02;
       canvas.drawArc(
         Rect.fromCircle(center: Offset(cx, headCy), radius: headR * 1.05),
-        3.4, 2.5, false, headbandPaint,
+        3.4,
+        2.5,
+        false,
+        headbandPaint,
       );
     }
 
@@ -135,7 +147,11 @@ class _AvatarPainter extends CustomPainter {
 
     // ── Neck ──
     canvas.drawRect(
-      Rect.fromCenter(center: Offset(cx, bodyTop - s * 0.01), width: s * 0.06, height: s * 0.04),
+      Rect.fromCenter(
+        center: Offset(cx, bodyTop - s * 0.01),
+        width: s * 0.06,
+        height: s * 0.04,
+      ),
       skinPaint,
     );
 
@@ -144,9 +160,19 @@ class _AvatarPainter extends CustomPainter {
     if (config.shirtStyle == 1) {
       // Hoodie
       shirtPath.moveTo(cx - bodyHalfW * 1.1, bodyTop + s * 0.02);
-      shirtPath.quadraticBezierTo(cx - bodyHalfW * 1.2, bodyTop - s * 0.02, cx - bodyHalfW * 0.4, bodyTop - s * 0.01);
+      shirtPath.quadraticBezierTo(
+        cx - bodyHalfW * 1.2,
+        bodyTop - s * 0.02,
+        cx - bodyHalfW * 0.4,
+        bodyTop - s * 0.01,
+      );
       shirtPath.lineTo(cx + bodyHalfW * 0.4, bodyTop - s * 0.01);
-      shirtPath.quadraticBezierTo(cx + bodyHalfW * 1.2, bodyTop - s * 0.02, cx + bodyHalfW * 1.1, bodyTop + s * 0.02);
+      shirtPath.quadraticBezierTo(
+        cx + bodyHalfW * 1.2,
+        bodyTop - s * 0.02,
+        cx + bodyHalfW * 1.1,
+        bodyTop + s * 0.02,
+      );
       shirtPath.lineTo(cx + bodyHalfW, bodyBottom);
       shirtPath.lineTo(cx - bodyHalfW, bodyBottom);
       shirtPath.close();
@@ -161,10 +187,17 @@ class _AvatarPainter extends CustomPainter {
       shirtPath.close();
     } else if (config.shirtStyle == 3) {
       // Formal — collared shirt with V-neck
-      shirtPath.addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx - bodyHalfW, bodyTop, bodyHalfW * 2, bodyBottom - bodyTop),
-        Radius.circular(s * 0.02),
-      ));
+      shirtPath.addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx - bodyHalfW,
+            bodyTop,
+            bodyHalfW * 2,
+            bodyBottom - bodyTop,
+          ),
+          Radius.circular(s * 0.02),
+        ),
+      );
       // Collar triangles
       final collarPaint = Paint()..color = _lighten(config.shirtColor, 0.2);
       final leftCollar = Path()
@@ -183,35 +216,65 @@ class _AvatarPainter extends CustomPainter {
       // Skip default shirtPath draw below
     } else if (config.shirtStyle == 4) {
       // Jacket — wider with lapels
-      shirtPath.addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx - bodyHalfW * 1.1, bodyTop, bodyHalfW * 2.2, bodyBottom - bodyTop),
-        Radius.circular(s * 0.02),
-      ));
+      shirtPath.addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx - bodyHalfW * 1.1,
+            bodyTop,
+            bodyHalfW * 2.2,
+            bodyBottom - bodyTop,
+          ),
+          Radius.circular(s * 0.02),
+        ),
+      );
       // Center line
       final linePaint = Paint()
         ..color = _darken(config.shirtColor, 0.2)
         ..style = PaintingStyle.stroke
         ..strokeWidth = s * 0.008;
       canvas.drawPath(shirtPath, shirtPaint);
-      canvas.drawLine(Offset(cx, bodyTop + s * 0.02), Offset(cx, bodyBottom), linePaint);
+      canvas.drawLine(
+        Offset(cx, bodyTop + s * 0.02),
+        Offset(cx, bodyBottom),
+        linePaint,
+      );
     } else if (config.shirtStyle == 5) {
       // Crop top — shorter body
       final cropBottom = bodyTop + (bodyBottom - bodyTop) * 0.6;
-      shirtPath.addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx - bodyHalfW, bodyTop, bodyHalfW * 2, cropBottom - bodyTop),
-        Radius.circular(s * 0.02),
-      ));
+      shirtPath.addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx - bodyHalfW,
+            bodyTop,
+            bodyHalfW * 2,
+            cropBottom - bodyTop,
+          ),
+          Radius.circular(s * 0.02),
+        ),
+      );
       // Exposed midriff
       canvas.drawRect(
-        Rect.fromLTWH(cx - bodyHalfW * 0.8, cropBottom, bodyHalfW * 1.6, bodyBottom - cropBottom),
+        Rect.fromLTWH(
+          cx - bodyHalfW * 0.8,
+          cropBottom,
+          bodyHalfW * 1.6,
+          bodyBottom - cropBottom,
+        ),
         skinPaint,
       );
     } else {
       // T-shirt (default)
-      shirtPath.addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx - bodyHalfW, bodyTop, bodyHalfW * 2, bodyBottom - bodyTop),
-        Radius.circular(s * 0.02),
-      ));
+      shirtPath.addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx - bodyHalfW,
+            bodyTop,
+            bodyHalfW * 2,
+            bodyBottom - bodyTop,
+          ),
+          Radius.circular(s * 0.02),
+        ),
+      );
     }
     // Draw shirt for styles that haven't drawn yet (3 and 4 draw inside their branch)
     if (config.shirtStyle != 3 && config.shirtStyle != 4) {
@@ -242,13 +305,21 @@ class _AvatarPainter extends CustomPainter {
       final watchY = bodyTop + s * 0.02 + armLen - s * 0.03;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(cx - bodyHalfW - armW / 2, watchY), width: armW * 1.4, height: s * 0.025),
+          Rect.fromCenter(
+            center: Offset(cx - bodyHalfW - armW / 2, watchY),
+            width: armW * 1.4,
+            height: s * 0.025,
+          ),
           Radius.circular(s * 0.005),
         ),
         watchPaint,
       );
       final facePaint = Paint()..color = const Color(0xFF90CAF9);
-      canvas.drawCircle(Offset(cx - bodyHalfW - armW / 2, watchY), s * 0.01, facePaint);
+      canvas.drawCircle(
+        Offset(cx - bodyHalfW - armW / 2, watchY),
+        s * 0.01,
+        facePaint,
+      );
     }
 
     // ── Backpack accessory ──
@@ -256,7 +327,12 @@ class _AvatarPainter extends CustomPainter {
       final bpPaint = Paint()..color = _darken(config.shirtColor, 0.3);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(cx + bodyHalfW - s * 0.01, bodyTop + s * 0.01, s * 0.06, s * 0.1),
+          Rect.fromLTWH(
+            cx + bodyHalfW - s * 0.01,
+            bodyTop + s * 0.01,
+            s * 0.06,
+            s * 0.1,
+          ),
           Radius.circular(s * 0.015),
         ),
         bpPaint,
@@ -271,31 +347,79 @@ class _AvatarPainter extends CustomPainter {
 
     if (config.pantsStyle == 1) {
       final shortsBottom = pantsTop + (pantsBottom - pantsTop) * 0.5;
-      canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx - bodyHalfW, pantsTop, legW - gap / 2, shortsBottom - pantsTop),
-        Radius.circular(s * 0.01),
-      ), pantsPaint);
-      canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx + gap / 2, pantsTop, legW - gap / 2, shortsBottom - pantsTop),
-        Radius.circular(s * 0.01),
-      ), pantsPaint);
-      canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx - bodyHalfW + (legW - armW) / 2, shortsBottom, armW, pantsBottom - shortsBottom + legOffset),
-        Radius.circular(armW / 2),
-      ), skinPaint);
-      canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx + gap / 2 + (legW - armW) / 2, shortsBottom, armW, pantsBottom - shortsBottom - legOffset),
-        Radius.circular(armW / 2),
-      ), skinPaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx - bodyHalfW,
+            pantsTop,
+            legW - gap / 2,
+            shortsBottom - pantsTop,
+          ),
+          Radius.circular(s * 0.01),
+        ),
+        pantsPaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx + gap / 2,
+            pantsTop,
+            legW - gap / 2,
+            shortsBottom - pantsTop,
+          ),
+          Radius.circular(s * 0.01),
+        ),
+        pantsPaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx - bodyHalfW + (legW - armW) / 2,
+            shortsBottom,
+            armW,
+            pantsBottom - shortsBottom + legOffset,
+          ),
+          Radius.circular(armW / 2),
+        ),
+        skinPaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx + gap / 2 + (legW - armW) / 2,
+            shortsBottom,
+            armW,
+            pantsBottom - shortsBottom - legOffset,
+          ),
+          Radius.circular(armW / 2),
+        ),
+        skinPaint,
+      );
     } else {
-      canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx - bodyHalfW, pantsTop, legW - gap / 2, pantsBottom - pantsTop + legOffset),
-        Radius.circular(s * 0.01),
-      ), pantsPaint);
-      canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx + gap / 2, pantsTop, legW - gap / 2, pantsBottom - pantsTop - legOffset),
-        Radius.circular(s * 0.01),
-      ), pantsPaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx - bodyHalfW,
+            pantsTop,
+            legW - gap / 2,
+            pantsBottom - pantsTop + legOffset,
+          ),
+          Radius.circular(s * 0.01),
+        ),
+        pantsPaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx + gap / 2,
+            pantsTop,
+            legW - gap / 2,
+            pantsBottom - pantsTop - legOffset,
+          ),
+          Radius.circular(s * 0.01),
+        ),
+        pantsPaint,
+      );
     }
 
     // ── Shoes ──
@@ -305,24 +429,46 @@ class _AvatarPainter extends CustomPainter {
     final rightShoeY = pantsBottom - legOffset;
 
     if (config.shoeStyle == 2) {
-      canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx - bodyHalfW - s * 0.01, leftShoeY, shoeW, shoeH * 0.6),
-        Radius.circular(s * 0.01),
-      ), shoePaint);
-      canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx + gap / 2 - s * 0.01, rightShoeY, shoeW, shoeH * 0.6),
-        Radius.circular(s * 0.01),
-      ), shoePaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx - bodyHalfW - s * 0.01,
+            leftShoeY,
+            shoeW,
+            shoeH * 0.6,
+          ),
+          Radius.circular(s * 0.01),
+        ),
+        shoePaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            cx + gap / 2 - s * 0.01,
+            rightShoeY,
+            shoeW,
+            shoeH * 0.6,
+          ),
+          Radius.circular(s * 0.01),
+        ),
+        shoePaint,
+      );
     } else {
       final r = config.shoeStyle == 1 ? s * 0.02 : s * 0.015;
-      canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx - bodyHalfW - s * 0.01, leftShoeY, shoeW, shoeH),
-        Radius.circular(r),
-      ), shoePaint);
-      canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(cx + gap / 2 - s * 0.01, rightShoeY, shoeW, shoeH),
-        Radius.circular(r),
-      ), shoePaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(cx - bodyHalfW - s * 0.01, leftShoeY, shoeW, shoeH),
+          Radius.circular(r),
+        ),
+        shoePaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(cx + gap / 2 - s * 0.01, rightShoeY, shoeW, shoeH),
+          Radius.circular(r),
+        ),
+        shoePaint,
+      );
     }
 
     // ── Eyes ──
@@ -351,14 +497,23 @@ class _AvatarPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round;
       final chainPath = Path()
         ..moveTo(cx - s * 0.04, bodyTop + s * 0.01)
-        ..quadraticBezierTo(cx, bodyTop + s * 0.07, cx + s * 0.04, bodyTop + s * 0.01);
+        ..quadraticBezierTo(
+          cx,
+          bodyTop + s * 0.07,
+          cx + s * 0.04,
+          bodyTop + s * 0.01,
+        );
       canvas.drawPath(chainPath, chainPaint);
     }
 
     // ── Earring accessory ──
     if (config.accessories.contains('earring')) {
       final earPaint = Paint()..color = const Color(0xFFFFD54F);
-      canvas.drawCircle(Offset(cx - headR * 1.0, headCy + headR * 0.1), s * 0.015, earPaint);
+      canvas.drawCircle(
+        Offset(cx - headR * 1.0, headCy + headR * 0.1),
+        s * 0.015,
+        earPaint,
+      );
     }
   }
 
@@ -375,21 +530,37 @@ class _AvatarPainter extends CustomPainter {
         break;
       case 1: // Almond — oval shapes
         canvas.drawOval(
-          Rect.fromCenter(center: Offset(leftEyeX, eyeY), width: s * 0.045, height: s * 0.025),
+          Rect.fromCenter(
+            center: Offset(leftEyeX, eyeY),
+            width: s * 0.045,
+            height: s * 0.025,
+          ),
           eyePaint,
         );
         canvas.drawOval(
-          Rect.fromCenter(center: Offset(rightEyeX, eyeY), width: s * 0.045, height: s * 0.025),
+          Rect.fromCenter(
+            center: Offset(rightEyeX, eyeY),
+            width: s * 0.045,
+            height: s * 0.025,
+          ),
           eyePaint,
         );
         break;
       case 2: // Narrow — thin horizontal ovals
         canvas.drawOval(
-          Rect.fromCenter(center: Offset(leftEyeX, eyeY), width: s * 0.04, height: s * 0.012),
+          Rect.fromCenter(
+            center: Offset(leftEyeX, eyeY),
+            width: s * 0.04,
+            height: s * 0.012,
+          ),
           eyePaint,
         );
         canvas.drawOval(
-          Rect.fromCenter(center: Offset(rightEyeX, eyeY), width: s * 0.04, height: s * 0.012),
+          Rect.fromCenter(
+            center: Offset(rightEyeX, eyeY),
+            width: s * 0.04,
+            height: s * 0.012,
+          ),
           eyePaint,
         );
         break;
@@ -398,8 +569,16 @@ class _AvatarPainter extends CustomPainter {
         canvas.drawCircle(Offset(rightEyeX, eyeY), s * 0.028, eyePaint);
         // White highlight
         final highlightPaint = Paint()..color = const Color(0xFFFFFFFF);
-        canvas.drawCircle(Offset(leftEyeX - s * 0.008, eyeY - s * 0.008), s * 0.008, highlightPaint);
-        canvas.drawCircle(Offset(rightEyeX - s * 0.008, eyeY - s * 0.008), s * 0.008, highlightPaint);
+        canvas.drawCircle(
+          Offset(leftEyeX - s * 0.008, eyeY - s * 0.008),
+          s * 0.008,
+          highlightPaint,
+        );
+        canvas.drawCircle(
+          Offset(rightEyeX - s * 0.008, eyeY - s * 0.008),
+          s * 0.008,
+          highlightPaint,
+        );
         break;
       case 4: // Sleepy — half-closed crescents
         final sleepyPaint = Paint()
@@ -408,12 +587,26 @@ class _AvatarPainter extends CustomPainter {
           ..strokeWidth = s * 0.015
           ..strokeCap = StrokeCap.round;
         canvas.drawArc(
-          Rect.fromCenter(center: Offset(leftEyeX, eyeY), width: s * 0.04, height: s * 0.025),
-          0.3, 2.5, false, sleepyPaint,
+          Rect.fromCenter(
+            center: Offset(leftEyeX, eyeY),
+            width: s * 0.04,
+            height: s * 0.025,
+          ),
+          0.3,
+          2.5,
+          false,
+          sleepyPaint,
         );
         canvas.drawArc(
-          Rect.fromCenter(center: Offset(rightEyeX, eyeY), width: s * 0.04, height: s * 0.025),
-          0.3, 2.5, false, sleepyPaint,
+          Rect.fromCenter(
+            center: Offset(rightEyeX, eyeY),
+            width: s * 0.04,
+            height: s * 0.025,
+          ),
+          0.3,
+          2.5,
+          false,
+          sleepyPaint,
         );
         break;
       default:
@@ -446,7 +639,12 @@ class _AvatarPainter extends CustomPainter {
       case 2: // Smirk — one-sided curve
         final smirkPath = Path()
           ..moveTo(cx - r * 0.15, cy + r * 0.35)
-          ..quadraticBezierTo(cx + r * 0.1, cy + r * 0.35, cx + r * 0.25, cy + r * 0.25);
+          ..quadraticBezierTo(
+            cx + r * 0.1,
+            cy + r * 0.35,
+            cx + r * 0.25,
+            cy + r * 0.25,
+          );
         canvas.drawPath(smirkPath, mouthPaint);
         break;
       case 3: // Gentle — slight upward curve
@@ -463,7 +661,13 @@ class _AvatarPainter extends CustomPainter {
     }
   }
 
-  void _drawSunglasses(Canvas canvas, double cx, double cy, double r, double s) {
+  void _drawSunglasses(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double r,
+    double s,
+  ) {
     final glassPaint = Paint()..color = const Color(0xCC212121);
     final glassR = r * 0.28;
     final glassY = cy - r * 0.05;
@@ -480,7 +684,13 @@ class _AvatarPainter extends CustomPainter {
     );
   }
 
-  void _drawGlassesRound(Canvas canvas, double cx, double cy, double r, double s) {
+  void _drawGlassesRound(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double r,
+    double s,
+  ) {
     final framePaint = Paint()
       ..color = const Color(0xFF5D4037)
       ..style = PaintingStyle.stroke
@@ -496,7 +706,13 @@ class _AvatarPainter extends CustomPainter {
     );
   }
 
-  void _drawGlassesSquare(Canvas canvas, double cx, double cy, double r, double s) {
+  void _drawGlassesSquare(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double r,
+    double s,
+  ) {
     final framePaint = Paint()
       ..color = const Color(0xFF212121)
       ..style = PaintingStyle.stroke
@@ -506,14 +722,22 @@ class _AvatarPainter extends CustomPainter {
     final glassY = cy - r * 0.05;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(cx - r * 0.35, glassY), width: glassW, height: glassH),
+        Rect.fromCenter(
+          center: Offset(cx - r * 0.35, glassY),
+          width: glassW,
+          height: glassH,
+        ),
         Radius.circular(s * 0.005),
       ),
       framePaint,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(cx + r * 0.35, glassY), width: glassW, height: glassH),
+        Rect.fromCenter(
+          center: Offset(cx + r * 0.35, glassY),
+          width: glassW,
+          height: glassH,
+        ),
         Radius.circular(s * 0.005),
       ),
       framePaint,
@@ -525,7 +749,14 @@ class _AvatarPainter extends CustomPainter {
     );
   }
 
-  void _drawHair(Canvas canvas, double cx, double cy, double r, Paint paint, double s) {
+  void _drawHair(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double r,
+    Paint paint,
+    double s,
+  ) {
     // Hair highlight paint
     final highlightPaint = Paint()
       ..color = _lighten(config.hairColor, 0.25).withValues(alpha: 0.5);
@@ -534,46 +765,78 @@ class _AvatarPainter extends CustomPainter {
       case 0: // Short
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.08),
-          3.4, 2.5, true, paint,
+          3.4,
+          2.5,
+          true,
+          paint,
         );
         // Highlight streak
         canvas.drawArc(
-          Rect.fromCircle(center: Offset(cx - r * 0.2, cy - r * 0.1), radius: r * 0.6),
-          3.6, 1.0, false, highlightPaint..style = PaintingStyle.stroke..strokeWidth = s * 0.015,
+          Rect.fromCircle(
+            center: Offset(cx - r * 0.2, cy - r * 0.1),
+            radius: r * 0.6,
+          ),
+          3.6,
+          1.0,
+          false,
+          highlightPaint
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = s * 0.015,
         );
         break;
       case 1: // Medium
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.12),
-          3.0, 3.3, true, paint,
+          3.0,
+          3.3,
+          true,
+          paint,
         );
-        canvas.drawRRect(RRect.fromRectAndRadius(
-          Rect.fromLTWH(cx - r * 1.15, cy - r * 0.2, r * 0.25, r * 1.0),
-          Radius.circular(r * 0.1),
-        ), paint);
-        canvas.drawRRect(RRect.fromRectAndRadius(
-          Rect.fromLTWH(cx + r * 0.9, cy - r * 0.2, r * 0.25, r * 1.0),
-          Radius.circular(r * 0.1),
-        ), paint);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(cx - r * 1.15, cy - r * 0.2, r * 0.25, r * 1.0),
+            Radius.circular(r * 0.1),
+          ),
+          paint,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(cx + r * 0.9, cy - r * 0.2, r * 0.25, r * 1.0),
+            Radius.circular(r * 0.1),
+          ),
+          paint,
+        );
         break;
       case 2: // Long
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.12),
-          3.0, 3.3, true, paint,
+          3.0,
+          3.3,
+          true,
+          paint,
         );
-        canvas.drawRRect(RRect.fromRectAndRadius(
-          Rect.fromLTWH(cx - r * 1.15, cy - r * 0.2, r * 0.3, r * 1.8),
-          Radius.circular(r * 0.12),
-        ), paint);
-        canvas.drawRRect(RRect.fromRectAndRadius(
-          Rect.fromLTWH(cx + r * 0.85, cy - r * 0.2, r * 0.3, r * 1.8),
-          Radius.circular(r * 0.12),
-        ), paint);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(cx - r * 1.15, cy - r * 0.2, r * 0.3, r * 1.8),
+            Radius.circular(r * 0.12),
+          ),
+          paint,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(cx + r * 0.85, cy - r * 0.2, r * 0.3, r * 1.8),
+            Radius.circular(r * 0.12),
+          ),
+          paint,
+        );
         break;
       case 3: // Buzz
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.03),
-          3.6, 2.0, true, paint,
+          3.6,
+          2.0,
+          true,
+          paint,
         );
         break;
       case 4: // Curly
@@ -588,29 +851,51 @@ class _AvatarPainter extends CustomPainter {
         // Base hair on top
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.1),
-          3.2, 2.8, true, paint,
+          3.2,
+          2.8,
+          true,
+          paint,
         );
         // Ponytail tail going down-right
         final tailPath = Path()
           ..moveTo(cx + r * 0.6, cy - r * 0.5)
-          ..quadraticBezierTo(cx + r * 1.8, cy - r * 0.3, cx + r * 1.4, cy + r * 1.0);
-        canvas.drawPath(tailPath, paint..style = PaintingStyle.stroke..strokeWidth = r * 0.35..strokeCap = StrokeCap.round);
+          ..quadraticBezierTo(
+            cx + r * 1.8,
+            cy - r * 0.3,
+            cx + r * 1.4,
+            cy + r * 1.0,
+          );
+        canvas.drawPath(
+          tailPath,
+          paint
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = r * 0.35
+            ..strokeCap = StrokeCap.round,
+        );
         paint.style = PaintingStyle.fill; // Reset
         // Hair tie
         final tiePaint = Paint()..color = const Color(0xFFE57373);
-        canvas.drawCircle(Offset(cx + r * 0.7, cy - r * 0.4), r * 0.12, tiePaint);
+        canvas.drawCircle(
+          Offset(cx + r * 0.7, cy - r * 0.4),
+          r * 0.12,
+          tiePaint,
+        );
         break;
       case 6: // Braids
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.1),
-          3.0, 3.3, true, paint,
+          3.0,
+          3.3,
+          true,
+          paint,
         );
         // Two braids hanging down
         for (var side = -1; side <= 1; side += 2) {
           final braidX = cx + side * r * 0.9;
           for (var j = 0; j < 5; j++) {
             final by = cy + r * 0.2 + j * r * 0.35;
-            final bx = braidX + (j % 2 == 0 ? side * r * 0.08 : -side * r * 0.08);
+            final bx =
+                braidX + (j % 2 == 0 ? side * r * 0.08 : -side * r * 0.08);
             canvas.drawCircle(Offset(bx, by), r * 0.13, paint);
           }
         }
@@ -634,12 +919,16 @@ class _AvatarPainter extends CustomPainter {
 
   static Color _lighten(Color c, double amount) {
     final hsl = HSLColor.fromColor(c);
-    return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
+    return hsl
+        .withLightness((hsl.lightness + amount).clamp(0.0, 1.0))
+        .toColor();
   }
 
   static Color _darken(Color c, double amount) {
     final hsl = HSLColor.fromColor(c);
-    return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
+    return hsl
+        .withLightness((hsl.lightness - amount).clamp(0.0, 1.0))
+        .toColor();
   }
 
   @override

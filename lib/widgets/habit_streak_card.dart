@@ -52,14 +52,19 @@ class HabitStreakCard extends StatelessWidget {
                 child: Text(name, style: AppTypography.uiLabelC(context)),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppTheme.radiusButton),
                 ),
                 child: Text(
                   '$streak day${streak == 1 ? '' : 's'}',
-                  style: AppTypography.caption(color: color).copyWith(fontWeight: FontWeight.w600),
+                  style: AppTypography.caption(
+                    color: color,
+                  ).copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -75,9 +80,13 @@ class HabitStreakCard extends StatelessWidget {
                 height: 16,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: done ? color.withValues(alpha: 0.8) : AppColors.dividerColor(context).withValues(alpha: 0.3),
+                  color: done
+                      ? color.withValues(alpha: 0.8)
+                      : AppColors.dividerColor(context).withValues(alpha: 0.3),
                 ),
-                child: done ? Icon(Icons.check_rounded, size: 10, color: Colors.white) : null,
+                child: done
+                    ? Icon(Icons.check_rounded, size: 10, color: Colors.white)
+                    : null,
               );
             }),
           ),

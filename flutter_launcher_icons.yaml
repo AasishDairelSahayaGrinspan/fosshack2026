@@ -1,7 +1,15 @@
 flutter_launcher_icons:
+  # Main app branding icon
+  image_path: "assets/app_icon.png"
+  
+  # Platforms to generate icons for
   android: true
   ios: true
-  image_path: "assets/logo.png"
-  adaptive_icon_background: "#1A1A2E"
-  adaptive_icon_foreground: "assets/logo.png"
+  
+  # Android-specific settings
+  # Adaptive icon background color (used behind the icon on Android 8+)
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/app_icon.png"
+  
+  # Minimum Android SDK version
   min_sdk_android: 21

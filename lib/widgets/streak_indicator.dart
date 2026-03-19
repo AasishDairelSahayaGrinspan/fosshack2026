@@ -66,10 +66,12 @@ class _StreakIndicatorState extends State<StreakIndicator>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      AppColors.warmCoral
-                          .withValues(alpha: _glowAnimation.value),
-                      AppColors.orangeE2814d
-                          .withValues(alpha: _glowAnimation.value),
+                      AppColors.warmCoral.withValues(
+                        alpha: _glowAnimation.value,
+                      ),
+                      AppColors.orangeE2814d.withValues(
+                        alpha: _glowAnimation.value,
+                      ),
                     ],
                   ).createShader(bounds),
                   child: const Icon(

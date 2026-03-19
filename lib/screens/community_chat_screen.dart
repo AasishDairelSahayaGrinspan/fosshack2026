@@ -47,7 +47,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
         userId == currentUserId,
       );
     }).toList();
-    
+
     // Sort oldest first (top-down) or adjust depending on UI list view
     loaded.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
@@ -101,7 +101,10 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
               Expanded(
                 child: ListView.builder(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   itemCount: _messages.length + (_isTyping ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == _messages.length && _isTyping) {
@@ -146,10 +149,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Community Chat', style: AppTypography.uiLabelC(context)),
-                Text(
-                  '4 people here',
-                  style: AppTypography.captionC(context),
-                ),
+                Text('4 people here', style: AppTypography.captionC(context)),
               ],
             ),
           ),
@@ -161,53 +161,58 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
   Widget _buildBubble(_ChatMessage message, int index) {
     final isMe = message.isMe;
     return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        child: Column(
-          crossAxisAlignment:
-              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            if (!isMe)
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 4),
-                child: Text(
-                  message.username,
-                  style: AppTypography.caption(color: AppColors.softIndigo)
-                      .copyWith(fontSize: 11),
-                ),
-              ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isMe
-                    ? AppColors.softIndigo.withValues(alpha: 0.15)
-                    : AppColors.card(context),
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(18),
-                  topRight: const Radius.circular(18),
-                  bottomLeft: Radius.circular(isMe ? 18 : 4),
-                  bottomRight: Radius.circular(isMe ? 4 : 18),
-                ),
-                border: Border.all(
-                  color: isMe
-                      ? AppColors.softIndigo.withValues(alpha: 0.2)
-                      : AppColors.dividerColor(context),
-                  width: 0.8,
-                ),
-              ),
-              child: Text(
-                message.text,
-                style: AppTypography.bodyC(context),
-              ),
+          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
             ),
-          ],
-        ),
-      ),
-    )
+            child: Column(
+              crossAxisAlignment: isMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                if (!isMe)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 4),
+                    child: Text(
+                      message.username,
+                      style: AppTypography.caption(
+                        color: AppColors.softIndigo,
+                      ).copyWith(fontSize: 11),
+                    ),
+                  ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isMe
+                        ? AppColors.softIndigo.withValues(alpha: 0.15)
+                        : AppColors.card(context),
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(18),
+                      topRight: const Radius.circular(18),
+                      bottomLeft: Radius.circular(isMe ? 18 : 4),
+                      bottomRight: Radius.circular(isMe ? 4 : 18),
+                    ),
+                    border: Border.all(
+                      color: isMe
+                          ? AppColors.softIndigo.withValues(alpha: 0.2)
+                          : AppColors.dividerColor(context),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Text(
+                    message.text,
+                    style: AppTypography.bodyC(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
         .animate()
         .fadeIn(
           delay: Duration(milliseconds: index * 60),
@@ -246,14 +251,14 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (i) {
             return Container(
-              width: 8,
-              height: 8,
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.tertiary(context),
-              ),
-            )
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.tertiary(context),
+                  ),
+                )
                 .animate(onPlay: (c) => c.repeat(reverse: true))
                 .fadeOut(
                   delay: Duration(milliseconds: i * 200),
@@ -271,10 +276,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       decoration: BoxDecoration(
         color: AppColors.card(context),
         border: Border(
-          top: BorderSide(
-            color: AppColors.dividerColor(context),
-            width: 0.8,
-          ),
+          top: BorderSide(color: AppColors.dividerColor(context), width: 0.8),
         ),
       ),
       child: Row(
@@ -334,5 +336,11 @@ class _ChatMessage {
   final bool isMe;
   final DateTime timestamp;
 
-  _ChatMessage(this.username, this.avatar, this.text, this.isMe, {DateTime? timestamp}) : timestamp = timestamp ?? DateTime.now();
+  _ChatMessage(
+    this.username,
+    this.avatar,
+    this.text,
+    this.isMe, {
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
 }

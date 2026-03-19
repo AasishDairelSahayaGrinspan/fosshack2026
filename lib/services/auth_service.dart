@@ -39,11 +39,11 @@ class LocalUser {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': $id,
-        'name': name,
-        'email': email,
-        'isGuest': isGuest,
-      };
+    'id': $id,
+    'name': name,
+    'email': email,
+    'isGuest': isGuest,
+  };
 }
 
 class AuthService {
@@ -65,7 +65,10 @@ class AuthService {
       final user = await _account.get();
       _currentUser = LocalUser.fromAppwriteUser(user);
       // Cache locally
-      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
+      await LocalDataService().saveUser(
+        _currentUser!.$id,
+        _currentUser!.toJson(),
+      );
       await LocalDataService().setSessionUserId(_currentUser!.$id);
       return true;
     } on AppwriteException catch (e) {
@@ -109,7 +112,10 @@ class AuthService {
       );
       final user = await _account.get();
       _currentUser = LocalUser.fromAppwriteUser(user);
-      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
+      await LocalDataService().saveUser(
+        _currentUser!.$id,
+        _currentUser!.toJson(),
+      );
       await LocalDataService().setSessionUserId(_currentUser!.$id);
       await LocalDataService().addAnalytics(
         'signup',
@@ -130,10 +136,7 @@ class AuthService {
   }
 
   /// Log in with email and password.
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     try {
       await LocalDataService().init();
       await _account.createEmailPasswordSession(
@@ -142,7 +145,10 @@ class AuthService {
       );
       final user = await _account.get();
       _currentUser = LocalUser.fromAppwriteUser(user);
-      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
+      await LocalDataService().saveUser(
+        _currentUser!.$id,
+        _currentUser!.toJson(),
+      );
       await LocalDataService().setSessionUserId(_currentUser!.$id);
       await LocalDataService().addAnalytics(
         'login',
@@ -161,13 +167,23 @@ class AuthService {
   }
 
   /// OAuth login (Google, Apple) — opens browser for real OAuth flow.
+  /// On web: OAuth session is created and browser handles redirect
+  /// On mobile: Uses custom URI schemes configured in native code
   Future<void> oAuthLogin(enums.OAuthProvider provider) async {
     try {
       await LocalDataService().init();
+
+      // Appwrite SDK v22+ handles OAuth differently on web
+      // Simply call createOAuth2Session - Appwrite handles the redirect
+      // Make sure redirect URI is configured in Appwrite console
       await _account.createOAuth2Session(provider: provider);
+
       final user = await _account.get();
       _currentUser = LocalUser.fromAppwriteUser(user);
-      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
+      await LocalDataService().saveUser(
+        _currentUser!.$id,
+        _currentUser!.toJson(),
+      );
       await LocalDataService().setSessionUserId(_currentUser!.$id);
       await LocalDataService().addAnalytics(
         'oauth_login',
@@ -188,12 +204,11 @@ class AuthService {
       await LocalDataService().init();
       await _account.createAnonymousSession();
       final user = await _account.get();
-      _currentUser = LocalUser(
-        $id: user.$id,
-        name: 'Guest',
-        isGuest: true,
+      _currentUser = LocalUser($id: user.$id, name: 'Guest', isGuest: true);
+      await LocalDataService().saveUser(
+        _currentUser!.$id,
+        _currentUser!.toJson(),
       );
-      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
       await LocalDataService().setSessionUserId(_currentUser!.$id);
       await LocalDataService().addAnalytics('guest_login');
     } catch (e, st) {

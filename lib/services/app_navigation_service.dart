@@ -40,4 +40,3 @@ class AppNavigationService {
     musicRecommendation.value = null;
   }
 }
-

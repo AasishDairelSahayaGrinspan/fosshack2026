@@ -32,7 +32,12 @@ class StatPill extends StatelessWidget {
         children: [
           Icon(icon, color: c, size: 16),
           const SizedBox(width: 6),
-          Text(value, style: AppTypography.uiLabel(color: c).copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: AppTypography.uiLabel(
+              color: c,
+            ).copyWith(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(width: 4),
           Text(label, style: AppTypography.caption(color: c)),
         ],

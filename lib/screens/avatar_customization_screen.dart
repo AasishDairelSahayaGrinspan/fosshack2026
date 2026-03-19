@@ -22,7 +22,8 @@ class AvatarCustomizationScreen extends StatefulWidget {
   });
 
   @override
-  State<AvatarCustomizationScreen> createState() => _AvatarCustomizationScreenState();
+  State<AvatarCustomizationScreen> createState() =>
+      _AvatarCustomizationScreenState();
 }
 
 class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
@@ -77,6 +78,65 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
       UserPreferencesService().avatarData = _config.toJsonString();
     }
   }
+
+  void _updateConfig(AvatarConfig newConfig) {
+    setState(() {
+      _config = newConfig;
+    });
+    _syncToPrefsIfCompact();
+  }
+
+  int _indexOfColor(List<Color> palette, Color color) {
+    final idx = palette.indexWhere((c) => c.toARGB32() == color.toARGB32());
+    return idx < 0 ? 0 : idx;
+  }
+
+  int get _presentationIndex =>
+      _config.bodyType.clamp(0, AvatarParts.presentationLabels.length - 1);
+
+  int get _faceShapeIndex =>
+      _config.eyeStyle.clamp(0, AvatarParts.faceShapeNames.length - 1);
+
+  int get _skinToneIndex => _indexOfColor(
+    AvatarParts.skinTones,
+    _config.skinColor,
+  ).clamp(0, AvatarParts.skinTones.length - 1);
+
+  int get _hairColorIndex => _indexOfColor(
+    AvatarParts.hairColors,
+    _config.hairColor,
+  ).clamp(0, AvatarParts.hairColors.length - 1);
+
+  int get _mouthStyleIndex =>
+      _config.smileStyle.clamp(0, AvatarParts.mouthStyleNames.length - 1);
+
+  int get _accessoryIndex {
+    if (_config.accessories.isEmpty) return 0;
+    final first = _config.accessories.first;
+    switch (first) {
+      case 'glassesRound':
+      case 'glassesSquare':
+        return 1;
+      case 'sunglasses':
+        return 2;
+      case 'earring':
+        return 3;
+      case 'headband':
+        return 4;
+      case 'hat':
+        return 5;
+      default:
+        return 0;
+    }
+  }
+
+  int get _clothingIndex =>
+      _config.shirtStyle.clamp(0, AvatarParts.clothingStyleNames.length - 1);
+
+  int get _clothingColorIndex => _indexOfColor(
+    AvatarParts.clothingColors,
+    _config.shirtColor,
+  ).clamp(0, AvatarParts.clothingColors.length - 1);
 
   @override
   Widget build(BuildContext context) {
@@ -211,8 +271,9 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
             const SizedBox(width: 6),
             Text(
               'Randomize',
-              style: AppTypography.caption(color: AppColors.softIndigo)
-                  .copyWith(fontWeight: FontWeight.w500),
+              style: AppTypography.caption(
+                color: AppColors.softIndigo,
+              ).copyWith(fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -259,13 +320,16 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
                   const SizedBox(width: 6),
                   Text(
                     _categories[i]['label'] as String,
-                    style: AppTypography.caption(
-                      color: isSelected
-                          ? AppColors.softIndigo
-                          : AppColors.secondary(context),
-                    ).copyWith(
-                      fontWeight: isSelected ? FontWeight.w500 : FontWeight.w300,
-                    ),
+                    style:
+                        AppTypography.caption(
+                          color: isSelected
+                              ? AppColors.softIndigo
+                              : AppColors.secondary(context),
+                        ).copyWith(
+                          fontWeight: isSelected
+                              ? FontWeight.w500
+                              : FontWeight.w300,
+                        ),
                   ),
                 ],
               ),
@@ -304,32 +368,34 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
           _buildSectionLabel('Presentation'),
           _buildOptionRow(
             itemCount: AvatarParts.presentationLabels.length,
-            selectedIndex: _config.presentation,
+            selectedIndex: _presentationIndex,
             labels: AvatarParts.presentationLabels,
             onSelect: (i) {
-              setState(() {
-                _config.presentation = i;
-                final allowed = AvatarParts.hairStyleIndicesForPresentation(i);
-                if (!allowed.contains(_config.hairStyle)) {
-                  _config.hairStyle = allowed.first;
-                }
-              });
+              final allowed = AvatarParts.hairStyleIndicesForPresentation(i);
+              final nextHairStyle = allowed.contains(_config.hairStyle)
+                  ? _config.hairStyle
+                  : allowed.first;
+              _updateConfig(
+                _config.copyWith(bodyType: i, hairStyle: nextHairStyle),
+              );
             },
           ),
           const SizedBox(height: 20),
           _buildSectionLabel('Face Shape'),
           _buildOptionRow(
             itemCount: AvatarParts.faceShapeNames.length,
-            selectedIndex: _config.faceShape,
+            selectedIndex: _faceShapeIndex,
             labels: AvatarParts.faceShapeNames,
-            onSelect: (i) => setState(() => _config.faceShape = i),
+            onSelect: (i) => _updateConfig(_config.copyWith(eyeStyle: i)),
           ),
           const SizedBox(height: 20),
           _buildSectionLabel('Skin Tone'),
           _buildColorRow(
             colors: AvatarParts.skinTones,
-            selectedIndex: _config.skinTone,
-            onSelect: (i) => setState(() => _config.skinTone = i),
+            selectedIndex: _skinToneIndex,
+            onSelect: (i) => _updateConfig(
+              _config.copyWith(skinColor: AvatarParts.skinTones[i]),
+            ),
           ),
         ],
       ),
@@ -354,8 +420,7 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
               final isSelected = _config.hairStyle == styleIndex;
               return GestureDetector(
                 onTap: () {
-                  setState(() => _config.hairStyle = styleIndex);
-                  _syncToPrefsIfCompact();
+                  _updateConfig(_config.copyWith(hairStyle: styleIndex));
                 },
                 child: AnimatedContainer(
                   duration: AppTheme.fadeInDuration,
@@ -377,15 +442,17 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
                   ),
                   child: Text(
                     AvatarParts.hairStyleNames[styleIndex],
-                    style: AppTypography.caption(
-                      color: isSelected
-                          ? AppColors.softIndigo
-                          : AppColors.secondary(context),
-                    ).copyWith(
-                      fontWeight:
-                          isSelected ? FontWeight.w500 : FontWeight.w300,
-                      fontSize: 11,
-                    ),
+                    style:
+                        AppTypography.caption(
+                          color: isSelected
+                              ? AppColors.softIndigo
+                              : AppColors.secondary(context),
+                        ).copyWith(
+                          fontWeight: isSelected
+                              ? FontWeight.w500
+                              : FontWeight.w300,
+                          fontSize: 11,
+                        ),
                   ),
                 ),
               );
@@ -395,8 +462,10 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
           _buildSectionLabel('Hair Color'),
           _buildColorRow(
             colors: AvatarParts.hairColors,
-            selectedIndex: _config.hairColor,
-            onSelect: (i) => setState(() => _config.hairColor = i),
+            selectedIndex: _hairColorIndex,
+            onSelect: (i) => _updateConfig(
+              _config.copyWith(hairColor: AvatarParts.hairColors[i]),
+            ),
           ),
         ],
       ),
@@ -414,7 +483,7 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
             itemCount: AvatarParts.eyeStyleNames.length,
             selectedIndex: _config.eyeStyle,
             labels: AvatarParts.eyeStyleNames,
-            onSelect: (i) => setState(() => _config.eyeStyle = i),
+            onSelect: (i) => _updateConfig(_config.copyWith(eyeStyle: i)),
           ),
         ],
       ),
@@ -430,9 +499,9 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
           _buildSectionLabel('Mouth Style'),
           _buildOptionRow(
             itemCount: AvatarParts.mouthStyleNames.length,
-            selectedIndex: _config.mouthStyle,
+            selectedIndex: _mouthStyleIndex,
             labels: AvatarParts.mouthStyleNames,
-            onSelect: (i) => setState(() => _config.mouthStyle = i),
+            onSelect: (i) => _updateConfig(_config.copyWith(smileStyle: i)),
           ),
         ],
       ),
@@ -448,9 +517,19 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
           _buildSectionLabel('Accessory'),
           _buildOptionRow(
             itemCount: AvatarParts.accessoryNames.length,
-            selectedIndex: _config.accessory,
+            selectedIndex: _accessoryIndex,
             labels: AvatarParts.accessoryNames,
-            onSelect: (i) => setState(() => _config.accessory = i),
+            onSelect: (i) {
+              final mapped = switch (i) {
+                1 => <String>['glassesRound'],
+                2 => <String>['sunglasses'],
+                3 => <String>['earring'],
+                4 => <String>['headband'],
+                5 => <String>['hat'],
+                _ => <String>[],
+              };
+              _updateConfig(_config.copyWith(accessories: mapped));
+            },
           ),
         ],
       ),
@@ -466,16 +545,18 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
           _buildSectionLabel('Clothing Style'),
           _buildOptionRow(
             itemCount: AvatarParts.clothingStyleNames.length,
-            selectedIndex: _config.clothing,
+            selectedIndex: _clothingIndex,
             labels: AvatarParts.clothingStyleNames,
-            onSelect: (i) => setState(() => _config.clothing = i),
+            onSelect: (i) => _updateConfig(_config.copyWith(shirtStyle: i)),
           ),
           const SizedBox(height: 20),
           _buildSectionLabel('Clothing Color'),
           _buildColorRow(
             colors: AvatarParts.clothingColors,
-            selectedIndex: _config.clothingColor,
-            onSelect: (i) => setState(() => _config.clothingColor = i),
+            selectedIndex: _clothingColorIndex,
+            onSelect: (i) => _updateConfig(
+              _config.copyWith(shirtColor: AvatarParts.clothingColors[i]),
+            ),
           ),
         ],
       ),
@@ -525,14 +606,15 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
             ),
             child: Text(
               i < labels.length ? labels[i] : '$i',
-              style: AppTypography.caption(
-                color: isSelected
-                    ? AppColors.softIndigo
-                    : AppColors.secondary(context),
-              ).copyWith(
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.w300,
-                fontSize: 11,
-              ),
+              style:
+                  AppTypography.caption(
+                    color: isSelected
+                        ? AppColors.softIndigo
+                        : AppColors.secondary(context),
+                  ).copyWith(
+                    fontWeight: isSelected ? FontWeight.w500 : FontWeight.w300,
+                    fontSize: 11,
+                  ),
             ),
           ),
         );

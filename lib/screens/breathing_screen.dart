@@ -74,17 +74,16 @@ class _BreathingScreenState extends State<BreathingScreen>
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
 
-    _colorController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          setState(() {
-            _colorIndex = (_colorIndex + 1) % _mantraColors.length;
+    _colorController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 15))
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              setState(() {
+                _colorIndex = (_colorIndex + 1) % _mantraColors.length;
+              });
+              _colorController.forward(from: 0);
+            }
           });
-          _colorController.forward(from: 0);
-        }
-      });
 
     // Ripple controllers — staggered
     _ripple1Controller = AnimationController(
@@ -430,14 +429,14 @@ class _BreathingScreenState extends State<BreathingScreen>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.softIndigo
-                        .withValues(alpha: glowOpacity),
+                    color: AppColors.softIndigo.withValues(alpha: glowOpacity),
                     blurRadius: 60,
                     spreadRadius: 20,
                   ),
                   BoxShadow(
-                    color: AppColors.paleLilac
-                        .withValues(alpha: glowOpacity * 0.8),
+                    color: AppColors.paleLilac.withValues(
+                      alpha: glowOpacity * 0.8,
+                    ),
                     blurRadius: 80,
                     spreadRadius: 10,
                   ),
@@ -496,12 +495,10 @@ class _BreathingScreenState extends State<BreathingScreen>
           const SizedBox(width: 42),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(
-          duration: const Duration(milliseconds: 500),
-          curve: AppTheme.gentleCurve,
-        );
+    ).animate().fadeIn(
+      duration: const Duration(milliseconds: 500),
+      curve: AppTheme.gentleCurve,
+    );
   }
 
   Widget _buildControls() {
@@ -586,12 +583,10 @@ class _BreathingScreenState extends State<BreathingScreen>
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(
-          delay: const Duration(milliseconds: 300),
-          duration: const Duration(milliseconds: 500),
-          curve: AppTheme.gentleCurve,
-        );
+    ).animate().fadeIn(
+      delay: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 500),
+      curve: AppTheme.gentleCurve,
+    );
   }
 }

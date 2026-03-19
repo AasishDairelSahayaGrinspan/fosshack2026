@@ -41,7 +41,9 @@ class MiniBarChart extends StatelessWidget {
                 values: values,
                 maxValue: maxValue,
                 barColor: color,
-                trackColor: AppColors.dividerColor(context).withValues(alpha: 0.3),
+                trackColor: AppColors.dividerColor(
+                  context,
+                ).withValues(alpha: 0.3),
               ),
             ),
           ),
@@ -49,7 +51,16 @@ class MiniBarChart extends StatelessWidget {
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: labels!.map((l) => Text(l, style: AppTypography.captionC(context).copyWith(fontSize: 10))).toList(),
+              children: labels!
+                  .map(
+                    (l) => Text(
+                      l,
+                      style: AppTypography.captionC(
+                        context,
+                      ).copyWith(fontSize: 10),
+                    ),
+                  )
+                  .toList(),
             ),
           ],
           if (caption != null) ...[
@@ -68,28 +79,50 @@ class _BarPainter extends CustomPainter {
   final Color barColor;
   final Color trackColor;
 
-  _BarPainter({required this.values, required this.maxValue, required this.barColor, required this.trackColor});
+  _BarPainter({
+    required this.values,
+    required this.maxValue,
+    required this.barColor,
+    required this.trackColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (values.isEmpty) return;
     final barWidth = (size.width / values.length) * 0.5;
     final gap = (size.width - barWidth * values.length) / (values.length + 1);
-    final trackPaint = Paint()..color = trackColor..strokeCap = StrokeCap.round;
-    final barPaint = Paint()..color = barColor..strokeCap = StrokeCap.round;
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..strokeCap = StrokeCap.round;
+    final barPaint = Paint()
+      ..color = barColor
+      ..strokeCap = StrokeCap.round;
 
     for (int i = 0; i < values.length; i++) {
       final x = gap + i * (barWidth + gap) + barWidth / 2;
-      final barH = maxValue > 0 ? (values[i] / maxValue).clamp(0.0, 1.0) * (size.height - 4) : 0.0;
+      final barH = maxValue > 0
+          ? (values[i] / maxValue).clamp(0.0, 1.0) * (size.height - 4)
+          : 0.0;
       // Track
       canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(x - barWidth / 2, 2, barWidth, size.height - 4), Radius.circular(barWidth / 2)),
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x - barWidth / 2, 2, barWidth, size.height - 4),
+          Radius.circular(barWidth / 2),
+        ),
         trackPaint,
       );
       // Bar
       if (barH > 0) {
         canvas.drawRRect(
-          RRect.fromRectAndRadius(Rect.fromLTWH(x - barWidth / 2, size.height - 2 - barH, barWidth, barH), Radius.circular(barWidth / 2)),
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(
+              x - barWidth / 2,
+              size.height - 2 - barH,
+              barWidth,
+              barH,
+            ),
+            Radius.circular(barWidth / 2),
+          ),
           barPaint,
         );
       }

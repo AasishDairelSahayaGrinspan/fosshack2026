@@ -120,6 +120,7 @@ flutter run -d windows
 - [x] Login / authentication screen
 - [x] Bottom navigation shell
 - [x] Home dashboard with mood selector, recovery score, streak indicator, and mood chart
+- [x] Community push notifications for community updates
 - [ ] Complete emotion journal flow with offline persistence
 - [ ] Guided audio sessions player
 - [ ] Grounding toolkit interactions

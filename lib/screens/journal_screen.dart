@@ -25,8 +25,13 @@ class _JournalScreenState extends State<JournalScreen>
   int _selectedMoodTag = -1;
   int _selectedPrompt = -1;
   bool _saved = false;
+<<<<<<< HEAD
   bool _showHistory = false;
   List<Map<String, dynamic>> _entries = [];
+=======
+  List<Map<String, dynamic>> _journalHistory = [];
+  bool _isLoadingHistory = true;
+>>>>>>> 2cd334db71e3651b94277102c4b7cdfb5704a9c3
 
   late AnimationController _saveAnimController;
 
@@ -54,7 +59,28 @@ class _JournalScreenState extends State<JournalScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
+<<<<<<< HEAD
     _loadEntries();
+=======
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+    try {
+      final result = await DatabaseService().getJournalEntries(user.$id);
+      if (mounted) {
+        setState(() {
+          _journalHistory = result.rows.map((row) => row.data).toList();
+          _journalHistory.sort((a, b) => (b['timestamp'] as String).compareTo(a['timestamp'] as String));
+          _isLoadingHistory = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingHistory = false);
+    }
+>>>>>>> 2cd334db71e3651b94277102c4b7cdfb5704a9c3
   }
 
   @override
@@ -106,6 +132,8 @@ class _JournalScreenState extends State<JournalScreen>
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         setState(() => _saved = false);
+        _textController.clear();
+        _loadHistory();
       }
     });
   }
@@ -228,8 +256,138 @@ class _JournalScreenState extends State<JournalScreen>
                       ],
                     ),
                   ),
+<<<<<<< HEAD
               ),
             ],
+=======
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
+
+                      // ─── Heading ───
+                      Text(
+                        'Today\'s Reflection',
+                        style: AppTypography.heroHeadingC(context),
+                      )
+                          .animate()
+                          .fadeIn(
+                            duration: const Duration(milliseconds: 600),
+                            curve: AppTheme.gentleCurve,
+                          ),
+
+                      const SizedBox(height: 4),
+                      Text(
+                        _formattedDate(),
+                        style: AppTypography.captionC(context),
+                      )
+                          .animate()
+                          .fadeIn(
+                            duration: const Duration(milliseconds: 600),
+                            curve: AppTheme.gentleCurve,
+                          ),
+
+                      const SizedBox(height: 24),
+
+                      // ─── Mood Tags ───
+                      _buildMoodTags()
+                          .animate(delay: const Duration(milliseconds: 150))
+                          .fadeIn(
+                            duration: const Duration(milliseconds: 500),
+                            curve: AppTheme.gentleCurve,
+                          ),
+
+                      const SizedBox(height: 24),
+
+                      // ─── Writing Field ───
+                      _buildWritingField()
+                          .animate(delay: const Duration(milliseconds: 250))
+                          .fadeIn(
+                            duration: const Duration(milliseconds: 500),
+                            curve: AppTheme.gentleCurve,
+                          )
+                          .slideY(
+                            begin: 0.04,
+                            end: 0,
+                            duration: const Duration(milliseconds: 500),
+                            curve: AppTheme.gentleCurve,
+                          ),
+
+                      const SizedBox(height: 20),
+
+                      // ─── Prompt Suggestions ───
+                      _buildPrompts()
+                          .animate(delay: const Duration(milliseconds: 350))
+                          .fadeIn(
+                            duration: const Duration(milliseconds: 500),
+                            curve: AppTheme.gentleCurve,
+                          ),
+
+                      const SizedBox(height: 32),
+
+                      // ─── Your Journey ───
+                      if (!_isLoadingHistory && _journalHistory.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          'Your Journey',
+                          style: AppTypography.heroHeadingC(context),
+                        ).animate().fadeIn(duration: const Duration(milliseconds: 600)),
+                        const SizedBox(height: 16),
+                        ..._journalHistory.map((entry) {
+                          final date = DateTime.tryParse(entry['timestamp'] as String? ?? '') ?? DateTime.now();
+                          final mood = entry['moodTag'] as String?;
+                          final content = entry['content'] as String? ?? '';
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.card(context).withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+                              border: Border.all(color: AppColors.dividerColor(context).withValues(alpha: 0.3)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${date.day}/${date.month}/${date.year}',
+                                      style: AppTypography.caption(color: AppColors.secondary(context)),
+                                    ),
+                                    if (mood != null)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.softIndigo.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          mood,
+                                          style: AppTypography.caption(color: AppColors.softIndigo).copyWith(fontSize: 10),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  content,
+                                  style: AppTypography.journalBodyC(context).copyWith(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ).animate().fadeIn(duration: const Duration(milliseconds: 400));
+                        }),
+                        const SizedBox(height: 32),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+>>>>>>> 2cd334db71e3651b94277102c4b7cdfb5704a9c3
           ),
         ),
       ),

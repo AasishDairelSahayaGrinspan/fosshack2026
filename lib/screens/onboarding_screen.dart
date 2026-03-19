@@ -7,7 +7,7 @@ import '../theme/app_typography.dart';
 import '../widgets/gradient_background.dart';
 import '../services/user_preferences_service.dart';
 import '../services/auth_service.dart';
-import '../services/avatar_service.dart';
+import 'avatar_customization_screen.dart';
 import 'community_onboarding_screen.dart';
 
 /// Multi-step onboarding — 9 pages via PageView.
@@ -96,10 +96,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // Page 5 — mood baseline
   double _moodBaseline = 0.5;
 
-  // Page 6 — avatar (DiceBear)
-  late String _avatarStyle = AvatarService.getRecommendedStyles()[0];
-  late String _avatarSeed = AvatarService().generateRandomSeed();
-  bool _isLoadingAvatar = false;
+  // Page 6 — avatar customization
 
   void _nextPage() {
     if (_currentPage < 8) {
@@ -120,9 +117,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         .toList();
     _prefs.sleepSchedule = _selectedSleep == 0 ? 'morning' : 'night';
     _prefs.moodBaseline = _moodBaseline;
-    _prefs.avatarStyle = _avatarStyle;
-    _prefs.avatarSeed = _avatarSeed;
-
     // Save preferences to Appwrite (fire and forget)
     try {
       await _prefs.saveToRemote();
@@ -718,215 +712,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ─── Page 6: Avatar Creation (DiceBear) ───
+  // ─── Page 6: Avatar Customization ───
   Widget _buildAvatarPage() {
-    final avatarUrl = AvatarService().getAvatarUrl(
-      seed: _avatarSeed,
-      style: _avatarStyle,
-    );
-
     return _pageWrapper(
       heading: 'Create your\navatar.',
       subtitle: 'A little you for this space.',
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Avatar Preview
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.card(context),
-                border: Border.all(
-                  color: AppColors.softIndigo.withValues(alpha: 0.3),
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.softIndigo.withValues(alpha: 0.15),
-                    blurRadius: 20,
-                    spreadRadius: 4,
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: _isLoadingAvatar
-                    ? Center(
-                        child: SizedBox(
-                          width: 30,
-                          height: 30,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(
-                              AppColors.softIndigo.withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ),
-                      )
-                    : Image.network(
-                        avatarUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.person_outline_rounded,
-                            size: 50,
-                            color: AppColors.softIndigo.withValues(alpha: 0.5),
-                          );
-                        },
-                      ),
-              ),
-            ),
-            const SizedBox(height: 28),
-
-            // Action Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Regenerate Button
-                GestureDetector(
-                  onTap: _isLoadingAvatar
-                      ? null
-                      : () {
-                          setState(() {
-                            _isLoadingAvatar = true;
-                            _avatarSeed = AvatarService().generateRandomSeed();
-                          });
-                          Future.delayed(const Duration(milliseconds: 600), () {
-                            if (mounted) {
-                              setState(() => _isLoadingAvatar = false);
-                            }
-                          });
-                        },
-                  child: AnimatedContainer(
-                    duration: AppTheme.fadeInDuration,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _isLoadingAvatar
-                          ? AppColors.softIndigo.withValues(alpha: 0.08)
-                          : AppColors.softIndigo.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.softIndigo.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.refresh_rounded,
-                          size: 16,
-                          color: _isLoadingAvatar
-                              ? AppColors.softIndigo.withValues(alpha: 0.5)
-                              : AppColors.softIndigo,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Regenerate',
-                          style: AppTypography.caption(
-                            color: _isLoadingAvatar
-                                ? AppColors.softIndigo.withValues(alpha: 0.5)
-                                : AppColors.softIndigo,
-                          ).copyWith(fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 28),
-
-            // Style Selection
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Avatar Style', style: AppTypography.captionC(context)),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: AvatarService.getRecommendedStyles().map((style) {
-                    final isSelected = _avatarStyle == style;
-                    return GestureDetector(
-                      onTap: () => setState(() => _avatarStyle = style),
-                      child: AnimatedContainer(
-                        duration: AppTheme.fadeInDuration,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.softIndigo.withValues(alpha: 0.15)
-                              : AppColors.card(context),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.softIndigo.withValues(alpha: 0.4)
-                                : AppColors.dividerColor(context),
-                            width: isSelected ? 1.5 : 1,
-                          ),
-                        ),
-                        child: Text(
-                          style.replaceAll('-', ' ').toUpperCase(),
-                          style:
-                              AppTypography.caption(
-                                color: isSelected
-                                    ? AppColors.softIndigo
-                                    : AppColors.tertiary(context),
-                              ).copyWith(
-                                fontSize: 10,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Info text
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.softIndigo.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.softIndigo.withValues(alpha: 0.1),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.lightbulb_outline_rounded,
-                    size: 16,
-                    color: AppColors.softIndigo.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Tap Regenerate to create new\navatar variations',
-                      style: AppTypography.caption(
-                        color: AppColors.softIndigo.withValues(alpha: 0.7),
-                      ).copyWith(fontSize: 11),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      child: const AvatarCustomizationScreen(
+        fullScreen: false,
       ),
     );
   }

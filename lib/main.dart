@@ -81,6 +81,8 @@ class _UnravelAppState extends State<UnravelApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: _themeProvider.themeMode,
+      themeAnimationDuration: const Duration(milliseconds: 600),
+      themeAnimationCurve: Curves.easeInOut,
       home: const SplashScreen(),
     );
   }

@@ -3,13 +3,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
+import '../services/auth_service.dart';
 import '../services/community_service.dart';
+import '../services/storage_service.dart';
 
-/// Create Post Screen — add caption, optional mood tag, and post.
-/// Camera/gallery integration placeholder (image_picker to be added later).
+/// Create Post Screen — add caption, optional image upload, mood tag, and post.
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
 
@@ -92,7 +94,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       imageQuality: 85,
     );
     if (image != null && mounted) {
-      setState(() => _imagePath = image.path);
+      // Copy image to permanent documents directory
+      try {
+        final docsDir = await getApplicationDocumentsDirectory();
+        final imagesDir = Directory('${docsDir.path}/community_images');
+        if (!await imagesDir.exists()) {
+          await imagesDir.create(recursive: true);
+        }
+        final ext = image.path.split('.').last;
+        final uniqueName = 'img_${DateTime.now().millisecondsSinceEpoch}.$ext';
+        final permanentFile = await File(image.path).copy('${imagesDir.path}/$uniqueName');
+        setState(() => _imagePath = permanentFile.path);
+      } catch (e, st) {
+        developer.log('Failed to copy image to permanent storage', name: 'CreatePostScreen', error: e, stackTrace: st);
+        // Fall back to original temp path
+        setState(() => _imagePath = image.path);
+      }
     }
   }
 
@@ -102,13 +119,32 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     setState(() => _isPosting = true);
 
-    // Simulate posting delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
     try {
+      String? imageFileId;
+
+      // Upload image to Appwrite Storage if selected
+      if (_imagePath != null) {
+        try {
+          final user = AuthService().currentUser;
+          if (user != null) {
+            final fileName = _imagePath!.split('/').last;
+            final file = await StorageService().uploadPostImage(
+              filePath: _imagePath!,
+              fileName: fileName,
+              userId: user.$id,
+            );
+            imageFileId = file.$id;
+          }
+        } catch (e, st) {
+          developer.log('Image upload failed', name: 'CreatePostScreen', error: e, stackTrace: st);
+          // Continue posting without image if upload fails
+        }
+      }
+
       await _service.addPost(
         caption: caption,
         imagePath: _imagePath,
+        imageFileId: imageFileId,
         moodTag: _selectedMoodTag >= 0
             ? _moodTags[_selectedMoodTag]['label'] as String
             : null,

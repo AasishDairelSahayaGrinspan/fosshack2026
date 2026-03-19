@@ -23,4 +23,5 @@ class AppwriteConstants {
   static const String profilePicsBucket = 'profile_pics';
   static const String journalMediaBucket = 'journal_media';
   static const String postImagesBucket = 'post_images';
+  static const String musicBucket = 'music_tracks';
 }

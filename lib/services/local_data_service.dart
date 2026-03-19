@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Local-first app backend with in-memory cache + SharedPreferences persistence.
@@ -12,10 +15,53 @@ class LocalDataService {
 
   static const String _tag = 'LocalDataService';
   static const String _rootKey = 'unravel_local_backend_v1';
+  static const String _backupFileName = 'unravel_local_backup_v1.json';
 
   final ValueNotifier<bool> ready = ValueNotifier<bool>(false);
   Map<String, dynamic> _root = <String, dynamic>{};
   SharedPreferences? _prefs;
+  Timer? _saveTimer;
+
+  Future<File> _getBackupFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/$_backupFileName');
+  }
+
+  Future<Map<String, dynamic>?> _loadFromBackup() async {
+    try {
+      final file = await _getBackupFile();
+      if (await file.exists()) {
+        final raw = await file.readAsString();
+        if (raw.isNotEmpty) {
+          final data = Map<String, dynamic>.from(jsonDecode(raw) as Map);
+          developer.log('Loaded data from backup file', name: _tag);
+          return data;
+        }
+      }
+    } catch (e, st) {
+      developer.log(
+        'Failed to load from backup file',
+        name: _tag,
+        error: e,
+        stackTrace: st,
+      );
+    }
+    return null;
+  }
+
+  Future<void> _writeBackup() async {
+    try {
+      final file = await _getBackupFile();
+      await file.writeAsString(jsonEncode(_root));
+    } catch (e, st) {
+      developer.log(
+        'Failed to write backup file',
+        name: _tag,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
 
   Future<void> init() async {
     if (ready.value) return;
@@ -29,20 +75,33 @@ class LocalDataService {
         stackTrace: st,
       );
     }
+
+    bool loadedFromPrefs = false;
     final raw = _prefs?.getString(_rootKey);
     if (raw != null && raw.isNotEmpty) {
       try {
         _root = Map<String, dynamic>.from(jsonDecode(raw) as Map);
+        loadedFromPrefs = true;
       } catch (e, st) {
         developer.log(
-          'Corrupted local data — resetting to empty state',
+          'Corrupted local data — will try backup',
           name: _tag,
           error: e,
           stackTrace: st,
         );
+      }
+    }
+
+    // If SharedPreferences data is missing or corrupted, try the backup file
+    if (!loadedFromPrefs) {
+      final backupData = await _loadFromBackup();
+      if (backupData != null) {
+        _root = backupData;
+      } else {
         _root = <String, dynamic>{};
       }
     }
+
     _root.putIfAbsent('session', () => <String, dynamic>{});
     _root.putIfAbsent('users', () => <String, dynamic>{});
     _root.putIfAbsent('userPrefs', () => <String, dynamic>{});
@@ -57,14 +116,26 @@ class LocalDataService {
     _root.putIfAbsent('activityLogs', () => <String, dynamic>{});
     _root.putIfAbsent('analytics', () => <dynamic>[]);
     ready.value = true;
-    await _persist();
+    await _persistImmediate();
   }
 
+  /// Debounced persist — delays write by 500ms to prevent rapid consecutive writes.
   Future<void> _persist() async {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 500), () {
+      _persistImmediate();
+    });
+  }
+
+  /// Immediate persist — writes to SharedPreferences and backup file.
+  Future<void> _persistImmediate() async {
+    _saveTimer?.cancel();
     final prefs = _prefs;
     if (prefs == null) return;
     try {
       await prefs.setString(_rootKey, jsonEncode(_root));
+      // Also write to backup file
+      await _writeBackup();
     } catch (e, st) {
       developer.log(
         'Failed to persist data to SharedPreferences',

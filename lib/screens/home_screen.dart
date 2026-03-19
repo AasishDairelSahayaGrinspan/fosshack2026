@@ -11,14 +11,16 @@ import '../widgets/streak_indicator.dart';
 import '../widgets/mood_chart.dart';
 import '../widgets/community_activity_card.dart';
 import '../widgets/doodle_refresh.dart';
+import '../models/avatar_config.dart';
 import '../services/user_preferences_service.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
 import '../services/app_navigation_service.dart';
 import '../services/notification_service.dart';
-import '../models/avatar_config.dart';
 import '../widgets/custom_avatar.dart';
 import '../services/activity_service.dart';
+import '../widgets/avatar_renderer.dart';
+import 'dart:math';
 import 'breathing_screen.dart';
 import 'sleep_tracker_screen.dart';
 import 'journal_screen.dart';
@@ -34,17 +36,79 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  double _recoveryScore = 100.0;
+  double _recoveryScore = 1.0;
   List<double> _moodData = List<double>.filled(7, 0.5);
   int _streakDays = 0;
   bool _activityPermissionDismissed = false;
 
   List<_Suggestion> _needSuggestions = [];
   bool _highlightTimer = false;
+  late final String _dailyQuote;
+
+  static const List<String> _quotes = [
+    '"The wound is the place where the light enters you." — Rumi',
+    '"You are allowed to be both a masterpiece and a work in progress."',
+    '"Be gentle with yourself. You\'re doing the best you can."',
+    '"Almost everything will work again if you unplug it for a few minutes — including you." — Anne Lamott',
+    '"You don\'t have to control your thoughts. You just have to stop letting them control you." — Dan Millman',
+    '"Happiness is not something ready-made. It comes from your own actions." — Dalai Lama',
+    '"The only way out is through." — Robert Frost',
+    '"Not all storms come to disrupt your life; some come to clear your path."',
+    '"Breathe. Let go. And remind yourself that this very moment is the only one you know you have for sure." — Oprah Winfrey',
+    '"You are not your thoughts. You are the awareness behind them."',
+    '"The present moment is filled with joy and happiness. If you are attentive, you will see it." — Thich Nhat Hanh',
+    '"Healing doesn\'t mean the damage never existed. It means the damage no longer controls your life."',
+    '"What lies behind us and what lies before us are tiny matters compared to what lies within us." — Ralph Waldo Emerson',
+    '"Start where you are. Use what you have. Do what you can." — Arthur Ashe',
+    '"Self-care is not self-indulgence. Self-care is self-preservation." — Audre Lorde',
+    '"Your calm mind is the ultimate weapon against your challenges." — Bryant McGill',
+    '"In the middle of difficulty lies opportunity." — Albert Einstein',
+    '"You yourself, as much as anybody in the entire universe, deserve your love and affection." — Buddha',
+    '"It is during our darkest moments that we must focus to see the light." — Aristotle',
+    '"Nothing can dim the light that shines from within." — Maya Angelou',
+    '"The greatest glory in living lies not in never falling, but in rising every time we fall." — Nelson Mandela',
+    '"Courage is not the absence of fear, but the triumph over it."',
+    '"Every morning brings new potential, but if you dwell on the misfortunes of the day before, you tend to overlook tremendous opportunities."',
+    '"Rest is not idleness, and to lie sometimes on the grass under trees on a summer\'s day is by no means a waste of time." — John Lubbock',
+    '"Gratitude turns what we have into enough."',
+    '"The best time to plant a tree was 20 years ago. The second best time is now." — Chinese Proverb',
+    '"Love yourself first and everything else falls into line." — Lucille Ball',
+    '"Peace comes from within. Do not seek it without." — Buddha',
+    '"Discipline is the bridge between goals and accomplishment." — Jim Rohn',
+    '"You are braver than you believe, stronger than you seem, and smarter than you think." — A.A. Milne',
+    '"Life isn\'t about waiting for the storm to pass. It\'s about learning to dance in the rain." — Vivian Greene',
+    '"What we think, we become." — Buddha',
+    '"The only impossible journey is the one you never begin." — Tony Robbins',
+    '"Growth is uncomfortable; that\'s why so few people do it."',
+    '"Kindness is a language which the deaf can hear and the blind can see." — Mark Twain',
+    '"Do not let what you cannot do interfere with what you can do." — John Wooden',
+    '"Talk to yourself like someone you love." — Brene Brown',
+    '"The quieter you become, the more you can hear." — Ram Dass',
+    '"Small steps in the right direction can turn out to be the biggest step of your life."',
+    '"You don\'t have to see the whole staircase, just take the first step." — Martin Luther King Jr.',
+    '"Your mental health is a priority. Your happiness is essential. Your self-care is a necessity."',
+    '"Inhale courage, exhale fear."',
+    '"When you can\'t control what\'s happening, challenge yourself to control how you respond."',
+    '"Be patient with yourself. Nothing in nature blooms all year."',
+    '"You are enough just as you are."',
+    '"The sun himself is weak when he first rises, and gathers strength and courage as the day gets on." — Charles Dickens',
+    '"We must be willing to let go of the life we planned so as to have the life that is waiting for us." — Joseph Campbell',
+    '"Feelings are much like waves. We can\'t stop them from coming, but we can choose which ones to surf." — Jonatan Martensson',
+    '"Sometimes the most productive thing you can do is relax." — Mark Black',
+    '"One small crack does not mean that you are broken. It means that you were put to the test and you didn\'t fall apart."',
+    '"Every day may not be good, but there is something good in every day."',
+    '"What consumes your mind controls your life."',
+    '"Owning our story and loving ourselves through that process is the bravest thing we\'ll ever do." — Brene Brown',
+    '"Out of your vulnerabilities will come your strength." — Sigmund Freud',
+    '"Don\'t believe everything you think."',
+  ];
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    final seed = now.year * 10000 + now.month * 100 + now.day;
+    _dailyQuote = _quotes[Random(seed).nextInt(_quotes.length)];
     _loadData();
   }
 
@@ -355,6 +419,45 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildAvatarWidget(double size) {
+    final prefs = UserPreferencesService();
+    if (prefs.avatarData != null && prefs.avatarData!.isNotEmpty) {
+      return AvatarRenderer(
+        config: AvatarConfig.fromJsonString(prefs.avatarData!),
+        size: size,
+      );
+    }
+    // Fallback to DiceBear
+    return Image.network(
+      prefs.getAvatarUrl(),
+      fit: BoxFit.cover,
+      cacheWidth: (size * 2).toInt(),
+      cacheHeight: (size * 2).toInt(),
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.softIndigo.withValues(alpha: 0.25),
+                AppColors.paleLilac.withValues(alpha: 0.5),
+              ],
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.person_outline_rounded,
+              color: AppColors.secondary(context),
+              size: size * 0.45,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildGreetingHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -368,6 +471,19 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'How is your mind today?',
                 style: AppTypography.subtitleC(context),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Opacity(
+                  opacity: 0.7,
+                  child: Text(
+                    _dailyQuote,
+                    style: AppTypography.subtitleC(context).copyWith(
+                      fontStyle: FontStyle.italic,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -405,34 +521,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       isWalking: walking,
                     ),
                   )
-                : Image.network(
-                    UserPreferencesService().getAvatarUrl(),
-                    fit: BoxFit.cover,
-                    cacheWidth: 108,
-                    cacheHeight: 108,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppColors.softIndigo.withValues(alpha: 0.25),
-                              AppColors.paleLilac.withValues(alpha: 0.5),
-                            ],
-                          ),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.person_outline_rounded,
-                            color: AppColors.secondary(context),
-                            size: 24,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                : _buildAvatarWidget(54),
           ),
         ),
       ],

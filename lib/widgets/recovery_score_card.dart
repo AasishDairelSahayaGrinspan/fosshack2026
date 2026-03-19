@@ -76,6 +76,7 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
 
+
   @override
   void dispose() {
     _controller.dispose();

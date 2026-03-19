@@ -22,6 +22,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
   int? _highlightIndex;
+  DateTime? _lastBackPress;
   late final bool _showCommunity;
   late final List<Widget> _screens;
 
@@ -83,12 +84,35 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final safeIndex = _currentIndex.clamp(0, _screens.length - 1);
-    return Scaffold(
-      body: IndexedStack(
-        index: safeIndex,
-        children: _screens,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          setState(() => _currentIndex = 0);
+          return;
+        }
+        final now = DateTime.now();
+        if (_lastBackPress != null &&
+            now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
+          Navigator.of(context).pop();
+          return;
+        }
+        _lastBackPress = now;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Press back again to exit'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: safeIndex,
+          children: _screens,
+        ),
+        bottomNavigationBar: _buildBottomNavBar(context),
       ),
-      bottomNavigationBar: _buildBottomNavBar(context),
     );
   }
 

@@ -1,20 +1,74 @@
+import 'dart:developer' as developer;
+
+import 'package:appwrite/appwrite.dart';
+import 'package:flutter/foundation.dart';
+
 import '../models/community_models.dart';
+import 'appwrite_constants.dart';
+import 'appwrite_service.dart';
 import 'auth_service.dart';
 import 'database_service.dart';
+import 'storage_service.dart';
 
-/// Community data service - local backend, cached in memory.
-class CommunityService {
+/// Community data service — Appwrite-backed with realtime subscriptions.
+class CommunityService extends ChangeNotifier {
   static final CommunityService _instance = CommunityService._();
   factory CommunityService() => _instance;
   CommunityService._();
 
-  String communityPreference = 'yes';
+  static const String _tag = 'CommunityService';
 
-  bool get canPost => communityPreference != 'no';
+  String communityPreference = 'yes';
+  bool get canPost => communityPreference == 'yes';
 
   final DatabaseService _db = DatabaseService();
   List<Post> _posts = <Post>[];
   List<Post> get posts => List<Post>.unmodifiable(_posts);
+
+  RealtimeSubscription? _postsSubscription;
+  RealtimeSubscription? _commentsSubscription;
+
+  /// Subscribe to realtime events for posts and comments.
+  void subscribeToRealtime() {
+    try {
+      final realtime = AppwriteService().realtime;
+
+      // Subscribe to posts collection
+      _postsSubscription = realtime.subscribe([
+        'databases.${AppwriteConstants.databaseId}.collections.${AppwriteConstants.postsCollection}.documents',
+      ]);
+
+      _postsSubscription!.stream.listen((event) {
+        developer.log('Realtime post event: ${event.events}', name: _tag);
+        // Reload posts on any change
+        loadPosts();
+      }, onError: (error) {
+        developer.log('Realtime posts error', name: _tag, error: error);
+      });
+
+      // Subscribe to comments collection
+      _commentsSubscription = realtime.subscribe([
+        'databases.${AppwriteConstants.databaseId}.collections.${AppwriteConstants.commentsCollection}.documents',
+      ]);
+
+      _commentsSubscription!.stream.listen((event) {
+        developer.log('Realtime comment event: ${event.events}', name: _tag);
+        notifyListeners();
+      }, onError: (error) {
+        developer.log('Realtime comments error', name: _tag, error: error);
+      });
+    } catch (e) {
+      developer.log('subscribeToRealtime failed', name: _tag, error: e);
+    }
+  }
+
+  /// Unsubscribe from realtime events.
+  void unsubscribeFromRealtime() {
+    _postsSubscription?.close();
+    _commentsSubscription?.close();
+    _postsSubscription = null;
+    _commentsSubscription = null;
+  }
 
   Future<void> loadPosts() async {
     final result = await _db.getPosts(limit: 200, offset: 0);
@@ -24,11 +78,19 @@ class CommunityService {
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
+
+      // Determine image URL — check for imageFileId (Appwrite) or imagePath (local)
+      String? imagePath = d['imagePath'] as String?;
+      final imageFileId = d['imageFileId'] as String?;
+      if (imageFileId != null && imageFileId.isNotEmpty) {
+        imagePath = StorageService().getPostImageUrl(imageFileId);
+      }
+
       return Post(
         id: doc.$id,
         username: (d['username'] as String?) ?? '',
         avatar: (d['avatar'] as String?) ?? '',
-        imagePath: d['imagePath'] as String?,
+        imagePath: imagePath,
         caption: (d['caption'] as String?) ?? '',
         moodTag: d['moodTag'] as String?,
         postType: (d['postType'] as String?) ?? 'All',
@@ -51,6 +113,7 @@ class CommunityService {
             .toList(),
       );
     }).toList();
+    notifyListeners();
   }
 
   bool _isLikedByCurrentUser(dynamic likedBy) {
@@ -82,6 +145,7 @@ class CommunityService {
   Future<void> addPost({
     required String caption,
     String? imagePath,
+    String? imageFileId,
     String? moodTag,
   }) async {
     final user = AuthService().currentUser;
@@ -93,8 +157,15 @@ class CommunityService {
       avatar: user.name.isNotEmpty ? user.name[0].toUpperCase() : 'Y',
       caption: caption,
       imagePath: imagePath,
+      imageFileId: imageFileId,
       moodTag: moodTag,
     );
+
+    // Determine display image path
+    String? displayImagePath = imagePath;
+    if (imageFileId != null && imageFileId.isNotEmpty) {
+      displayImagePath = StorageService().getPostImageUrl(imageFileId);
+    }
 
     _posts.insert(
       0,
@@ -102,12 +173,13 @@ class CommunityService {
         id: doc.$id,
         username: user.name.isNotEmpty ? user.name : 'you',
         avatar: user.name.isNotEmpty ? user.name[0].toUpperCase() : 'Y',
-        imagePath: imagePath,
+        imagePath: displayImagePath,
         caption: caption,
         moodTag: moodTag,
         timestamp: DateTime.now(),
       ),
     );
+    notifyListeners();
   }
 
   Future<void> toggleLike(String postId) async {
@@ -119,6 +191,7 @@ class CommunityService {
     final post = _posts[idx];
     post.isLiked = !post.isLiked;
     post.likesCount += post.isLiked ? 1 : -1;
+    notifyListeners();
     await _db.togglePostLike(postId: postId, userId: user.$id);
   }
 
@@ -147,6 +220,7 @@ class CommunityService {
         timestamp: DateTime.now(),
       ),
     );
+    notifyListeners();
   }
 
   String formatTimeAgo(DateTime timestamp) {
@@ -157,5 +231,10 @@ class CommunityService {
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     return '${(diff.inDays / 7).floor()}w ago';
   }
-}
 
+  @override
+  void dispose() {
+    unsubscribeFromRealtime();
+    super.dispose();
+  }
+}

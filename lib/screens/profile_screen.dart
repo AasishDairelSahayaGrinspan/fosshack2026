@@ -7,12 +7,15 @@ import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../theme/theme_provider.dart';
 import '../widgets/gradient_background.dart';
+import '../widgets/doodle_refresh.dart';
+import '../models/avatar_config.dart';
 import '../services/auth_service.dart';
 import '../services/community_service.dart';
+import '../services/database_service.dart';
 import '../services/user_preferences_service.dart';
 import '../services/notification_service.dart';
-import '../models/avatar_config.dart';
-import '../widgets/custom_avatar.dart';
+import '../widgets/avatar_renderer.dart';
+import 'avatar_customization_screen.dart';
 import 'login_screen.dart';
 
 /// Profile Screen with settings and theme toggle.
@@ -25,61 +28,209 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ThemeProvider _themeProvider = ThemeProvider();
-  bool _sleepReminder = true;
-  bool _breathingReminder = true;
+  int _streakDays = 0;
+  int _journalCount = 0;
+  bool _isEditingName = false;
+  bool _isEditingAbout = false;
+  final _nameController = TextEditingController();
+  final _aboutController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadReminderPrefs();
+    _loadStats();
   }
 
-  Future<void> _loadReminderPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _sleepReminder = prefs.getBool('pref_sleep_reminder') ?? true;
-      _breathingReminder = prefs.getBool('pref_breathing_reminder') ?? true;
-    });
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _aboutController.dispose();
+    super.dispose();
   }
 
-  Future<void> _saveReminderPref(String key, bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(key, value);
+  Future<void> _loadStats() async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+    final db = DatabaseService();
+    try {
+      final streak = await db.getOrCreateStreak(user.$id);
+      final journals = await db.getJournalEntries(user.$id, limit: 1000);
+      if (!mounted) return;
+      setState(() {
+        _streakDays = (streak.data['currentStreak'] as num?)?.toInt() ?? 0;
+        _journalCount = journals.rows.length;
+      });
+    } catch (_) {}
   }
 
-  String _communitySubtitle() {
-    final pref = CommunityService().communityPreference;
-    switch (pref) {
-      case 'yes':
-        return 'Participating in community';
-      case 'browsing':
-        return 'Browsing community quietly';
-      case 'no':
-        return 'Community hidden';
-      default:
-        return 'Participation settings';
+  Future<void> _saveName() async {
+    final newName = _nameController.text.trim();
+    if (newName.isEmpty) return;
+    await AuthService().updateName(newName);
+    UserPreferencesService().name = newName;
+    await UserPreferencesService().saveToRemote();
+    if (mounted) {
+      setState(() => _isEditingName = false);
     }
   }
 
-  void _showCommunityPreferenceSheet() {
-    final currentPref = CommunityService().communityPreference;
+  Future<void> _saveAbout() async {
+    final newAbout = _aboutController.text.trim();
+    UserPreferencesService().about = newAbout.isEmpty ? null : newAbout;
+    await UserPreferencesService().saveToRemote();
+    if (mounted) {
+      setState(() => _isEditingAbout = false);
+    }
+  }
+
+  void _showCommunityDialog(BuildContext context) {
+    final prefs = UserPreferencesService();
+
+    Future<void> savePreference(String value) async {
+      prefs.communityPreference = value;
+      CommunityService().communityPreference = value;
+      await prefs.saveToRemote();
+      if (mounted) setState(() {});
+      if (context.mounted) Navigator.pop(context);
+    }
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppColors.card(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Community Participation', style: AppTypography.heroHeadingC(context)),
+              const SizedBox(height: 8),
+              Text('Share your recovery scores and mood trends anonymously with the Unravel community.', style: AppTypography.captionC(context)),
+              const SizedBox(height: 24),
+              ListTile(
+                title: Text('Public - Share insights', style: AppTypography.uiLabelC(context)),
+                leading: const Icon(Icons.public_rounded, color: AppColors.softIndigo),
+                trailing: prefs.communityPreference == 'yes' ? const Icon(Icons.check_circle, color: AppColors.sageGreen) : null,
+                onTap: () => savePreference('yes'),
+              ),
+              ListTile(
+                title: Text('Browse only', style: AppTypography.uiLabelC(context)),
+                leading: Icon(Icons.visibility_outlined, color: AppColors.tertiary(context)),
+                trailing: prefs.communityPreference == 'browsing' ? const Icon(Icons.check_circle, color: AppColors.sageGreen) : null,
+                onTap: () => savePreference('browsing'),
+              ),
+              ListTile(
+                title: Text('Private - Just for me', style: AppTypography.uiLabelC(context)),
+                leading: Icon(Icons.lock_outline_rounded, color: AppColors.tertiary(context)),
+                trailing: prefs.communityPreference == 'no' ? const Icon(Icons.check_circle, color: AppColors.sageGreen) : null,
+                onTap: () => savePreference('no'),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showIntendedUseDialog(BuildContext context) {
+    final prefs = UserPreferencesService();
+    final Set<String> selected = Set.from(prefs.concerns);
+    final List<Map<String, dynamic>> allConcerns = [
+      {'label': 'Stress', 'icon': Icons.bolt_rounded},
+      {'label': 'Sleep', 'icon': Icons.nightlight_outlined},
+      {'label': 'Anxiety', 'icon': Icons.waves_rounded},
+      {'label': 'Focus', 'icon': Icons.center_focus_strong_outlined},
+      {'label': 'Healing', 'icon': Icons.favorite_outline_rounded},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card(context),
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return _CommunityPreferenceSheet(
-          currentPreference: currentPref,
-          onChanged: (newPref) async {
-            CommunityService().communityPreference = newPref;
-            UserPreferencesService().communityPreference = newPref;
-            try {
-              await UserPreferencesService().saveToRemote();
-            } catch (e, st) {
-              developer.log('Failed to save community preference',
-                  name: 'ProfileScreen', error: e, stackTrace: st);
-            }
-            if (mounted) setState(() {});
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24.0, right: 24.0, top: 24.0,
+                bottom: MediaQuery.of(context).padding.bottom + 24.0,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('My Goals', style: AppTypography.heroHeadingC(context)),
+                  const SizedBox(height: 8),
+                  Text('Select all the areas you want to focus on.', style: AppTypography.captionC(context)),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: allConcerns.map((c) {
+                      final label = c['label'] as String;
+                      final isSelected = selected.contains(label);
+                      return GestureDetector(
+                        onTap: () {
+                          setModalState(() {
+                            if (isSelected) {
+                              selected.remove(label);
+                            } else {
+                              selected.add(label);
+                            }
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: AppTheme.fadeInDuration,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.softIndigo.withValues(alpha: 0.1) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected ? AppColors.softIndigo : AppColors.dividerColor(context),
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(c['icon'] as IconData, size: 18, color: isSelected ? AppColors.softIndigo : AppColors.tertiary(context)),
+                              const SizedBox(width: 8),
+                              Text(label, style: AppTypography.buttonText(color: isSelected ? AppColors.softIndigo : AppColors.primary(context))),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.softIndigo,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      onPressed: () async {
+                        prefs.concerns = selected.toList();
+                        await prefs.saveToRemote();
+                        if (mounted) setState(() {});
+                        if (context.mounted) Navigator.pop(context);
+                      },
+                      child: Text('Save Goals', style: AppTypography.buttonText(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            );
           },
         );
       },
@@ -174,12 +325,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: AppColors.tertiary(context),
                       ),
                       onTap: () async {
+                        final prefs = UserPreferencesService();
                         final granted =
                             await NotificationService().requestPermissionIfNeeded();
                         await NotificationService().openAppNotificationSettings();
                         if (granted) {
-                          await NotificationService()
-                              .showTrackerEnabledGreeting();
+                          final service = NotificationService();
+                          await service.showTrackerEnabledGreeting();
+                          await service.schedulePersonalizedReminders(
+                            sleepSchedule: prefs.sleepSchedule,
+                            concerns: prefs.concerns,
+                            moodBaseline: prefs.moodBaseline,
+                            communityPreference: prefs.communityPreference,
+                          );
                         }
                       },
                     )
@@ -188,76 +346,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 8),
 
-                Text('Reminders', style: AppTypography.sectionHeadingC(context))
-                    .animate(delay: const Duration(milliseconds: 365))
-                    .fadeIn(duration: const Duration(milliseconds: 400)),
-
-                const SizedBox(height: 14),
-
-                _buildSettingsTile(
-                      context,
-                      icon: Icons.nightlight_outlined,
-                      title: 'Sleep Reminder',
-                      subtitle: 'Daily at 10pm',
-                      trailing: Switch.adaptive(
-                        value: _sleepReminder,
-                        onChanged: (value) async {
-                          setState(() => _sleepReminder = value);
-                          await _saveReminderPref('pref_sleep_reminder', value);
-                          if (value) {
-                            await NotificationService().scheduleSleepReminder();
-                          } else {
-                            await NotificationService().cancelSleepReminder();
-                          }
-                        },
-                        activeTrackColor: AppColors.softIndigo,
-                        activeThumbColor: Colors.white,
-                        inactiveThumbColor: AppColors.softIndigo.withValues(alpha: 0.6),
-                        inactiveTrackColor: AppColors.dividerColor(context),
-                      ),
-                    )
-                    .animate(delay: const Duration(milliseconds: 375))
-                    .fadeIn(duration: const Duration(milliseconds: 400)),
-
-                const SizedBox(height: 8),
-
-                _buildSettingsTile(
-                      context,
-                      icon: Icons.air_rounded,
-                      title: 'Breathing Reminder',
-                      subtitle: 'Daily at 2pm',
-                      trailing: Switch.adaptive(
-                        value: _breathingReminder,
-                        onChanged: (value) async {
-                          setState(() => _breathingReminder = value);
-                          await _saveReminderPref('pref_breathing_reminder', value);
-                          if (value) {
-                            await NotificationService().scheduleBreathingReminder();
-                          } else {
-                            await NotificationService().cancelBreathingReminder();
-                          }
-                        },
-                        activeTrackColor: AppColors.softIndigo,
-                        activeThumbColor: Colors.white,
-                        inactiveThumbColor: AppColors.softIndigo.withValues(alpha: 0.6),
-                        inactiveTrackColor: AppColors.dividerColor(context),
-                      ),
-                    )
-                    .animate(delay: const Duration(milliseconds: 425))
-                    .fadeIn(duration: const Duration(milliseconds: 400)),
-
-                const SizedBox(height: 8),
-
                 _buildSettingsTile(
                       context,
                       icon: Icons.people_outline_rounded,
                       title: 'Community',
-                      subtitle: _communitySubtitle(),
+                      subtitle: UserPreferencesService().communityPreference == 'yes' ? 'Public - Sharing insights' : 'Private',
                       trailing: Icon(
                         Icons.chevron_right_rounded,
                         color: AppColors.tertiary(context),
                       ),
-                      onTap: _showCommunityPreferenceSheet,
+                      onTap: () => _showCommunityDialog(context),
                     )
                     .animate(delay: const Duration(milliseconds: 400))
                     .fadeIn(duration: const Duration(milliseconds: 400)),
@@ -267,12 +365,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _buildSettingsTile(
                       context,
                       icon: Icons.info_outline_rounded,
-                      title: 'About Unravel',
-                      subtitle: 'Version 1.0.0',
+                      title: 'Intended Use',
+                      subtitle: UserPreferencesService().concerns.isNotEmpty ? UserPreferencesService().concerns.join(', ') : 'Set your goals',
                       trailing: Icon(
                         Icons.chevron_right_rounded,
                         color: AppColors.tertiary(context),
                       ),
+                      onTap: () => _showIntendedUseDialog(context),
                     )
                     .animate(delay: const Duration(milliseconds: 450))
                     .fadeIn(duration: const Duration(milliseconds: 400)),
@@ -325,6 +424,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildAvatarWidget(double size) {
+    final prefs = UserPreferencesService();
+    if (prefs.avatarData != null && prefs.avatarData!.isNotEmpty) {
+      return AvatarRenderer(
+        config: AvatarConfig.fromJsonString(prefs.avatarData!),
+        size: size,
+      );
+    }
+    return Image.network(
+      prefs.getAvatarUrl(),
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: AppColors.card(context),
+          child: Icon(
+            Icons.person_outline_rounded,
+            color: AppColors.softIndigo.withValues(alpha: 0.5),
+            size: size * 0.45,
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildProfileCard(BuildContext context) {
     final prefs = UserPreferencesService();
 
@@ -336,65 +459,259 @@ class _ProfileScreenState extends State<ProfileScreen> {
         border: Border.all(color: AppColors.cardBorder(context), width: 0.8),
         boxShadow: AppColors.cardShadow(context),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.softIndigo.withValues(alpha: 0.2),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.softIndigo.withValues(alpha: 0.15),
-                  blurRadius: 16,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: ClipOval(
-              child: prefs.avatarConfigMap != null
-                  ? CustomAvatar(
-                      config: AvatarConfig.fromMap(prefs.avatarConfigMap!),
-                      size: 60,
-                    )
-                  : Image.network(
-                      prefs.getAvatarUrl(),
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: AppColors.card(context),
-                          child: Icon(
-                            Icons.person_outline_rounded,
-                            color: AppColors.softIndigo.withValues(alpha: 0.5),
-                            size: 28,
-                          ),
-                        );
-                      },
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AvatarCustomizationScreen(
+                        onSaved: () => setState(() {}),
+                      ),
                     ),
-            ),
+                  );
+                },
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.softIndigo.withValues(alpha: 0.2),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.softIndigo.withValues(alpha: 0.15),
+                            blurRadius: 16,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(child: _buildAvatarWidget(80)),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: AppColors.softIndigo,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.card(context), width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.edit_rounded,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ─── Editable Name ───
+                    if (_isEditingName)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _nameController,
+                              style: AppTypography.sectionHeadingC(context),
+                              decoration: InputDecoration(
+                                hintText: 'Your name',
+                                hintStyle: AppTypography.sectionHeading(
+                                  color: AppColors.tertiary(context),
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                                isDense: true,
+                              ),
+                              onSubmitted: (_) => _saveName(),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: _saveName,
+                            child: Icon(
+                              Icons.check_rounded,
+                              color: AppColors.sageGreen,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      GestureDetector(
+                        onTap: () {
+                          _nameController.text = prefs.displayName;
+                          setState(() => _isEditingName = true);
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              prefs.displayName,
+                              style: AppTypography.sectionHeadingC(context),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 14,
+                              color: AppColors.tertiary(context),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 2),
+                    Text(
+                      prefs.concerns.isNotEmpty ? prefs.concerns.join(' • ') : 'Taking it one day at a time.',
+                      style: AppTypography.captionC(context),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  prefs.displayName,
-                  style: AppTypography.sectionHeadingC(context),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Taking it one day at a time.',
-                  style: AppTypography.captionC(context),
-                ),
-              ],
+
+          const SizedBox(height: 14),
+
+          // ─── Editable About ───
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.softIndigo.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+              border: Border.all(
+                color: AppColors.dividerColor(context).withValues(alpha: 0.5),
+              ),
             ),
+            child: _isEditingAbout
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _aboutController,
+                          style: AppTypography.captionC(context).copyWith(fontSize: 13),
+                          maxLength: 150,
+                          maxLines: 2,
+                          decoration: InputDecoration(
+                            hintText: "Hey there! I'm using Unravel.",
+                            hintStyle: AppTypography.caption(
+                              color: AppColors.tertiary(context),
+                            ).copyWith(fontSize: 13),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                            isDense: true,
+                            counterStyle: AppTypography.caption(
+                              color: AppColors.tertiary(context),
+                            ).copyWith(fontSize: 10),
+                          ),
+                          onSubmitted: (_) => _saveAbout(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _saveAbout,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Icon(
+                            Icons.check_rounded,
+                            color: AppColors.sageGreen,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : GestureDetector(
+                    onTap: () {
+                      _aboutController.text = prefs.displayAbout;
+                      setState(() => _isEditingAbout = true);
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            prefs.displayAbout,
+                            style: AppTypography.captionC(context).copyWith(
+                              fontSize: 13,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 14,
+                          color: AppColors.tertiary(context),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+
+          const SizedBox(height: 16),
+          // ─── Stats Row ───
+          Row(
+            children: [
+              _buildStatChip(
+                icon: Icons.local_fire_department_outlined,
+                label: '$_streakDays day streak',
+                color: AppColors.warmCoral,
+              ),
+              const SizedBox(width: 8),
+              _buildStatChip(
+                icon: Icons.edit_note_rounded,
+                label: '$_journalCount entries',
+                color: AppColors.sageGreen,
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: AppTypography.caption(color: color)
+                    .copyWith(fontWeight: FontWeight.w500, fontSize: 11),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -442,230 +759,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             trailing,
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Bottom sheet for changing community participation preference.
-class _CommunityPreferenceSheet extends StatefulWidget {
-  final String currentPreference;
-  final ValueChanged<String> onChanged;
-
-  const _CommunityPreferenceSheet({
-    required this.currentPreference,
-    required this.onChanged,
-  });
-
-  @override
-  State<_CommunityPreferenceSheet> createState() =>
-      _CommunityPreferenceSheetState();
-}
-
-class _CommunityPreferenceSheetState extends State<_CommunityPreferenceSheet> {
-  late String _selected;
-
-  static const List<Map<String, dynamic>> _options = [
-    {
-      'label': 'Yes, I\'d love to',
-      'description': 'Share and connect with the community.',
-      'icon': Icons.favorite_outline_rounded,
-      'value': 'yes',
-    },
-    {
-      'label': 'Just browsing',
-      'description': 'Read along quietly without posting.',
-      'icon': Icons.visibility_outlined,
-      'value': 'browsing',
-    },
-    {
-      'label': 'Hide community',
-      'description': 'Remove the community tab entirely.',
-      'icon': Icons.person_outline_rounded,
-      'value': 'no',
-    },
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = widget.currentPreference;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.card(context),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle bar
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.dividerColor(context),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          Text(
-            'Community Participation',
-            style: AppTypography.sectionHeadingC(context),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Choose how you\'d like to engage.',
-            style: AppTypography.captionC(context),
-          ),
-          const SizedBox(height: 20),
-
-          ..._options.map((option) {
-            final value = option['value'] as String;
-            final isSelected = _selected == value;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: GestureDetector(
-                onTap: () => setState(() => _selected = value),
-                child: AnimatedContainer(
-                  duration: AppTheme.fadeInDuration,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.softIndigo.withValues(alpha: 0.1)
-                        : AppColors.card(context),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.softIndigo.withValues(alpha: 0.4)
-                          : AppColors.dividerColor(context),
-                      width: isSelected ? 1.5 : 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: isSelected
-                              ? AppColors.softIndigo.withValues(alpha: 0.15)
-                              : AppColors.dividerColor(context)
-                                  .withValues(alpha: 0.3),
-                        ),
-                        child: Icon(
-                          option['icon'] as IconData,
-                          color: isSelected
-                              ? AppColors.softIndigo
-                              : AppColors.tertiary(context),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              option['label'] as String,
-                              style: AppTypography.uiLabel(
-                                color: isSelected
-                                    ? AppColors.softIndigo
-                                    : AppColors.primary(context),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              option['description'] as String,
-                              style: AppTypography.captionC(context),
-                            ),
-                          ],
-                        ),
-                      ),
-                      AnimatedContainer(
-                        duration: AppTheme.fadeInDuration,
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isSelected
-                              ? AppColors.softIndigo
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.softIndigo
-                                : AppColors.dividerColor(context),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: isSelected
-                            ? const Icon(Icons.check_rounded,
-                                color: Colors.white, size: 14)
-                            : null,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-
-          const SizedBox(height: 8),
-          Text(
-            'Changing to "Hide community" will remove the tab. You can re-enable it anytime.',
-            style: AppTypography.captionC(context),
-          ),
-          const SizedBox(height: 16),
-
-          // Save button
-          GestureDetector(
-            onTap: () {
-              widget.onChanged(_selected);
-              Navigator.of(context).pop();
-              // If community visibility changed, user needs to restart the shell
-              if (_selected != widget.currentPreference) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      _selected == 'no'
-                          ? 'Community tab hidden. Restart the app to apply.'
-                          : 'Community preference updated. Restart the app to apply.',
-                      style: AppTypography.body(color: Colors.white),
-                    ),
-                    backgroundColor: AppColors.softIndigo,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    ),
-                  ),
-                );
-              }
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: AppColors.softIndigo.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-              ),
-              child: Center(
-                child: Text(
-                  'Save',
-                  style: AppTypography.buttonText(color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

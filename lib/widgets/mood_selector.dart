@@ -44,11 +44,11 @@ class _MoodSelectorState extends State<MoodSelector> {
   }
 
   static const List<Map<String, dynamic>> _moods = [
-    {'emoji': '😌', 'label': 'Calm', 'color': AppColors.sageGreen},
-    {'emoji': '🙂', 'label': 'Okay', 'color': AppColors.softIndigo},
-    {'emoji': '😔', 'label': 'Low', 'color': AppColors.orangeE2814d},
-    {'emoji': '😰', 'label': 'Anxious', 'color': AppColors.warmCoral},
-    {'emoji': '😣', 'label': 'Overwhelmed', 'color': AppColors.coralDa5e5a},
+    {'icon': Icons.spa_rounded, 'emoji': '😌', 'label': 'Calm', 'color': AppColors.sageGreen, 'glow': Color(0xFF304057)},
+    {'icon': Icons.sentiment_satisfied_rounded, 'emoji': '🙂', 'label': 'Okay', 'color': AppColors.softIndigo, 'glow': Color(0xFFDA5E5A)},
+    {'icon': Icons.cloud_rounded, 'emoji': '😔', 'label': 'Low', 'color': AppColors.orangeE2814d, 'glow': Color(0xFFE2814D)},
+    {'icon': Icons.electric_bolt_rounded, 'emoji': '😰', 'label': 'Anxious', 'color': AppColors.warmCoral, 'glow': Color(0xFFFDB903)},
+    {'icon': Icons.whatshot_rounded, 'emoji': '😣', 'label': 'Overwhelmed', 'color': AppColors.coralDa5e5a, 'glow': Color(0xFFFFFFFF)},
   ];
 
   @override
@@ -73,6 +73,7 @@ class _MoodSelectorState extends State<MoodSelector> {
             itemBuilder: (context, index) {
               final isSelected = _selectedIndex == index;
               final moodColor = _moods[index]['color'] as Color;
+              final glowColor = _moods[index]['glow'] as Color;
               return GestureDetector(
                     onTap: () {
                       setState(() => _selectedIndex = index);
@@ -95,16 +96,13 @@ class _MoodSelectorState extends State<MoodSelector> {
                               : AppColors.dividerColor(context),
                           width: isSelected ? 1.8 : 1,
                         ),
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: moodColor.withValues(alpha: 0.25),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 4),
-                                  spreadRadius: 2,
-                                ),
-                              ]
-                            : AppColors.subtleShadow,
+                        boxShadow: [
+                          BoxShadow(
+                            color: glowColor.withValues(alpha: isSelected ? 0.7 : 0.5),
+                            blurRadius: isSelected ? 20 : 12,
+                            spreadRadius: isSelected ? 4 : 2,
+                          ),
+                        ],
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -113,9 +111,10 @@ class _MoodSelectorState extends State<MoodSelector> {
                             scale: isSelected ? 1.3 : 1.0,
                             duration: AppTheme.fadeInDuration,
                             curve: AppTheme.defaultCurve,
-                            child: Text(
-                              _moods[index]['emoji'] as String,
-                              style: const TextStyle(fontSize: 28),
+                            child: Icon(
+                              _moods[index]['icon'] as IconData,
+                              color: isSelected ? _moods[index]['color'] as Color : AppColors.tertiary(context),
+                              size: 28,
                             ),
                           ),
                           const SizedBox(height: 8),

@@ -68,6 +68,11 @@ class StorageService {
     return '${AppwriteConstants.endpoint}/storage/buckets/$bucketId/files/$fileId/preview?project=${AppwriteConstants.projectId}';
   }
 
+  /// Get a direct file view URL suitable for audio/video playback.
+  String getFileViewUrl(String bucketId, String fileId) {
+    return '${AppwriteConstants.endpoint}/storage/buckets/$bucketId/files/$fileId/view?project=${AppwriteConstants.projectId}';
+  }
+
   /// Get the profile pic URL for a user.
   String getProfilePicUrl(String userId) {
     return getFilePreviewUrl(AppwriteConstants.profilePicsBucket, userId);
@@ -76,6 +81,20 @@ class StorageService {
   /// Get a post image URL.
   String getPostImageUrl(String fileId) {
     return getFilePreviewUrl(AppwriteConstants.postImagesBucket, fileId);
+  }
+
+  /// Get an audio stream URL for a music track file.
+  String getMusicTrackUrl(String fileId) {
+    return getFileViewUrl(AppwriteConstants.musicBucket, fileId);
+  }
+
+  /// List cloud music files from Appwrite storage.
+  Future<List<models.File>> listMusicFiles({int limit = 100}) async {
+    final result = await _storage.listFiles(
+      bucketId: AppwriteConstants.musicBucket,
+      queries: [Query.limit(limit), Query.orderAsc(r'$createdAt')],
+    );
+    return result.files;
   }
 
   /// Download file as bytes.

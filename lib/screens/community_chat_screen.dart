@@ -4,6 +4,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../widgets/gradient_background.dart';
+import '../services/database_service.dart';
+import '../services/auth_service.dart';
+import '../services/community_service.dart';
 
 /// Minimal community chat UI shell with sample messages.
 class CommunityChatScreen extends StatefulWidget {
@@ -15,41 +18,72 @@ class CommunityChatScreen extends StatefulWidget {
 
 class _CommunityChatScreenState extends State<CommunityChatScreen> {
   final TextEditingController _messageController = TextEditingController();
-  final List<_ChatMessage> _messages = [
-    _ChatMessage('gentle_soul', 'G', 'Hey everyone, how are you doing today?', false),
-    _ChatMessage('quiet_river', 'Q', 'Taking it one breath at a time.', false),
-    _ChatMessage('morning_dew', 'M', 'Sending love to anyone who needs it right now.', false),
-    _ChatMessage('warm_light', 'W', 'Just finished a 10-minute meditation. Feeling lighter.', false),
-  ];
+  final List<_ChatMessage> _messages = [];
   bool _isTyping = false;
 
-  void _sendMessage() {
+  @override
+  void initState() {
+    super.initState();
+    CommunityService().addListener(_onCommunityUpdate);
+    _loadMessages();
+  }
+
+  void _onCommunityUpdate() {
+    _loadMessages();
+  }
+
+  Future<void> _loadMessages() async {
+    final user = AuthService().currentUser;
+    final currentUserId = user?.$id ?? '';
+
+    final result = await DatabaseService().getComments('GLOBAL_CHAT');
+    final loaded = result.rows.map((doc) {
+      final d = doc.data;
+      final userId = d['userId'] as String? ?? '';
+      return _ChatMessage(
+        (d['username'] as String?) ?? 'Someone',
+        (d['avatar'] as String?) ?? 'S',
+        (d['text'] as String?) ?? '',
+        userId == currentUserId,
+      );
+    }).toList();
+    
+    // Sort oldest first (top-down) or adjust depending on UI list view
+    loaded.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    if (mounted) {
+      setState(() {
+        _messages.clear();
+        _messages.addAll(loaded);
+      });
+    }
+  }
+
+  Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    setState(() {
-      _messages.add(_ChatMessage('you', 'Y', text, true));
-      _messageController.clear();
-      _isTyping = true;
-    });
+    final user = AuthService().currentUser;
+    if (user == null) return;
 
-    // Simulate typing response
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      setState(() {
-        _isTyping = false;
-        _messages.add(_ChatMessage(
-          'gentle_soul',
-          'G',
-          'That\'s really lovely to hear.',
-          false,
-        ));
-      });
-    });
+    final username = user.name.isNotEmpty ? user.name : 'you';
+    final avatar = username.isNotEmpty ? username[0].toUpperCase() : 'Y';
+
+    _messageController.clear();
+
+    await DatabaseService().addComment(
+      postId: 'GLOBAL_CHAT',
+      userId: user.$id,
+      username: username,
+      avatar: avatar,
+      text: text,
+    );
+    _loadMessages();
   }
 
   @override
   void dispose() {
+    CommunityService().removeListener(_onCommunityUpdate);
     _messageController.dispose();
     super.dispose();
   }
@@ -298,6 +332,7 @@ class _ChatMessage {
   final String avatar;
   final String text;
   final bool isMe;
+  final DateTime timestamp;
 
-  _ChatMessage(this.username, this.avatar, this.text, this.isMe);
+  _ChatMessage(this.username, this.avatar, this.text, this.isMe, {DateTime? timestamp}) : timestamp = timestamp ?? DateTime.now();
 }

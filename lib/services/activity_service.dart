@@ -51,6 +51,8 @@ class ActivityService {
   DateTime? _lastWalkingNotification;
   Timer? _walkingDebounce;
   int _walkingSeconds = 0;
+  Position? _lastPosition;
+  String? _trackingDate; // date string for the current tracking session
 
   Future<bool> requestPermissions() async {
     try {
@@ -73,6 +75,20 @@ class ActivityService {
 
   Future<void> init() async {
     await _loadTodayData();
+
+    // Auto-start tracking if permission was previously granted
+    if (!permissionGranted.value) {
+      try {
+        final perm = await Geolocator.checkPermission();
+        if (perm == LocationPermission.always ||
+            perm == LocationPermission.whileInUse) {
+          permissionGranted.value = true;
+          await startTracking();
+        }
+      } catch (e) {
+        developer.log('Auto-start permission check failed', name: _tag, error: e);
+      }
+    }
   }
 
   Future<void> _loadTodayData() async {
@@ -93,12 +109,29 @@ class ActivityService {
     }
   }
 
+  /// Check if the date has rolled over; if so, reset today's data.
+  void _checkDateRollover() {
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    if (_trackingDate != null && _trackingDate != today) {
+      // New day — reset counters
+      todayData.value = const ActivityData();
+      _baseSet = false;
+      _lastPosition = null;
+      developer.log('Date rollover detected, reset activity data', name: _tag);
+    }
+    _trackingDate = today;
+  }
+
   Future<void> startTracking() async {
     if (_stepSub != null) return; // already tracking
 
+    _trackingDate = DateTime.now().toIso8601String().substring(0, 10);
+
+    // Start pedometer
     try {
       final pedometer = Pedometer();
       _stepSub = pedometer.stepCountStream().listen((stepCount) {
+        _checkDateRollover();
         if (!_baseSet) {
           _baseSteps = stepCount;
           _baseSet = true;
@@ -106,9 +139,11 @@ class ActivityService {
         final sessionSteps = stepCount - _baseSteps;
         final totalSteps = todayData.value.steps + sessionSteps.clamp(0, 999999);
         _baseSteps = stepCount;
-        final dist = totalSteps * 0.0007;
         final cal = totalSteps * 0.04;
-        todayData.value = ActivityData(steps: totalSteps.toInt(), distanceKm: dist, calories: cal);
+        todayData.value = todayData.value.copyWith(
+          steps: totalSteps.toInt(),
+          calories: cal,
+        );
         _saveTodayData();
         _detectWalking();
       }, onError: (e) {
@@ -116,6 +151,36 @@ class ActivityService {
       });
     } catch (e, st) {
       developer.log('Failed to start pedometer', name: _tag, error: e, stackTrace: st);
+    }
+
+    // Start GPS-based distance tracking
+    try {
+      final locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 5, // minimum 5 meters between updates
+      );
+      _positionSub = Geolocator.getPositionStream(locationSettings: locationSettings).listen((position) {
+        _checkDateRollover();
+        if (_lastPosition != null) {
+          final distanceMeters = Geolocator.distanceBetween(
+            _lastPosition!.latitude,
+            _lastPosition!.longitude,
+            position.latitude,
+            position.longitude,
+          );
+          // Only add reasonable distances (filter GPS jumps > 500m)
+          if (distanceMeters > 0 && distanceMeters < 500) {
+            final newDistKm = todayData.value.distanceKm + (distanceMeters / 1000.0);
+            todayData.value = todayData.value.copyWith(distanceKm: newDistKm);
+            _saveTodayData();
+          }
+        }
+        _lastPosition = position;
+      }, onError: (e) {
+        developer.log('Position stream error', name: _tag, error: e);
+      });
+    } catch (e, st) {
+      developer.log('Failed to start position stream', name: _tag, error: e, stackTrace: st);
     }
   }
 

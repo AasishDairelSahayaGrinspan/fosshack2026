@@ -3,15 +3,17 @@ import 'package:flutter/material.dart';
 class AvatarConfig {
   final int bodyType; // 0=slim, 1=average, 2=broad
   final Color skinColor;
-  final int hairStyle; // 0=short, 1=medium, 2=long, 3=buzz, 4=curly
+  final int hairStyle; // 0=short, 1=medium, 2=long, 3=buzz, 4=curly, 5=ponytail, 6=braids, 7=afro, 8=bald
   final Color hairColor;
-  final int shirtStyle; // 0=tee, 1=hoodie, 2=tank
+  final int shirtStyle; // 0=tee, 1=hoodie, 2=tank, 3=formal, 4=jacket, 5=crop top
   final Color shirtColor;
   final int pantsStyle; // 0=jeans, 1=shorts, 2=joggers
   final Color pantsColor;
   final int shoeStyle; // 0=sneakers, 1=boots, 2=sandals
   final Color shoeColor;
-  final List<String> accessories; // 'sunglasses', 'chain', 'hat', 'earring'
+  final List<String> accessories; // 'sunglasses', 'chain', 'hat', 'earring', 'watch', 'backpack', 'headband', 'glassesRound', 'glassesSquare'
+  final int eyeStyle; // 0=round, 1=almond, 2=narrow, 3=wide, 4=sleepy
+  final int smileStyle; // 0=happy, 1=neutral, 2=smirk, 3=gentle
 
   const AvatarConfig({
     this.bodyType = 1,
@@ -25,6 +27,8 @@ class AvatarConfig {
     this.shoeStyle = 0,
     this.shoeColor = const Color(0xFFEEEEEE),
     this.accessories = const [],
+    this.eyeStyle = 0,
+    this.smileStyle = 0,
   });
 
   AvatarConfig copyWith({
@@ -39,6 +43,8 @@ class AvatarConfig {
     int? shoeStyle,
     Color? shoeColor,
     List<String>? accessories,
+    int? eyeStyle,
+    int? smileStyle,
   }) {
     return AvatarConfig(
       bodyType: bodyType ?? this.bodyType,
@@ -52,6 +58,8 @@ class AvatarConfig {
       shoeStyle: shoeStyle ?? this.shoeStyle,
       shoeColor: shoeColor ?? this.shoeColor,
       accessories: accessories ?? this.accessories,
+      eyeStyle: eyeStyle ?? this.eyeStyle,
+      smileStyle: smileStyle ?? this.smileStyle,
     );
   }
 
@@ -68,6 +76,8 @@ class AvatarConfig {
       'shoeStyle': shoeStyle,
       'shoeColor': shoeColor.toARGB32(),
       'accessories': accessories,
+      'eyeStyle': eyeStyle,
+      'smileStyle': smileStyle,
     };
   }
 
@@ -87,6 +97,8 @@ class AvatarConfig {
               ?.map((e) => e.toString())
               .toList() ??
           [],
+      eyeStyle: (map['eyeStyle'] as num?)?.toInt() ?? 0,
+      smileStyle: (map['smileStyle'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -143,15 +155,48 @@ class AvatarConfig {
     'Long',
     'Buzz',
     'Curly',
+    'Ponytail',
+    'Braids',
+    'Afro',
+    'Bald',
   ];
 
-  static const List<String> shirtStyleNames = ['T-Shirt', 'Hoodie', 'Tank'];
+  static const List<String> shirtStyleNames = [
+    'T-Shirt',
+    'Hoodie',
+    'Tank',
+    'Formal',
+    'Jacket',
+    'Crop Top',
+  ];
+
   static const List<String> pantsStyleNames = ['Jeans', 'Shorts', 'Joggers'];
   static const List<String> shoeStyleNames = ['Sneakers', 'Boots', 'Sandals'];
+
+  static const List<String> eyeStyleNames = [
+    'Round',
+    'Almond',
+    'Narrow',
+    'Wide',
+    'Sleepy',
+  ];
+
+  static const List<String> smileStyleNames = [
+    'Happy',
+    'Neutral',
+    'Smirk',
+    'Gentle',
+  ];
+
   static const List<String> accessoryNames = [
     'sunglasses',
     'chain',
     'hat',
     'earring',
+    'watch',
+    'backpack',
+    'headband',
+    'glassesRound',
+    'glassesSquare',
   ];
 }

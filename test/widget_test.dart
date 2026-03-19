@@ -8,6 +8,9 @@ void main() {
 
     // Verify splash screen shows app name
     expect(find.text('Unravel'), findsOneWidget);
-    expect(find.text('Your quiet place.'), findsOneWidget);
+    expect(find.text("Slow down. You're safe here."), findsOneWidget);
+
+    // Let splash timer complete to avoid pending Timer assertion at teardown.
+    await tester.pump(const Duration(milliseconds: 2500));
   });
 }

@@ -191,6 +191,55 @@ class LocalDataService {
     await _persist();
   }
 
+  /// Find a cached user ID by email.
+  String? findUserIdByEmail(String email) {
+    final users = _bucketMap('users');
+    for (final entry in users.entries) {
+      final value = entry.value;
+      if (value is Map &&
+          (value['email']?.toString().toLowerCase() ==
+              email.toLowerCase())) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  /// Migrate all per-user local buckets from [oldUserId] to [newUserId].
+  Future<void> migrateUserData({
+    required String oldUserId,
+    required String newUserId,
+  }) async {
+    if (oldUserId == newUserId) return;
+
+    const keyedBuckets = <String>[
+      'userPrefs',
+      'moods',
+      'recoveryHistory',
+      'journal',
+      'streaks',
+      'sleepLogs',
+      'breathingLogs',
+      'listenedSongs',
+      'activityLogs',
+      'wellnessLogs',
+    ];
+
+    for (final bucketName in keyedBuckets) {
+      final bucket = _bucketMap(bucketName);
+      if (bucket.containsKey(oldUserId) && !bucket.containsKey(newUserId)) {
+        bucket[newUserId] = bucket[oldUserId];
+      }
+    }
+
+    final session = _bucketMap('session');
+    if (session['userId'] == oldUserId) {
+      session['userId'] = newUserId;
+    }
+
+    await _persist();
+  }
+
   Map<String, dynamic> getUserPrefs(String userId) {
     final prefs = _bucketMap('userPrefs');
     final raw = prefs[userId];

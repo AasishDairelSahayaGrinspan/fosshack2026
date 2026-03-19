@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/app_navigation_service.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
+import '../services/music_service.dart';
 import '../services/user_preferences_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -20,6 +22,13 @@ class MusicScreen extends StatefulWidget {
 
 class _MusicScreenState extends State<MusicScreen> {
   String? _recommendation;
+  final AudioPlayer _player = AudioPlayer();
+
+  List<MusicTrackData> _sessionTracks = <MusicTrackData>[];
+  int _activeTrackIndex = 0;
+  bool _isPlaying = false;
+  bool _loadingSession = true;
+  String? _sessionError;
 
   static const List<String> _languages = [
     'English',
@@ -586,6 +595,13 @@ class _MusicScreenState extends State<MusicScreen> {
     super.initState();
     _recommendation = AppNavigationService().musicRecommendation.value;
     AppNavigationService().musicRecommendation.addListener(_onRecommendation);
+    _player.playerStateStream.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = state.playing;
+      });
+    });
+    _loadCalmSession();
   }
 
   @override
@@ -593,6 +609,7 @@ class _MusicScreenState extends State<MusicScreen> {
     AppNavigationService()
         .musicRecommendation
         .removeListener(_onRecommendation);
+    _player.dispose();
     super.dispose();
   }
 
@@ -601,6 +618,84 @@ class _MusicScreenState extends State<MusicScreen> {
     setState(() {
       _recommendation = AppNavigationService().musicRecommendation.value;
     });
+  }
+
+  Future<void> _loadCalmSession() async {
+    setState(() {
+      _loadingSession = true;
+      _sessionError = null;
+    });
+
+    try {
+      final tracks = await MusicService().getCalmSessionTracks(count: 7);
+      if (!mounted) return;
+      setState(() {
+        _sessionTracks = tracks;
+        _activeTrackIndex = 0;
+      });
+
+      if (_sessionTracks.isNotEmpty) {
+        await _playTrackAt(0, autoplay: true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _sessionError = 'Failed to load calm session.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingSession = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _playTrackAt(int index, {bool autoplay = false}) async {
+    if (index < 0 || index >= _sessionTracks.length) return;
+    final track = _sessionTracks[index];
+
+    try {
+      if (track.fromCloud) {
+        await _player.setUrl(track.sourceUrl);
+      } else {
+        await _player.setAsset(track.sourceUrl);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _activeTrackIndex = index;
+      });
+
+      if (autoplay) {
+        await _player.play();
+      }
+
+      final user = AuthService().currentUser;
+      if (user != null) {
+        await DatabaseService().saveListenedSong(
+          userId: user.$id,
+          title: track.title,
+          artist: track.artist,
+          playlist: 'Calm Session',
+          mood: track.mood,
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _sessionError = 'Could not play selected track.';
+      });
+    }
+  }
+
+  Future<void> _togglePlayback() async {
+    if (_sessionTracks.isEmpty) return;
+    if (_isPlaying) {
+      await _player.pause();
+    } else {
+      await _player.play();
+    }
   }
 
   @override
@@ -684,11 +779,147 @@ class _MusicScreenState extends State<MusicScreen> {
                 ),
                 const SizedBox(height: 10),
                 ..._filteredPlaylists.map((pl) => _buildPlaylistCard(pl)),
+                const SizedBox(height: 16),
+                _buildCalmSessionCard(),
                 const SizedBox(height: 20),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCalmSessionCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.sageGreen.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.self_improvement_rounded,
+                  size: 18,
+                  color: AppColors.sageGreen,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Calm Music Session',
+                      style: AppTypography.uiLabel(color: Colors.white),
+                    ),
+                    Text(
+                      'Auto-plays from Appwrite Cloud (fallback to local)',
+                      style: AppTypography.caption(
+                        color: Colors.white.withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: _sessionTracks.isEmpty ? null : _togglePlayback,
+                icon: Icon(
+                  _isPlaying
+                      ? Icons.pause_circle_filled_rounded
+                      : Icons.play_circle_fill_rounded,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_loadingSession)
+            const LinearProgressIndicator(minHeight: 3)
+          else if (_sessionError != null)
+            Text(
+              _sessionError!,
+              style: AppTypography.caption(color: AppColors.warmCoral),
+            )
+          else
+            Column(
+              children: List.generate(_sessionTracks.length, (i) {
+                final track = _sessionTracks[i];
+                final isActive = i == _activeTrackIndex;
+                return GestureDetector(
+                  onTap: () => _playTrackAt(i, autoplay: true),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? AppColors.sageGreen.withValues(alpha: 0.2)
+                          : Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isActive
+                            ? AppColors.sageGreen.withValues(alpha: 0.5)
+                            : Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          '${i + 1}',
+                          style: AppTypography.caption(
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                track.title,
+                                style: AppTypography.caption(
+                                  color: Colors.white,
+                                ).copyWith(fontWeight: FontWeight.w500),
+                              ),
+                              Text(
+                                '${track.mood} · ${track.fromCloud ? 'Cloud' : 'Local'}',
+                                style: AppTypography.caption(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          isActive && _isPlaying
+                              ? Icons.graphic_eq_rounded
+                              : Icons.play_arrow_rounded,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+        ],
       ),
     );
   }

@@ -9,11 +9,15 @@ import 'frosted_glass_card.dart';
 class RecoveryScoreCard extends StatefulWidget {
   final double score; // 0.0 to 1.0
   final String? quote;
+  final List<double> trendPoints; // normalized 0.0 to 1.0
+  final String? trendLabel;
 
   const RecoveryScoreCard({
     super.key,
     this.score = 0.78,
     this.quote,
+    this.trendPoints = const <double>[],
+    this.trendLabel,
   });
 
   @override
@@ -153,6 +157,15 @@ class _RecoveryScoreCardState extends State<RecoveryScoreCard>
             ),
           ),
           const SizedBox(height: 20),
+          if (widget.trendPoints.isNotEmpty) ...[
+            _TrendSparkline(points: widget.trendPoints),
+            const SizedBox(height: 8),
+            Text(
+              widget.trendLabel ?? 'Intelligence trend',
+              style: AppTypography.captionC(context),
+            ),
+            const SizedBox(height: 14),
+          ],
           // Inspirational quote — Playfair italic
           Text(
             '"$_displayQuote"',
@@ -208,4 +221,77 @@ class _ScoreRingPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _ScoreRingPainter oldDelegate) =>
       oldDelegate.progress != progress;
+}
+
+class _TrendSparkline extends StatelessWidget {
+  final List<double> points;
+
+  const _TrendSparkline({required this.points});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      width: double.infinity,
+      child: CustomPaint(
+        painter: _TrendSparklinePainter(
+          points: points,
+          lineColor: AppColors.softIndigo,
+          gridColor: AppColors.dividerColor(context).withValues(alpha: 0.35),
+        ),
+      ),
+    );
+  }
+}
+
+class _TrendSparklinePainter extends CustomPainter {
+  final List<double> points;
+  final Color lineColor;
+  final Color gridColor;
+
+  const _TrendSparklinePainter({
+    required this.points,
+    required this.lineColor,
+    required this.gridColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.length < 2) return;
+
+    final w = size.width;
+    final h = size.height;
+
+    final gridPaint = Paint()
+      ..color = gridColor
+      ..strokeWidth = 1;
+    canvas.drawLine(Offset(0, h * 0.2), Offset(w, h * 0.2), gridPaint);
+    canvas.drawLine(Offset(0, h * 0.8), Offset(w, h * 0.8), gridPaint);
+
+    final path = Path();
+    for (int i = 0; i < points.length; i++) {
+      final x = i * (w / (points.length - 1));
+      final y = h - (points[i].clamp(0.0, 1.0) * h);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+
+    final linePaint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 2.2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(path, linePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TrendSparklinePainter oldDelegate) {
+    return oldDelegate.points != points ||
+        oldDelegate.lineColor != lineColor ||
+        oldDelegate.gridColor != gridColor;
+  }
 }

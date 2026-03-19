@@ -55,6 +55,23 @@ class AuthService {
 
   final Account _account = AppwriteService().account;
 
+  Future<void> _cacheUserAndRecoverLocalData(LocalUser user) async {
+    await LocalDataService().init();
+
+    if (user.email != null && user.email!.isNotEmpty) {
+      final previousId = LocalDataService().findUserIdByEmail(user.email!);
+      if (previousId != null && previousId != user.$id) {
+        await LocalDataService().migrateUserData(
+          oldUserId: previousId,
+          newUserId: user.$id,
+        );
+      }
+    }
+
+    await LocalDataService().saveUser(user.$id, user.toJson());
+    await LocalDataService().setSessionUserId(user.$id);
+  }
+
   LocalUser? _currentUser;
   LocalUser? get currentUser => _currentUser;
 
@@ -64,9 +81,7 @@ class AuthService {
       await LocalDataService().init();
       final user = await _account.get();
       _currentUser = LocalUser.fromAppwriteUser(user);
-      // Cache locally
-      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
-      await LocalDataService().setSessionUserId(_currentUser!.$id);
+      await _cacheUserAndRecoverLocalData(_currentUser!);
       return true;
     } on AppwriteException catch (e) {
       developer.log('isLoggedIn: no session ($e)', name: _tag);
@@ -109,8 +124,7 @@ class AuthService {
       );
       final user = await _account.get();
       _currentUser = LocalUser.fromAppwriteUser(user);
-      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
-      await LocalDataService().setSessionUserId(_currentUser!.$id);
+      await _cacheUserAndRecoverLocalData(_currentUser!);
       await LocalDataService().addAnalytics(
         'signup',
         payload: <String, dynamic>{'userId': _currentUser!.$id},
@@ -142,8 +156,7 @@ class AuthService {
       );
       final user = await _account.get();
       _currentUser = LocalUser.fromAppwriteUser(user);
-      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
-      await LocalDataService().setSessionUserId(_currentUser!.$id);
+      await _cacheUserAndRecoverLocalData(_currentUser!);
       await LocalDataService().addAnalytics(
         'login',
         payload: <String, dynamic>{'userId': _currentUser!.$id},
@@ -167,8 +180,7 @@ class AuthService {
       await _account.createOAuth2Session(provider: provider);
       final user = await _account.get();
       _currentUser = LocalUser.fromAppwriteUser(user);
-      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
-      await LocalDataService().setSessionUserId(_currentUser!.$id);
+      await _cacheUserAndRecoverLocalData(_currentUser!);
       await LocalDataService().addAnalytics(
         'oauth_login',
         payload: <String, dynamic>{
@@ -193,8 +205,7 @@ class AuthService {
         name: 'Guest',
         isGuest: true,
       );
-      await LocalDataService().saveUser(_currentUser!.$id, _currentUser!.toJson());
-      await LocalDataService().setSessionUserId(_currentUser!.$id);
+      await _cacheUserAndRecoverLocalData(_currentUser!);
       await LocalDataService().addAnalytics('guest_login');
     } catch (e, st) {
       developer.log('guestLogin failed', name: _tag, error: e, stackTrace: st);

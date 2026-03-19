@@ -37,6 +37,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   double _recoveryScore = 1.0;
+  List<double> _recoveryTrendPoints = <double>[];
+  String? _recoveryTrendLabel;
+  String? _recoveryInsightMessage;
   List<double> _moodData = List<double>.filled(7, 0.5);
   int _streakDays = 0;
   bool _activityPermissionDismissed = false;
@@ -120,17 +123,76 @@ class _HomeScreenState extends State<HomeScreen> {
     final scoreFuture = db.getLatestRecoveryScore(user.$id).catchError((_) => 100.0);
     final moodFuture = db.getMoodEntries(user.$id, days: 7).catchError((_) => LocalRowList(rows: <LocalRow>[]));
     final streakFuture = db.getOrCreateStreak(user.$id).catchError((_) => LocalRow($id: user.$id, data: <String, dynamic>{'currentStreak': 0}));
+    final trendFuture = db.getCloudWellnessTrend(user.$id).catchError((_) => <String, dynamic>{'success': false});
+    final insightsFuture = db.getCloudWellnessInsights(user.$id).catchError((_) => <String, dynamic>{'success': false});
 
-    final results = await Future.wait<dynamic>([scoreFuture, moodFuture, streakFuture]);
+    final results = await Future.wait<dynamic>([
+      scoreFuture,
+      moodFuture,
+      streakFuture,
+      trendFuture,
+      insightsFuture,
+    ]);
     if (!mounted) return;
 
     final rawScore = (results[0] as num?)?.toDouble() ?? 100.0;
     final moodResult = results[1] as LocalRowList;
     final streakDoc = results[2] as LocalRow;
+    final cloudTrend = results[3] as Map<String, dynamic>;
+    final cloudInsights = results[4] as Map<String, dynamic>;
+
+    double scorePercent = rawScore;
+    final trendPoints = <double>[];
+    String? trendLabel;
+    String? insightMessage;
+
+    if (cloudTrend['success'] == true) {
+      final trend =
+          (cloudTrend['trend'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
+      final currentAvg = (trend['current7DayAverage'] as num?)?.toDouble();
+      final previousAvg = (trend['previous7DayAverage'] as num?)?.toDouble();
+      final status = (trend['status'] as String?) ?? 'stable';
+
+      if (currentAvg != null) {
+        // Cloud wellness average is 0..5, convert to 0..100 for recovery card.
+        scorePercent = (currentAvg * 20.0).clamp(0.0, 100.0);
+      }
+
+      if (currentAvg != null && previousAvg != null) {
+        final delta = (currentAvg - previousAvg);
+        final sign = delta >= 0 ? '+' : '';
+        trendLabel =
+            'Cloud trend: $status ($sign${delta.toStringAsFixed(2)} vs last week)';
+      } else {
+        trendLabel = 'Cloud trend: $status';
+      }
+
+      final points = (cloudTrend['points'] as List?) ?? <dynamic>[];
+      for (final p in points) {
+        if (p is Map) {
+          final raw = (p['wellnessScore'] as num?)?.toDouble() ??
+              (p['score'] as num?)?.toDouble();
+          if (raw != null) {
+            trendPoints.add((raw / 5.0).clamp(0.0, 1.0));
+          }
+        }
+      }
+    }
+
+    if (cloudInsights['success'] == true) {
+      final items = (cloudInsights['insights'] as List?) ?? <dynamic>[];
+      if (items.isNotEmpty && items.first is Map) {
+        final first = Map<String, dynamic>.from(items.first as Map);
+        insightMessage = (first['message'] as String?)?.trim();
+      }
+    }
 
     setState(() {
       // rawScore is 0–100 from database; convert to 0.0–1.0 for the widget.
-      _recoveryScore = (rawScore / 100.0).clamp(0.0, 1.0);
+      _recoveryScore = (scorePercent / 100.0).clamp(0.0, 1.0);
+      _recoveryTrendPoints = trendPoints;
+      _recoveryTrendLabel = trendLabel;
+      _recoveryInsightMessage = insightMessage;
       if (moodResult.rows.isNotEmpty) {
         _moodData = moodResult.rows
             .map<double>((d) => ((d.data['mood'] as num?)?.toDouble() ?? 0.5))
@@ -265,7 +327,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 28),
                     RepaintBoundary(
-                      child: RecoveryScoreCard(score: _recoveryScore),
+                      child: RecoveryScoreCard(
+                        score: _recoveryScore,
+                        quote: _recoveryInsightMessage ?? _dailyQuote,
+                        trendPoints: _recoveryTrendPoints,
+                        trendLabel: _recoveryTrendLabel,
+                      ),
                     ),
                     const SizedBox(height: 28),
                     RepaintBoundary(child: _buildActivityCard(context)),

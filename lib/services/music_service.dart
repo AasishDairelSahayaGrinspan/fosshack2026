@@ -78,12 +78,57 @@ class MusicService {
       sourceUrl: 'assets/music/Meditation Focus.mp3',
       fromCloud: false,
     ),
+    // Seventh fallback track (safe duplicate source) to keep session length stable.
+    MusicTrackData(
+      id: 'local_7',
+      title: 'Deep Calm Loop',
+      artist: 'Unravel Music',
+      mood: 'Calm',
+      sourceUrl: 'assets/music/Ambient Calm.mp3',
+      fromCloud: false,
+    ),
   ];
 
   Future<List<MusicTrackData>> getPlayableTracks() async {
     final cloudTracks = await _loadCloudTracks();
     if (cloudTracks.isNotEmpty) return cloudTracks;
     return _localFallbackTracks;
+  }
+
+  /// Returns a curated 7-track calm session.
+  ///
+  /// Prefers cloud tracks when available, with local fallback.
+  Future<List<MusicTrackData>> getCalmSessionTracks({int count = 7}) async {
+    final pool = await getPlayableTracks();
+    if (pool.isEmpty) return _localFallbackTracks.take(count).toList();
+
+    final calmFirst = <MusicTrackData>[
+      ...pool.where((t) => t.mood.toLowerCase() == 'calm'),
+      ...pool.where((t) => t.mood.toLowerCase() != 'calm'),
+    ];
+
+    final selected = <MusicTrackData>[];
+    for (final track in calmFirst) {
+      if (selected.length >= count) break;
+      selected.add(track);
+    }
+
+    if (selected.isEmpty) {
+      selected.addAll(_localFallbackTracks.take(count));
+    }
+
+    // Top-up with local fallback (or repeat from selected) to guarantee count.
+    var idx = 0;
+    while (selected.length < count) {
+      if (idx < _localFallbackTracks.length) {
+        selected.add(_localFallbackTracks[idx]);
+      } else {
+        selected.add(selected[idx % selected.length]);
+      }
+      idx++;
+    }
+
+    return selected.take(count).toList(growable: false);
   }
 
   Future<List<MusicTrackData>> _loadCloudTracks() async {

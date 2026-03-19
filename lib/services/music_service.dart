@@ -32,50 +32,50 @@ class MusicService {
   static const List<MusicTrackData> _localFallbackTracks = <MusicTrackData>[
     MusicTrackData(
       id: 'local_1',
-      title: 'Calm Chill',
-      artist: 'Armonicamente',
+      title: 'Ambient Calm',
+      artist: 'Unravel Music',
       mood: 'Calm',
-      sourceUrl: 'assets/music/armonicamente-calm-chill-beautiful-141317.mp3',
+      sourceUrl: 'assets/music/Ambient Calm.mp3',
       fromCloud: false,
     ),
     MusicTrackData(
       id: 'local_2',
-      title: 'Aura Cycle',
-      artist: 'Day Night Morning',
-      mood: 'Focus',
-      sourceUrl: 'assets/music/daynigthmorning-aura-273351.mp3',
+      title: 'Morning Aura',
+      artist: 'Unravel Music',
+      mood: 'Energy',
+      sourceUrl: 'assets/music/Morning Aura.mp3',
       fromCloud: false,
     ),
     MusicTrackData(
       id: 'local_3',
       title: 'Soft Background',
-      artist: 'Free Music For Video',
-      mood: 'Release thoughts',
-      sourceUrl: 'assets/music/freemusicforvideo-soft-background-music-409193.mp3',
+      artist: 'Unravel Music',
+      mood: 'Peaceful',
+      sourceUrl: 'assets/music/Soft Background.mp3',
       fromCloud: false,
     ),
     MusicTrackData(
       id: 'local_4',
-      title: 'Calm Journey',
-      artist: 'Happiness In Music',
+      title: 'Peaceful Moments',
+      artist: 'Unravel Music',
       mood: 'Calm',
-      sourceUrl: 'assets/music/happinessinmusic-music-calm-no-copyright-463752.mp3',
+      sourceUrl: 'assets/music/Peaceful Moments.mp3',
       fromCloud: false,
     ),
     MusicTrackData(
       id: 'local_5',
-      title: 'Relaxing Session',
-      artist: 'Happiness In Music',
+      title: 'Relaxing Music',
+      artist: 'Unravel Music',
       mood: 'Rest',
-      sourceUrl: 'assets/music/happinessinmusic-relaxing-music-468109.mp3',
+      sourceUrl: 'assets/music/Relaxing Music.mp3',
       fromCloud: false,
     ),
     MusicTrackData(
       id: 'local_6',
-      title: '258 Hz Focus',
-      artist: 'PoorArtistt',
+      title: 'Meditation Focus',
+      artist: 'Unravel Music',
       mood: 'Focus',
-      sourceUrl: 'assets/music/poorartistt-258hz-frequency-music-no-copyright-music-for-meditation-amp-focus-339016.mp3',
+      sourceUrl: 'assets/music/Meditation Focus.mp3',
       fromCloud: false,
     ),
   ];
@@ -126,6 +126,32 @@ class MusicService {
   }
 
   (String, String, String) _parseName(String rawName) {
+    final normalized = rawName.toLowerCase();
+
+    const knownTracks = <String, (String, String, String)>{
+      'armonicamente-calm-chill-beautiful-141317.mp3':
+        ('Ambient Calm', 'Unravel Music', 'Calm'),
+      'daynigthmorning-aura-273351.mp3':
+        ('Morning Aura', 'Unravel Music', 'Energy'),
+      'freemusicforvideo-soft-background-music-409193.mp3':
+        ('Soft Background', 'Unravel Music', 'Peaceful'),
+      'happinessinmusic-music-calm-no-copyright-463752.mp3':
+        ('Peaceful Moments', 'Unravel Music', 'Calm'),
+      'happinessinmusic-relaxing-music-468109.mp3':
+        ('Relaxing Music', 'Unravel Music', 'Rest'),
+      'poorartistt-258hz-frequency-music-no-copyright-music-for-meditation-amp-focus-339016.mp3':
+        ('Meditation Focus', 'Unravel Music', 'Focus'),
+      'ambient calm.mp3': ('Ambient Calm', 'Unravel Music', 'Calm'),
+      'morning aura.mp3': ('Morning Aura', 'Unravel Music', 'Energy'),
+      'soft background.mp3': ('Soft Background', 'Unravel Music', 'Peaceful'),
+      'peaceful moments.mp3': ('Peaceful Moments', 'Unravel Music', 'Calm'),
+      'relaxing music.mp3': ('Relaxing Music', 'Unravel Music', 'Rest'),
+      'meditation focus.mp3': ('Meditation Focus', 'Unravel Music', 'Focus'),
+    };
+
+    final known = knownTracks[normalized];
+    if (known != null) return known;
+
     final cleaned = rawName
         .replaceAll('.mp3', '')
         .replaceAll('.wav', '')

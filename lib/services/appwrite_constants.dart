@@ -19,6 +19,9 @@ class AppwriteConstants {
   static const String postsCollection = 'posts';
   static const String commentsCollection = 'comments';
 
+  // ─── Functions ───
+  static const String wellnessFunctionId = 'wellness_intelligence';
+
   // ─── Storage Buckets ───
   static const String profilePicsBucket = 'profile_pics';
   static const String journalMediaBucket = 'journal_media';

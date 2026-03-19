@@ -41,6 +41,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
   int _breathingStreak = 0;
   int _journalStreak = 0;
 
+  String _cloudTrendStatus = 'stable';
+  double _cloudCurrentAvg = 0.0;
+  double _cloudPreviousAvg = 0.0;
+  List<Map<String, dynamic>> _cloudInsights = <Map<String, dynamic>>[];
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +64,13 @@ class _InsightsScreenState extends State<InsightsScreen> {
     final db = DatabaseService();
     final local = LocalDataService();
     final now = DateTime.now();
+
+    final trendFuture = db
+      .getCloudWellnessTrend(userId)
+      .catchError((_) => <String, dynamic>{'success': false});
+    final insightsFuture = db
+      .getCloudWellnessInsights(userId)
+      .catchError((_) => <String, dynamic>{'success': false});
 
     // --- Insights ---
     // Mood entries for 7 days
@@ -136,6 +148,25 @@ class _InsightsScreenState extends State<InsightsScreen> {
     _sleepStreak = _countStreak(_sleepHabit);
     _breathingStreak = _countStreak(_breathingHabit);
     _journalStreak = _countStreak(_journalHabit);
+
+    final cloudTrend = await trendFuture;
+    if (cloudTrend['success'] == true) {
+      final trend = (cloudTrend['trend'] as Map?)?.cast<String, dynamic>() ??
+          <String, dynamic>{};
+      _cloudTrendStatus = (trend['status'] as String?) ?? 'stable';
+      _cloudCurrentAvg = (trend['current7DayAverage'] as num?)?.toDouble() ?? 0;
+      _cloudPreviousAvg =
+          (trend['previous7DayAverage'] as num?)?.toDouble() ?? 0;
+    }
+
+    final cloudInsights = await insightsFuture;
+    if (cloudInsights['success'] == true) {
+      final list = (cloudInsights['insights'] as List?) ?? <dynamic>[];
+      _cloudInsights = list
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
 
     if (mounted) setState(() {});
   }
@@ -265,6 +296,13 @@ class _InsightsScreenState extends State<InsightsScreen> {
               .animate().fadeIn(duration: const Duration(milliseconds: 500)),
           const SizedBox(height: 20),
 
+            _buildCloudIntelligenceCard(context)
+              .animate(delay: const Duration(milliseconds: 80))
+              .fadeIn(duration: const Duration(milliseconds: 350))
+              .slideY(begin: 0.03, end: 0),
+
+            const SizedBox(height: 14),
+
           // Mood consistency
           CircularProgressCard(
             progress: _moodConsistency,
@@ -334,6 +372,61 @@ class _InsightsScreenState extends State<InsightsScreen> {
           ).animate(delay: const Duration(milliseconds: 400)).fadeIn(duration: const Duration(milliseconds: 400)),
 
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCloudIntelligenceCard(BuildContext context) {
+    final trendColor = _cloudTrendStatus == 'improving'
+        ? AppColors.sageGreen
+        : _cloudTrendStatus == 'declining'
+            ? AppColors.warmCoral
+            : AppColors.softIndigo;
+
+    final trendText = _cloudTrendStatus == 'improving'
+        ? 'Improving'
+        : _cloudTrendStatus == 'declining'
+            ? 'Declining'
+            : 'Stable';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+        border: Border.all(color: AppColors.dividerColor(context), width: 0.8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_graph_rounded, color: trendColor, size: 20),
+              const SizedBox(width: 10),
+              Text('Cloud Intelligence', style: AppTypography.uiLabelC(context)),
+              const Spacer(),
+              Text(
+                trendText,
+                style: AppTypography.captionC(context)
+                    .copyWith(color: trendColor, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '7-day avg: ${_cloudCurrentAvg.toStringAsFixed(1)}  |  Prev: ${_cloudPreviousAvg.toStringAsFixed(1)}',
+            style: AppTypography.captionC(context),
+          ),
+          if (_cloudInsights.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              (_cloudInsights.first['message'] as String?) ??
+                  'Keep tracking daily for more personalized guidance.',
+              style: AppTypography.captionC(context),
+            ),
+          ],
         ],
       ),
     );

@@ -11,6 +11,7 @@ class AppwriteService {
   late final Databases databases;
   late final Storage storage;
   late final Realtime realtime;
+  late final Functions functions;
 
   AppwriteService._internal() {
     client = Client()
@@ -22,5 +23,6 @@ class AppwriteService {
     databases = Databases(client);
     storage = Storage(client);
     realtime = Realtime(client);
+    functions = Functions(client);
   }
 }

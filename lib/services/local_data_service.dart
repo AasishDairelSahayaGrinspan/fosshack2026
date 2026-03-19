@@ -115,6 +115,7 @@ class LocalDataService {
     _root.putIfAbsent('communityPosts', () => <dynamic>[]);
     _root.putIfAbsent('activityLogs', () => <String, dynamic>{});
     _root.putIfAbsent('analytics', () => <dynamic>[]);
+    _root.putIfAbsent('wellnessLogs', () => <String, dynamic>{});
     ready.value = true;
     await _persistImmediate();
   }
@@ -395,5 +396,62 @@ class LocalDataService {
       analytics.removeRange(500, analytics.length);
     }
     await _persist();
+  }
+
+  // ──────────────────────────────────────────────
+  // WELLNESS SCORES
+  // ──────────────────────────────────────────────
+
+  /// Get all wellness logs for a user
+  List<Map<String, dynamic>> getWellnessLogs(String userId) {
+    final bucket = _bucketMap('wellnessLogs');
+    final raw = bucket[userId];
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    return <Map<String, dynamic>>[];
+  }
+
+  /// Save wellness logs for a user
+  Future<void> saveWellnessLogs(
+    String userId,
+    List<Map<String, dynamic>> logs,
+  ) async {
+    final bucket = _bucketMap('wellnessLogs');
+    bucket[userId] = logs;
+    await _persist();
+  }
+
+  /// Add a single wellness log entry
+  Future<void> addWellnessLog(
+    String userId,
+    Map<String, dynamic> logEntry,
+  ) async {
+    final logs = getWellnessLogs(userId);
+    logs.insert(0, logEntry);
+    // Keep last 180 days of logs
+    if (logs.length > 180) {
+      logs.removeRange(180, logs.length);
+    }
+    await saveWellnessLogs(userId, logs);
+  }
+
+  /// Get wellness log for a specific date
+  Map<String, dynamic>? getWellnessLogForDate(
+    String userId,
+    DateTime date,
+  ) {
+    final logs = getWellnessLogs(userId);
+    final dayKey = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    try {
+      return logs.firstWhere(
+        (log) => log['date']?.toString().startsWith(dayKey) ?? false,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:math';
 
@@ -8,6 +9,7 @@ import 'appwrite_service.dart';
 import 'auth_service.dart';
 import 'local_data_service.dart';
 import 'storage_service.dart';
+import 'wellness_cloud_service.dart';
 
 class LocalRow {
   final String $id;
@@ -214,12 +216,74 @@ class DatabaseService {
     entries.add(row);
     entries.sort((a, b) => (a['timestamp'] as String).compareTo(b['timestamp'] as String));
     await LocalDataService().saveMoodEntries(userId, entries);
+    unawaited(_syncWellnessFromMoodEntry(userId: userId, mood: mood, note: note));
     await _recomputeRecoveryFromMood(userId);
     await LocalDataService().addAnalytics(
       'mood_saved',
       payload: <String, dynamic>{'userId': userId, 'mood': mood},
     );
     return LocalRow($id: docId, data: row);
+  }
+
+  Future<void> _syncWellnessFromMoodEntry({
+    required String userId,
+    required double mood,
+    String? note,
+  }) async {
+    try {
+      final boundedMood = mood.clamp(0.0, 1.0);
+      final mood5 = ((boundedMood * 4.0) + 1.0).round().clamp(1, 5);
+      final energy5 = mood5;
+      final stress5 = (6 - mood5).clamp(1, 5);
+      final anxiety5 = (6 - mood5).clamp(1, 5);
+
+      final sleepLogs = LocalDataService().getSleepLogs(userId)
+        ..sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
+      final latestSleep = sleepLogs
+          .map((l) => (l['hours'] as num?)?.toDouble() ?? 0.0)
+          .firstWhere((v) => v > 0.0, orElse: () => 7.0);
+
+      final response = await WellnessCloudService().logDailyMetrics(
+        userId: userId,
+        mood: mood5,
+        sleep: latestSleep,
+        stress: stress5,
+        energy: energy5,
+        anxiety: anxiety5,
+        exercise: null,
+        journaling: note,
+      );
+
+      if (response['success'] == true) {
+        final score = (response['wellnessScore'] as num?)?.toDouble() ?? 0.0;
+        await LocalDataService().addWellnessLog(userId, <String, dynamic>{
+          'date': DateTime.now().toIso8601String(),
+          'mood': mood5,
+          'sleepHours': latestSleep,
+          'stress': stress5,
+          'energy': energy5,
+          'anxiety': anxiety5,
+          'exercised': null,
+          'journalText': note,
+          'wellnessScore': score,
+        });
+      }
+    } catch (e, st) {
+      developer.log(
+        'wellness cloud sync failed',
+        name: _tag,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> getCloudWellnessTrend(String userId) {
+    return WellnessCloudService().getTrend(userId: userId);
+  }
+
+  Future<Map<String, dynamic>> getCloudWellnessInsights(String userId) {
+    return WellnessCloudService().getInsights(userId: userId);
   }
 
   Future<LocalRowList> getMoodEntries(

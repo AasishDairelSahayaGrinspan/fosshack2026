@@ -47,7 +47,10 @@ class NotificationService {
       iOS: darwinSettings,
       macOS: darwinSettings,
     );
-    await _plugin.initialize(initSettings);
+    await _plugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (details) {},
+    );
 
     // Initialize timezone data for scheduled notifications.
     if (!_tzInitialized) {
@@ -306,6 +309,8 @@ class NotificationService {
       _nextInstanceOfTime(hour, minute),
       const NotificationDetails(android: androidDetails),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
@@ -446,6 +451,8 @@ class NotificationService {
           scheduledTime,
           details,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: null, // One-shot, not repeating.
         );
       }
@@ -499,6 +506,8 @@ class NotificationService {
         scheduledTime,
         const NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
       developer.log(
         'Scheduled inactivity reminder at $scheduledTime',
@@ -549,6 +558,8 @@ class NotificationService {
         scheduledTime,
         const NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
       developer.log(
@@ -603,6 +614,8 @@ class NotificationService {
         scheduledTime,
         const NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
       developer.log(
@@ -670,6 +683,8 @@ class NotificationService {
         scheduledTime,
         const NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
       developer.log(
         'Scheduled streak encouragement ($streakDays days) at $scheduledTime',
@@ -808,6 +823,8 @@ class NotificationService {
         scheduledTime,
         const NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
 
       developer.log(

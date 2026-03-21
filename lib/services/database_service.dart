@@ -1130,6 +1130,205 @@ class DatabaseService {
   }
 
   // ──────────────────────────────────────────────
+  // GRATITUDE ENTRIES
+  // ──────────────────────────────────────────────
+
+  Future<LocalRow> saveGratitudeEntry({
+    required String userId,
+    required String content,
+    String? category,
+  }) async {
+    await _ensureUserId(userId);
+    final row = <String, dynamic>{
+      'userId': userId,
+      'content': content,
+      'category': category ?? 'general',
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+
+    String docId = _newId('gratitude');
+
+    // Write to Appwrite
+    try {
+      final doc = await _db.createDocument(
+        databaseId: _dbId,
+        collectionId: AppwriteConstants.gratitudeEntriesCollection,
+        documentId: ID.unique(),
+        data: row,
+        permissions: [
+          Permission.read(Role.user(userId)),
+          Permission.write(Role.user(userId)),
+        ],
+      );
+      docId = doc.$id;
+    } on AppwriteException catch (e) {
+      developer.log(
+        'saveGratitudeEntry remote failed: ${e.message}',
+        name: _tag,
+      );
+    } catch (e) {
+      developer.log('saveGratitudeEntry remote failed', name: _tag, error: e);
+    }
+
+    // Cache locally
+    row['id'] = docId;
+    final entries = LocalDataService().getGenericList('gratitude_$userId');
+    entries.insert(0, row);
+    await LocalDataService().saveGenericList('gratitude_$userId', entries);
+    return LocalRow($id: docId, data: row);
+  }
+
+  Future<List<Map<String, dynamic>>> getGratitudeEntries(
+    String userId, {
+    int days = 7,
+  }) async {
+    await _ensureUserId(userId);
+
+    // Try Appwrite
+    try {
+      final cutoff = DateTime.now().subtract(Duration(days: days));
+      final result = await _db.listDocuments(
+        databaseId: _dbId,
+        collectionId: AppwriteConstants.gratitudeEntriesCollection,
+        queries: [
+          Query.equal('userId', userId),
+          Query.greaterThan('timestamp', cutoff.toIso8601String()),
+          Query.orderDesc('timestamp'),
+          Query.limit(100),
+        ],
+      );
+
+      if (result.documents.isNotEmpty) {
+        final remoteEntries = result.documents
+            .map((doc) => <String, dynamic>{...doc.data, 'id': doc.$id})
+            .toList();
+        // Merge into local cache
+        final localEntries = LocalDataService().getGenericList('gratitude_$userId');
+        final remoteIds = remoteEntries.map((e) => e['id']).toSet();
+        final merged = <Map<String, dynamic>>[
+          ...remoteEntries,
+          ...localEntries.where((e) => !remoteIds.contains(e['id'])),
+        ];
+        merged.sort((a, b) => (b['timestamp'] as String).compareTo(a['timestamp'] as String));
+        await LocalDataService().saveGenericList('gratitude_$userId', merged);
+      }
+    } on AppwriteException catch (e) {
+      developer.log(
+        'getGratitudeEntries remote failed: ${e.message}',
+        name: _tag,
+      );
+    } catch (e) {
+      developer.log('getGratitudeEntries remote failed', name: _tag, error: e);
+    }
+
+    // Fallback to local
+    final entries = LocalDataService().getGenericList('gratitude_$userId');
+    final cutoff = DateTime.now().subtract(Duration(days: days));
+    return entries.where((e) {
+      final ts = DateTime.tryParse(e['timestamp'] as String? ?? '');
+      return ts != null && ts.isAfter(cutoff);
+    }).toList();
+  }
+
+  // ──────────────────────────────────────────────
+  // DATA SYNC
+  // ──────────────────────────────────────────────
+
+  Future<void> syncLocalDataToRemote(String userId) async {
+    await _ensureUserId(userId);
+    developer.log('Starting local-to-remote sync for $userId', name: _tag);
+
+    // Sync sleep logs
+    try {
+      final sleepLogs = LocalDataService().getSleepLogs(userId);
+      for (final log in sleepLogs) {
+        if (log['synced'] == true) continue;
+        try {
+          await _db.createDocument(
+            databaseId: _dbId,
+            collectionId: AppwriteConstants.sleepEntriesCollection,
+            documentId: ID.unique(),
+            data: {
+              'userId': userId,
+              'date': log['date'],
+              'hours': log['hours'],
+              'quality': log['quality'] ?? 'good',
+            },
+            permissions: [
+              Permission.read(Role.user(userId)),
+              Permission.write(Role.user(userId)),
+            ],
+          );
+          log['synced'] = true;
+        } catch (_) {}
+      }
+      await LocalDataService().saveSleepLogs(userId, sleepLogs);
+    } catch (e) {
+      developer.log('Sync sleep logs failed', name: _tag, error: e);
+    }
+
+    // Sync breathing logs
+    try {
+      final breathingLogs = LocalDataService().getBreathingLogs(userId);
+      for (final log in breathingLogs) {
+        if (log['synced'] == true) continue;
+        try {
+          await _db.createDocument(
+            databaseId: _dbId,
+            collectionId: AppwriteConstants.breathingSessionsCollection,
+            documentId: ID.unique(),
+            data: {
+              'userId': userId,
+              'timestamp': log['timestamp'],
+              'duration': log['duration'],
+              'exercise': log['exercise'] ?? 'basic',
+            },
+            permissions: [
+              Permission.read(Role.user(userId)),
+              Permission.write(Role.user(userId)),
+            ],
+          );
+          log['synced'] = true;
+        } catch (_) {}
+      }
+      await LocalDataService().saveBreathingLogs(userId, breathingLogs);
+    } catch (e) {
+      developer.log('Sync breathing logs failed', name: _tag, error: e);
+    }
+
+    // Sync gratitude entries
+    try {
+      final gratitudeEntries = LocalDataService().getGenericList('gratitude_$userId');
+      for (final entry in gratitudeEntries) {
+        if (entry['synced'] == true) continue;
+        try {
+          await _db.createDocument(
+            databaseId: _dbId,
+            collectionId: AppwriteConstants.gratitudeEntriesCollection,
+            documentId: ID.unique(),
+            data: {
+              'userId': userId,
+              'content': entry['content'],
+              'category': entry['category'] ?? 'general',
+              'timestamp': entry['timestamp'],
+            },
+            permissions: [
+              Permission.read(Role.user(userId)),
+              Permission.write(Role.user(userId)),
+            ],
+          );
+          entry['synced'] = true;
+        } catch (_) {}
+      }
+      await LocalDataService().saveGenericList('gratitude_$userId', gratitudeEntries);
+    } catch (e) {
+      developer.log('Sync gratitude entries failed', name: _tag, error: e);
+    }
+
+    developer.log('Sync completed for $userId', name: _tag);
+  }
+
+  // ──────────────────────────────────────────────
   // MUSIC LISTENS
   // ──────────────────────────────────────────────
 

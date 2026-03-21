@@ -12,6 +12,7 @@ import '../widgets/stat_pill.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
 import '../services/local_data_service.dart';
+import '../services/wellness_analytics_service.dart';
 
 class InsightsScreen extends StatefulWidget {
   const InsightsScreen({super.key});
@@ -30,6 +31,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
   int _journalEntries = 0;
   int _songsListened = 0;
   int _communityInteractions = 0;
+
+  // Wellness data
+  double? _wellnessScore;
+  List<double> _wellnessTrend = [];
 
   // Habits data (14 days)
   List<bool> _moodHabit = List.filled(14, false);
@@ -144,6 +149,20 @@ class _InsightsScreenState extends State<InsightsScreen> {
     _sleepStreak = _countStreak(_sleepHabit);
     _breathingStreak = _countStreak(_breathingHabit);
     _journalStreak = _countStreak(_journalHabit);
+
+    // Load wellness data
+    try {
+      final wellnessLogs =
+          await WellnessAnalyticsService().getWellnessLogs(userId, days: 7);
+      if (wellnessLogs.isNotEmpty) {
+        _wellnessScore =
+            (wellnessLogs.first['wellness_score'] as num?)?.toDouble();
+        _wellnessTrend = wellnessLogs.reversed
+            .map((l) =>
+                (l['wellness_score'] as num?)?.toDouble() ?? 0.0)
+            .toList();
+      }
+    } catch (_) {}
 
     if (mounted) setState(() {});
   }
@@ -326,6 +345,15 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
           const SizedBox(height: 14),
 
+          // Wellness Score
+          if (_wellnessScore != null)
+            _buildWellnessScoreCard(context)
+                .animate(delay: const Duration(milliseconds: 150))
+                .fadeIn(duration: const Duration(milliseconds: 400))
+                .slideY(begin: 0.03, end: 0),
+
+          if (_wellnessScore != null) const SizedBox(height: 14),
+
           // Sleep
           Text('Sleep Overview', style: AppTypography.uiLabelC(context)),
           const SizedBox(height: 8),
@@ -420,6 +448,96 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
+  Widget _buildWellnessScoreCard(BuildContext context) {
+    final score = _wellnessScore ?? 0.0;
+    final label = score >= 4.0
+        ? 'You\'re doing great!'
+        : score >= 3.0
+            ? 'Steady progress. Keep going.'
+            : score >= 2.0
+                ? 'Be gentle with yourself today.'
+                : 'Take it one step at a time.';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.card(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+        border: Border.all(
+          color: AppColors.dividerColor(context),
+          width: 0.8,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.auto_awesome_rounded,
+                color: AppColors.amberFdb903,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text('Wellness Score',
+                  style: AppTypography.uiLabelC(context)
+                      .copyWith(fontWeight: FontWeight.w500)),
+              const Spacer(),
+              Text(
+                '${score.toStringAsFixed(1)} / 5',
+                style: AppTypography.sectionHeadingC(context).copyWith(
+                  fontSize: 20,
+                  color: AppColors.softIndigo,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: (score / 5.0).clamp(0.0, 1.0),
+              minHeight: 8,
+              backgroundColor:
+                  AppColors.dividerColor(context).withValues(alpha: 0.3),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                score >= 3.5
+                    ? AppColors.sageGreen
+                    : score >= 2.5
+                        ? AppColors.amberFdb903
+                        : AppColors.coralDa5e5a,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(label, style: AppTypography.captionC(context)),
+
+          // Trend line if 3+ days
+          if (_wellnessTrend.length >= 3) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 40,
+              child: CustomPaint(
+                size: const Size(double.infinity, 40),
+                painter: _TrendLinePainter(
+                  values: _wellnessTrend,
+                  color: AppColors.softIndigo,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${_wellnessTrend.length}-day trend',
+              style: AppTypography.captionC(context).copyWith(fontSize: 10),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildHabitsTab(BuildContext context) {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -499,4 +617,50 @@ class _InsightsScreenState extends State<InsightsScreen> {
       ),
     );
   }
+}
+
+class _TrendLinePainter extends CustomPainter {
+  final List<double> values;
+  final Color color;
+
+  _TrendLinePainter({required this.values, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2) return;
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final dotPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final maxVal = 5.0;
+    final minVal = 1.0;
+    final range = maxVal - minVal;
+
+    final path = Path();
+    for (int i = 0; i < values.length; i++) {
+      final x = values.length == 1
+          ? size.width / 2
+          : i / (values.length - 1) * size.width;
+      final y = size.height -
+          ((values[i] - minVal) / range * size.height).clamp(0.0, size.height);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+      canvas.drawCircle(Offset(x, y), 3, dotPaint);
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TrendLinePainter oldDelegate) =>
+      oldDelegate.values != values;
 }

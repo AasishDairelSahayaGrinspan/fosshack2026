@@ -30,6 +30,12 @@ class _JournalScreenState extends State<JournalScreen>
   List<Map<String, dynamic>> _journalHistory = [];
   bool _isLoadingHistory = false;
 
+  // Search state
+  String _searchQuery = '';
+  String? _selectedFilterTag;
+  bool _searchExpanded = false;
+  final TextEditingController _searchController = TextEditingController();
+
   late AnimationController _saveAnimController;
 
   static const List<String> _moodTags = [
@@ -80,11 +86,46 @@ class _JournalScreenState extends State<JournalScreen>
     }
   }
 
+  List<Map<String, dynamic>> get _filteredEntries {
+    var results = List<Map<String, dynamic>>.from(_entries);
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      results = results.where((e) {
+        final content = (e['content'] as String? ?? '').toLowerCase();
+        return content.contains(query);
+      }).toList();
+    }
+    if (_selectedFilterTag != null) {
+      results = results.where((e) {
+        return (e['moodTag'] as String?) == _selectedFilterTag;
+      }).toList();
+    }
+    return results;
+  }
+
+  List<Map<String, dynamic>> get _filteredHistory {
+    var results = List<Map<String, dynamic>>.from(_journalHistory);
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      results = results.where((e) {
+        final content = (e['content'] as String? ?? '').toLowerCase();
+        return content.contains(query);
+      }).toList();
+    }
+    if (_selectedFilterTag != null) {
+      results = results.where((e) {
+        return (e['moodTag'] as String?) == _selectedFilterTag;
+      }).toList();
+    }
+    return results;
+  }
+
   @override
   void dispose() {
     _textController.dispose();
     _focusNode.dispose();
     _saveAnimController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -267,7 +308,7 @@ class _JournalScreenState extends State<JournalScreen>
                             duration: const Duration(milliseconds: 600),
                           ),
                           const SizedBox(height: 16),
-                          ..._journalHistory.map((entry) {
+                          ..._filteredHistory.map((entry) {
                             final date =
                                 DateTime.tryParse(
                                   entry['timestamp'] as String? ?? '',
@@ -395,6 +436,41 @@ class _JournalScreenState extends State<JournalScreen>
           _showHistory,
           () => setState(() => _showHistory = true),
         ),
+        const Spacer(),
+        if (_showHistory)
+          GestureDetector(
+            onTap: () => setState(() {
+              _searchExpanded = !_searchExpanded;
+              if (!_searchExpanded) {
+                _searchController.clear();
+                _searchQuery = '';
+                _selectedFilterTag = null;
+              }
+            }),
+            child: AnimatedContainer(
+              duration: AppTheme.fadeInDuration,
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: _searchExpanded
+                    ? AppColors.softIndigo.withValues(alpha: 0.12)
+                    : AppColors.card(context).withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _searchExpanded
+                      ? AppColors.softIndigo.withValues(alpha: 0.4)
+                      : AppColors.dividerColor(context),
+                ),
+              ),
+              child: Icon(
+                _searchExpanded ? Icons.search_off_rounded : Icons.search_rounded,
+                color: _searchExpanded
+                    ? AppColors.softIndigo
+                    : AppColors.secondary(context),
+                size: 18,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -511,7 +587,121 @@ class _JournalScreenState extends State<JournalScreen>
     );
   }
 
+  Widget _buildSearchBar() {
+    return Column(
+      children: [
+        // Search toggle + search field
+        AnimatedContainer(
+          duration: AppTheme.fadeInDuration,
+          curve: AppTheme.gentleCurve,
+          height: _searchExpanded ? 50 : 0,
+          clipBehavior: Clip.antiAlias,
+          decoration: const BoxDecoration(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: AppColors.card(context).withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(AppTheme.radiusInput),
+              border: Border.all(
+                color: AppColors.dividerColor(context).withValues(alpha: 0.5),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  color: AppColors.tertiary(context),
+                  size: 18,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    style: AppTypography.bodyC(context),
+                    decoration: InputDecoration(
+                      hintText: 'Search entries...',
+                      hintStyle: AppTypography.body(
+                        color: AppColors.tertiary(context).withValues(alpha: 0.5),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
+                    ),
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                  ),
+                ),
+                if (_searchQuery.isNotEmpty)
+                  GestureDetector(
+                    onTap: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: AppColors.tertiary(context),
+                      size: 18,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (_searchExpanded) const SizedBox(height: 10),
+
+        // Mood filter chips
+        if (_searchExpanded)
+          SizedBox(
+            height: 34,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildFilterChip(null, 'All'),
+                ..._moodTags.map((tag) => _buildFilterChip(tag, tag)),
+              ],
+            ),
+          ),
+        if (_searchExpanded) const SizedBox(height: 14),
+      ],
+    );
+  }
+
+  Widget _buildFilterChip(String? tag, String label) {
+    final isSelected = _selectedFilterTag == tag;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedFilterTag = tag),
+        child: AnimatedContainer(
+          duration: AppTheme.fadeInDuration,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.softIndigo.withValues(alpha: 0.12)
+                : AppColors.card(context).withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.softIndigo.withValues(alpha: 0.4)
+                  : AppColors.dividerColor(context),
+            ),
+          ),
+          child: Text(
+            label,
+            style: AppTypography.caption(
+              color: isSelected
+                  ? AppColors.softIndigo
+                  : AppColors.secondary(context),
+            ).copyWith(
+              fontWeight: isSelected ? FontWeight.w500 : FontWeight.w300,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildEntriesList() {
+    final filtered = _filteredEntries;
     if (_entries.isEmpty) {
       return Center(
         child: Padding(
@@ -545,11 +735,22 @@ class _JournalScreenState extends State<JournalScreen>
     }
 
     return Column(
-      children: _entries.asMap().entries.map((entry) {
-        final i = entry.key;
-        final data = entry.value;
-        return _buildEntryCard(data, i);
-      }).toList(),
+      children: [
+        _buildSearchBar(),
+        if (filtered.isEmpty && (_searchQuery.isNotEmpty || _selectedFilterTag != null))
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(
+              'No matching entries found.',
+              style: AppTypography.captionC(context),
+            ),
+          ),
+        ...filtered.asMap().entries.map((entry) {
+          final i = entry.key;
+          final data = entry.value;
+          return _buildEntryCard(data, i);
+        }),
+      ],
     );
   }
 

@@ -366,7 +366,7 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionLabel('Presentation'),
-          _buildOptionRow(
+          _buildHorizontalWheelPicker(
             itemCount: AvatarParts.presentationLabels.length,
             selectedIndex: _presentationIndex,
             labels: AvatarParts.presentationLabels,
@@ -382,7 +382,7 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
           ),
           const SizedBox(height: 20),
           _buildSectionLabel('Face Shape'),
-          _buildOptionRow(
+          _buildHorizontalWheelPicker(
             itemCount: AvatarParts.faceShapeNames.length,
             selectedIndex: _faceShapeIndex,
             labels: AvatarParts.faceShapeNames,
@@ -390,7 +390,7 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
           ),
           const SizedBox(height: 20),
           _buildSectionLabel('Skin Tone'),
-          _buildColorRow(
+          _buildColorWheelPicker(
             colors: AvatarParts.skinTones,
             selectedIndex: _skinToneIndex,
             onSelect: (i) => _updateConfig(
@@ -413,54 +413,17 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionLabel('Hair Style'),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: allowedStyles.map((styleIndex) {
-              final isSelected = _config.hairStyle == styleIndex;
-              return GestureDetector(
-                onTap: () {
-                  _updateConfig(_config.copyWith(hairStyle: styleIndex));
-                },
-                child: AnimatedContainer(
-                  duration: AppTheme.fadeInDuration,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.softIndigo.withValues(alpha: 0.15)
-                        : AppColors.card(context),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.softIndigo.withValues(alpha: 0.5)
-                          : AppColors.dividerColor(context),
-                      width: isSelected ? 1.5 : 1,
-                    ),
-                  ),
-                  child: Text(
-                    AvatarParts.hairStyleNames[styleIndex],
-                    style:
-                        AppTypography.caption(
-                          color: isSelected
-                              ? AppColors.softIndigo
-                              : AppColors.secondary(context),
-                        ).copyWith(
-                          fontWeight: isSelected
-                              ? FontWeight.w500
-                              : FontWeight.w300,
-                          fontSize: 11,
-                        ),
-                  ),
-                ),
-              );
-            }).toList(),
+          _buildHorizontalWheelPicker(
+            itemCount: allowedStyles.length,
+            selectedIndex: allowedStyles.indexOf(_config.hairStyle).clamp(0, allowedStyles.length - 1),
+            labels: allowedStyles.map((i) => AvatarParts.hairStyleNames[i]).toList(),
+            onSelect: (i) {
+              _updateConfig(_config.copyWith(hairStyle: allowedStyles[i]));
+            },
           ),
           const SizedBox(height: 20),
           _buildSectionLabel('Hair Color'),
-          _buildColorRow(
+          _buildColorWheelPicker(
             colors: AvatarParts.hairColors,
             selectedIndex: _hairColorIndex,
             onSelect: (i) => _updateConfig(
@@ -479,7 +442,7 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionLabel('Eye Style'),
-          _buildOptionRow(
+          _buildHorizontalWheelPicker(
             itemCount: AvatarParts.eyeStyleNames.length,
             selectedIndex: _config.eyeStyle,
             labels: AvatarParts.eyeStyleNames,
@@ -497,7 +460,7 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionLabel('Mouth Style'),
-          _buildOptionRow(
+          _buildHorizontalWheelPicker(
             itemCount: AvatarParts.mouthStyleNames.length,
             selectedIndex: _mouthStyleIndex,
             labels: AvatarParts.mouthStyleNames,
@@ -515,7 +478,7 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionLabel('Accessory'),
-          _buildOptionRow(
+          _buildHorizontalWheelPicker(
             itemCount: AvatarParts.accessoryNames.length,
             selectedIndex: _accessoryIndex,
             labels: AvatarParts.accessoryNames,
@@ -543,7 +506,7 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionLabel('Clothing Style'),
-          _buildOptionRow(
+          _buildHorizontalWheelPicker(
             itemCount: AvatarParts.clothingStyleNames.length,
             selectedIndex: _clothingIndex,
             labels: AvatarParts.clothingStyleNames,
@@ -551,7 +514,7 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
           ),
           const SizedBox(height: 20),
           _buildSectionLabel('Clothing Color'),
-          _buildColorRow(
+          _buildColorWheelPicker(
             colors: AvatarParts.clothingColors,
             selectedIndex: _clothingColorIndex,
             onSelect: (i) => _updateConfig(
@@ -573,96 +536,117 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
     );
   }
 
-  Widget _buildOptionRow({
+  Widget _buildHorizontalWheelPicker({
     required int itemCount,
     required int selectedIndex,
     required List<String> labels,
     required void Function(int) onSelect,
   }) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: List.generate(itemCount, (i) {
-        final isSelected = selectedIndex == i;
-        return GestureDetector(
-          onTap: () {
-            onSelect(i);
-            _syncToPrefsIfCompact();
-          },
-          child: AnimatedContainer(
-            duration: AppTheme.fadeInDuration,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.softIndigo.withValues(alpha: 0.15)
-                  : AppColors.card(context),
-              borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-              border: Border.all(
-                color: isSelected
-                    ? AppColors.softIndigo.withValues(alpha: 0.5)
-                    : AppColors.dividerColor(context),
-                width: isSelected ? 1.5 : 1,
-              ),
-            ),
-            child: Text(
-              i < labels.length ? labels[i] : '$i',
-              style:
-                  AppTypography.caption(
+    final controller = FixedExtentScrollController(initialItem: selectedIndex);
+    return SizedBox(
+      height: 50,
+      child: RotatedBox(
+        quarterTurns: -1,
+        child: ListWheelScrollView.useDelegate(
+          controller: controller,
+          itemExtent: 90,
+          physics: const FixedExtentScrollPhysics(),
+          perspective: 0.003,
+          diameterRatio: 2.5,
+          onSelectedItemChanged: (index) => onSelect(index),
+          childDelegate: ListWheelChildBuilderDelegate(
+            childCount: itemCount,
+            builder: (context, index) {
+              final isSelected = index == selectedIndex;
+              return RotatedBox(
+                quarterTurns: 1,
+                child: AnimatedContainer(
+                  duration: AppTheme.fadeInDuration,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.softIndigo
-                        : AppColors.secondary(context),
-                  ).copyWith(
-                    fontWeight: isSelected ? FontWeight.w500 : FontWeight.w300,
-                    fontSize: 11,
+                        ? AppColors.softIndigo.withValues(alpha: 0.15)
+                        : AppColors.card(context),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.softIndigo.withValues(alpha: 0.5)
+                          : AppColors.dividerColor(context),
+                      width: isSelected ? 1.5 : 1,
+                    ),
                   ),
-            ),
+                  child: Center(
+                    child: Text(
+                      index < labels.length ? labels[index] : '$index',
+                      style: AppTypography.caption(
+                        color: isSelected
+                            ? AppColors.softIndigo
+                            : AppColors.secondary(context),
+                      ).copyWith(
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w300,
+                        fontSize: isSelected ? 12 : 11,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 
-  Widget _buildColorRow({
+  Widget _buildColorWheelPicker({
     required List<Color> colors,
     required int selectedIndex,
     required void Function(int) onSelect,
   }) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: List.generate(colors.length, (i) {
-        final isSelected = selectedIndex == i;
-        return GestureDetector(
-          onTap: () {
-            onSelect(i);
-            _syncToPrefsIfCompact();
-          },
-          child: AnimatedContainer(
-            duration: AppTheme.fadeInDuration,
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: colors[i],
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected
-                    ? AppColors.softIndigo
-                    : AppColors.dividerColor(context),
-                width: isSelected ? 3 : 1.5,
-              ),
-              boxShadow: isSelected
-                  ? [
+    final controller = FixedExtentScrollController(initialItem: selectedIndex);
+    return SizedBox(
+      height: 56,
+      child: RotatedBox(
+        quarterTurns: -1,
+        child: ListWheelScrollView.useDelegate(
+          controller: controller,
+          itemExtent: 56,
+          physics: const FixedExtentScrollPhysics(),
+          perspective: 0.003,
+          diameterRatio: 2.0,
+          onSelectedItemChanged: (index) => onSelect(index),
+          childDelegate: ListWheelChildBuilderDelegate(
+            childCount: colors.length,
+            builder: (context, index) {
+              final isSelected = index == selectedIndex;
+              return RotatedBox(
+                quarterTurns: 1,
+                child: AnimatedContainer(
+                  duration: AppTheme.fadeInDuration,
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colors[index],
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.softIndigo
+                          : AppColors.dividerColor(context),
+                      width: isSelected ? 3 : 1.5,
+                    ),
+                    boxShadow: isSelected ? [
                       BoxShadow(
                         color: AppColors.softIndigo.withValues(alpha: 0.3),
                         blurRadius: 8,
                         spreadRadius: 1,
                       ),
-                    ]
-                  : null,
-            ),
+                    ] : null,
+                  ),
+                ),
+              );
+            },
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 

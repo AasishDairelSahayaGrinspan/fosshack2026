@@ -141,10 +141,18 @@ class _LoginScreenState extends State<LoginScreen>
       if (!mounted) return;
       _navigateAfterAuth();
     } catch (e) {
+      developer.log('Guest login error: $e');
       if (!mounted) return;
+      final errorStr = e.toString().toLowerCase();
+      String message = 'Guest login failed. Please try again.';
+      if (errorStr.contains('network') || errorStr.contains('socket')) {
+        message = 'Network error. Check your connection and try again.';
+      } else if (errorStr.contains('project') || errorStr.contains('endpoint')) {
+        message = 'Server configuration issue. Please contact support.';
+      }
       setState(() {
         _isVerifying = false;
-        _errorMessage = 'Guest login failed. Please try again.';
+        _errorMessage = message;
       });
     }
   }
@@ -165,6 +173,7 @@ class _LoginScreenState extends State<LoginScreen>
       if (!mounted) return;
       _navigateAfterAuth();
     } catch (e) {
+      developer.log('Google OAuth error: $e');
       if (!mounted) return;
       final errorStr = e.toString().toLowerCase();
       String message = 'Google login failed. Please try again.';
@@ -172,8 +181,10 @@ class _LoginScreenState extends State<LoginScreen>
         message = 'Network error. Check your connection and try again.';
       } else if (errorStr.contains('cancel')) {
         message = 'Google login was cancelled.';
-      } else if (errorStr.contains('oauth')) {
-        message = 'Google OAuth is not fully configured in Appwrite yet.';
+      } else if (errorStr.contains('redirect') || errorStr.contains('uri')) {
+        message = 'OAuth redirect error. Please ensure Google OAuth is enabled in Appwrite.';
+      } else if (errorStr.contains('oauth') || errorStr.contains('provider')) {
+        message = 'Google OAuth is not configured. Please check Appwrite settings.';
       }
       setState(() {
         _isVerifying = false;

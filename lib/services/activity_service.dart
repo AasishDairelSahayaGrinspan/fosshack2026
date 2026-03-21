@@ -53,6 +53,7 @@ class ActivityService {
   Timer? _walkingDebounce;
   int _walkingSeconds = 0;
   Position? _lastPosition;
+  DateTime? _lastStepTime;
   String? _trackingDate; // date string for the current tracking session
 
   Future<bool> requestPermissions() async {
@@ -156,6 +157,7 @@ class ActivityService {
             steps: totalSteps.toInt(),
             calories: cal,
           );
+          _lastStepTime = DateTime.now();
           _saveTodayData();
           _detectWalking();
         },
@@ -176,7 +178,7 @@ class ActivityService {
     try {
       final locationSettings = const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 5, // minimum 5 meters between updates
+        distanceFilter: 10, // minimum 10 meters between updates
       );
       _positionSub =
           Geolocator.getPositionStream(
@@ -184,9 +186,17 @@ class ActivityService {
           ).listen(
             (position) {
               _checkDateRollover();
+
+              // Stationary detection: if no steps in last 30s, ignore GPS (drift)
+              if (_lastStepTime == null ||
+                  DateTime.now().difference(_lastStepTime!).inSeconds > 30) {
+                _lastPosition = position;
+                return;
+              }
+
               if (_lastPosition != null) {
-                // Only use GPS readings with good accuracy (< 30 meters)
-                if (position.accuracy > 30) {
+                // Only use GPS readings with good accuracy (< 20 meters)
+                if (position.accuracy > 20) {
                   developer.log(
                     'Skipping GPS reading - poor accuracy: ${position.accuracy}m',
                     name: _tag,
@@ -204,9 +214,10 @@ class ActivityService {
                 // Validate distance calculation to prevent GPS drift accumulation
                 // Check: reasonable distance (0-500m) and reasonable speed
                 // Average walking speed: 1.4 m/s (5 km/h)
-                // Allow up to 10 m/s (36 km/h) as reasonable max for any movement
-                const maxReasonableSpeed = 10.0;
-                if (distanceMeters > 0 && distanceMeters < 500) {
+                // Allow up to 6 m/s (~21 km/h) as reasonable max for walking/jogging
+                const maxReasonableSpeed = 6.0;
+                // Minimum movement threshold: ignore GPS noise below 8 meters
+                if (distanceMeters >= 8 && distanceMeters < 500) {
                   // Calculate time difference in seconds
                   final timeDiffSeconds = position.timestamp
                       .difference(_lastPosition!.timestamp)

@@ -28,6 +28,8 @@ import 'journal_screen.dart';
 import 'timer_screen.dart';
 import 'insights_screen.dart';
 import 'podcast_screen.dart';
+import 'gratitude_screen.dart';
+import 'safety_net_screen.dart';
 
 /// Unravel Home Screen - the emotional dashboard.
 class HomeScreen extends StatefulWidget {
@@ -235,6 +237,24 @@ class _HomeScreenState extends State<HomeScreen> {
               AppColors.warmCoral,
               () => _navigate(context, const BreathingScreen()),
             ),
+            _Suggestion(
+              Icons.av_timer_rounded,
+              'Pomodoro Focus — 25-min deep work',
+              AppColors.orangeE2814d,
+              () => _navigate(context, const TimerScreen()),
+            ),
+            _Suggestion(
+              Icons.favorite_border_rounded,
+              'Gratitude Check — count your wins',
+              AppColors.sageGreen,
+              () => _navigate(context, const GratitudeScreen()),
+            ),
+            _Suggestion(
+              Icons.edit_note_rounded,
+              'Journal Intentions — set your focus',
+              AppColors.softIndigo,
+              () => _navigate(context, const JournalScreen()),
+            ),
           ];
         });
         break;
@@ -264,6 +284,24 @@ class _HomeScreenState extends State<HomeScreen> {
               AppColors.orangeE2814d,
               () => _navigate(context, const JournalScreen()),
             ),
+            _Suggestion(
+              Icons.accessibility_new_rounded,
+              'Body Scan — release tension slowly',
+              AppColors.warmCoral,
+              () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.visibility_outlined,
+              '5-4-3-2-1 Grounding — anchor yourself',
+              AppColors.sageGreen,
+              () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.headphones_rounded,
+              'Listen to a calming Podcast',
+              AppColors.softIndigo,
+              () => _navigate(context, const PodcastScreen()),
+            ),
           ];
         });
         break;
@@ -287,6 +325,24 @@ class _HomeScreenState extends State<HomeScreen> {
               'Share with the community',
               AppColors.warmCoral,
               () => AppNavigationService().requestTab(AppTabTarget.community),
+            ),
+            _Suggestion(
+              Icons.favorite_border_rounded,
+              'Gratitude & Wins — celebrate progress',
+              AppColors.sageGreen,
+              () => _navigate(context, const GratitudeScreen()),
+            ),
+            _Suggestion(
+              Icons.shield_outlined,
+              'Safety Net — reach out for support',
+              AppColors.warmCoral,
+              () => _navigate(context, const SafetyNetScreen()),
+            ),
+            _Suggestion(
+              Icons.square_outlined,
+              'Box Breathing — steady your mind',
+              AppColors.softIndigo,
+              () => _navigate(context, const BreathingScreen()),
             ),
           ];
         });
@@ -316,6 +372,24 @@ class _HomeScreenState extends State<HomeScreen> {
               'A gentle breathing session before rest',
               AppColors.softIndigo,
               () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.headphones_rounded,
+              'Sleep Stories Podcast — drift off gently',
+              AppColors.orangeE2814d,
+              () => _navigate(context, const PodcastScreen()),
+            ),
+            _Suggestion(
+              Icons.accessibility_new_rounded,
+              'Body Scan — relax every muscle',
+              AppColors.sageGreen,
+              () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.favorite_border_rounded,
+              'Gratitude Before Bed — end on a high',
+              AppColors.softIndigo,
+              () => _navigate(context, const GratitudeScreen()),
             ),
           ];
         });
@@ -456,6 +530,55 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                     const SizedBox(height: 28),
                     Text(
+                      'Guided Sessions',
+                      style: AppTypography.sectionHeadingC(context),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      height: 100,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          _buildGuidedSessionCard(
+                            context,
+                            icon: Icons.self_improvement_rounded,
+                            label: '10-min Calm',
+                            color: AppColors.softIndigo,
+                            onTap: () => _navigate(context, const PodcastScreen()),
+                          ),
+                          _buildGuidedSessionCard(
+                            context,
+                            icon: Icons.air_rounded,
+                            label: 'Quick Breathe',
+                            color: AppColors.sageGreen,
+                            onTap: () => _navigate(context, const BreathingScreen()),
+                          ),
+                          _buildGuidedSessionCard(
+                            context,
+                            icon: Icons.nightlight_outlined,
+                            label: 'Sleep Wind-Down',
+                            color: AppColors.warmCoral,
+                            onTap: () => _navigate(context, const PodcastScreen()),
+                          ),
+                          _buildGuidedSessionCard(
+                            context,
+                            icon: Icons.directions_walk_rounded,
+                            label: 'Mindful Walk',
+                            color: AppColors.orangeE2814d,
+                            onTap: () => _navigate(context, const PodcastScreen()),
+                          ),
+                          _buildGuidedSessionCard(
+                            context,
+                            icon: Icons.wb_sunny_outlined,
+                            label: 'Morning Reset',
+                            color: AppColors.sageGreen,
+                            onTap: () => _navigate(context, const BreathingScreen()),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    Text(
                       'Explore',
                       style: AppTypography.sectionHeadingC(context),
                     ),
@@ -510,6 +633,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       label: 'Podcast',
                       iconColor: AppColors.softIndigo,
                       onTap: () => _navigate(context, const PodcastScreen()),
+                    ),
+                    QuickActionButton(
+                      icon: Icons.emoji_events_outlined,
+                      label: 'Gratitude',
+                      iconColor: AppColors.amberFdb903,
+                      onTap: () =>
+                          _navigate(context, const GratitudeScreen()),
+                    ),
+                    QuickActionButton(
+                      icon: Icons.sos_rounded,
+                      label: 'Safety Net',
+                      iconColor: AppColors.coralDa5e5a,
+                      onTap: () => _navigate(context, const SafetyNetScreen()),
                     ),
                   ]),
                 ),
@@ -838,6 +974,56 @@ class _HomeScreenState extends State<HomeScreen> {
           style: AppTypography.captionC(context).copyWith(fontSize: 10),
         ),
       ],
+    );
+  }
+
+  Widget _buildGuidedSessionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 120,
+          height: 100,
+          decoration: BoxDecoration(
+            color: AppColors.card(context),
+            borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+            border: Border.all(
+              color: color.withValues(alpha: 0.25),
+            ),
+            boxShadow: AppColors.subtleShadow,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: AppTypography.captionC(context).copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

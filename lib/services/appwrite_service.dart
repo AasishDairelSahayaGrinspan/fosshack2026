@@ -19,7 +19,7 @@ class AppwriteService {
     client = Client()
         .setEndpoint(AppwriteConstants.endpoint)
         .setProject(AppwriteConstants.projectId)
-        .setSelfSigned(status: true); // Remove in production
+        .setSelfSigned(status: kDebugMode);
 
     // Platform-specific configuration for web
     if (kIsWeb) {

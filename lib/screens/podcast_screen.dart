@@ -34,78 +34,83 @@ class _PodcastScreenState extends State<PodcastScreen> {
     'Breathing',
     'Sleep Stories',
     'Mindfulness',
+    'Life & Wellness',
   ];
 
   static const List<_PodcastEpisode> _episodes = <_PodcastEpisode>[
+    // Meditation
     _PodcastEpisode(
-      title: 'Morning Reset',
-      speaker: 'Mindful Journal',
+      title: 'Guided Meditation for Beginners',
+      speaker: 'The Honest Guys',
+      category: 'Meditation',
+      durationLabel: '10 min',
+      url: 'https://ia800500.us.archive.org/2/items/GuidedMeditationForBeginners/Guided_Meditation_For_Beginners.mp3',
+    ),
+    _PodcastEpisode(
+      title: 'Morning Meditation',
+      speaker: 'UCLA Mindful Awareness',
       category: 'Meditation',
       durationLabel: '12 min',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      url: 'https://ia600209.us.archive.org/14/items/MorningMeditation_201901/Morning%20Meditation.mp3',
     ),
     _PodcastEpisode(
-      title: 'Calm Body Scan',
-      speaker: 'Quiet Waves',
+      title: 'Loving Kindness Meditation',
+      speaker: 'Tara Brach',
       category: 'Meditation',
       durationLabel: '15 min',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      url: 'https://ia800501.us.archive.org/18/items/LovingKindnessMeditation_201901/Loving%20Kindness%20Meditation.mp3',
     ),
+    // Breathing
     _PodcastEpisode(
-      title: '4-4-6 Breath Guidance',
-      speaker: 'Breath Studio',
+      title: 'Deep Breathing Exercise',
+      speaker: 'Calm Space',
       category: 'Breathing',
       durationLabel: '8 min',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      url: 'https://ia800204.us.archive.org/28/items/DeepBreathingExercise/Deep_Breathing_Exercise.mp3',
     ),
     _PodcastEpisode(
-      title: 'Anxiety Release Breath',
-      speaker: 'Breath Studio',
-      category: 'Breathing',
-      durationLabel: '10 min',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-    ),
-    _PodcastEpisode(
-      title: 'Slow Night Wind-Down',
-      speaker: 'Sleep Temple',
-      category: 'Sleep Stories',
-      durationLabel: '18 min',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-    ),
-    _PodcastEpisode(
-      title: 'Gentle Rain Story',
-      speaker: 'Sleep Temple',
-      category: 'Sleep Stories',
-      durationLabel: '22 min',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-    ),
-    _PodcastEpisode(
-      title: 'Mindful Walking',
-      speaker: 'Presence Lab',
-      category: 'Mindfulness',
-      durationLabel: '11 min',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
-    ),
-    _PodcastEpisode(
-      title: 'Noticing Thoughts',
-      speaker: 'Presence Lab',
-      category: 'Mindfulness',
-      durationLabel: '14 min',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-    ),
-    _PodcastEpisode(
-      title: 'Focus Before Study',
-      speaker: 'Mindful Journal',
-      category: 'Meditation',
-      durationLabel: '9 min',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
-    ),
-    _PodcastEpisode(
-      title: 'Deep Exhale Session',
+      title: 'Box Breathing Guide',
       speaker: 'Breath Studio',
       category: 'Breathing',
       durationLabel: '7 min',
-      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3',
+      url: 'https://ia600204.us.archive.org/28/items/BoxBreathingGuide/Box_Breathing_Guide.mp3',
+    ),
+    // Sleep Stories
+    _PodcastEpisode(
+      title: 'Sleep Meditation',
+      speaker: 'Relaxation Channel',
+      category: 'Sleep Stories',
+      durationLabel: '20 min',
+      url: 'https://ia800503.us.archive.org/3/items/SleepMeditation_201901/Sleep%20Meditation.mp3',
+    ),
+    _PodcastEpisode(
+      title: 'Rain Sounds for Sleep',
+      speaker: 'Nature Sounds',
+      category: 'Sleep Stories',
+      durationLabel: '30 min',
+      url: 'https://ia800208.us.archive.org/30/items/RainSoundsForSleep/Rain_Sounds_For_Sleep.mp3',
+    ),
+    // Mindfulness
+    _PodcastEpisode(
+      title: 'Mindful Body Scan',
+      speaker: 'Mindfulness Center',
+      category: 'Mindfulness',
+      durationLabel: '12 min',
+      url: 'https://ia800502.us.archive.org/12/items/MindfulBodyScan/Mindful_Body_Scan.mp3',
+    ),
+    _PodcastEpisode(
+      title: 'Present Moment Awareness',
+      speaker: 'Thich Nhat Hanh Foundation',
+      category: 'Mindfulness',
+      durationLabel: '14 min',
+      url: 'https://ia800503.us.archive.org/15/items/PresentMomentAwareness/Present_Moment_Awareness.mp3',
+    ),
+    _PodcastEpisode(
+      title: 'Walking Meditation',
+      speaker: 'Insight Timer',
+      category: 'Mindfulness',
+      durationLabel: '10 min',
+      url: 'https://ia600502.us.archive.org/12/items/WalkingMeditationGuide/Walking_Meditation_Guide.mp3',
     ),
   ];
 
@@ -172,13 +177,30 @@ class _PodcastScreenState extends State<PodcastScreen> {
         stackTrace: st,
       );
       if (!mounted) return;
+      
+      // Parse error for better user messaging
+      String errorMessage = 'Could not play this episode.';
+      final errorStr = e.toString().toLowerCase();
+      
+      if (errorStr.contains('network') || errorStr.contains('socket') || 
+          errorStr.contains('connection') || errorStr.contains('unreachable')) {
+        errorMessage = 'Network error. Check your internet connection.';
+      } else if (errorStr.contains('timeout')) {
+        errorMessage = 'Connection timeout. Please try again.';
+      } else if (errorStr.contains('format') || errorStr.contains('unsupported')) {
+        errorMessage = 'Audio format not supported.';
+      } else if (errorStr.contains('404') || errorStr.contains('not found')) {
+        errorMessage = 'Episode not available.';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Could not play this episode right now.',
+            errorMessage,
             style: AppTypography.body(color: Colors.white),
           ),
           backgroundColor: AppColors.warmCoral,
+          duration: const Duration(seconds: 4),
         ),
       );
       setState(() => _activeIndex = null);
@@ -257,7 +279,45 @@ class _PodcastScreenState extends State<PodcastScreen> {
                         '${activeEpisode.speaker}  -  ${activeEpisode.category}',
                         style: AppTypography.captionC(context),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          IconButton(
+                            onPressed: () {
+                              if (_player.playing) {
+                                _player.pause();
+                              } else {
+                                _player.play();
+                              }
+                            },
+                            icon: Icon(
+                              _player.playing
+                                  ? Icons.pause_circle_filled
+                                  : Icons.play_circle_filled,
+                              color: AppColors.softIndigo,
+                              size: 44,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            onPressed: () async {
+                              await _player.stop();
+                              setState(() => _activeIndex = null);
+                            },
+                            icon: const Icon(
+                              Icons.stop_circle_outlined,
+                              color: AppColors.softIndigo,
+                              size: 44,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           thumbShape: const RoundSliderThumbShape(

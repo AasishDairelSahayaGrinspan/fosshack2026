@@ -7,7 +7,7 @@ class AppwriteConstants {
   // For web: Use your Appwrite server endpoint (can be cloud.appwrite.io or self-hosted)
   // For development: If running Appwrite locally, use http://localhost/v1
   // For production: Use your domain
-  static const String endpoint = 'https://cloud.appwrite.io/v1';
+  static const String endpoint = 'https://fra.cloud.appwrite.io/v1';
   static const String projectId = 'unravel-app';
 
   // ─── Database ───
@@ -21,6 +21,12 @@ class AppwriteConstants {
   static const String recoveryScoresCollection = 'recovery_scores';
   static const String postsCollection = 'posts';
   static const String commentsCollection = 'comments';
+  static const String sleepEntriesCollection = 'sleep_entries';
+  static const String breathingSessionsCollection = 'breathing_sessions';
+  static const String gratitudeEntriesCollection = 'gratitude_entries';
+  static const String activityLogsCollection = 'activity_logs';
+  static const String wellnessLogsCollection = 'wellness_logs';
+  static const String chatMessagesCollection = 'chat_messages';
 
   // ─── Storage Buckets ───
   static const String profilePicsBucket = 'profile_pics';

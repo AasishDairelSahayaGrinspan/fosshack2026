@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:appwrite/appwrite.dart';
@@ -252,14 +253,14 @@ class CommunityService extends ChangeNotifier {
       // The function will query all users, filter out the author, and send FCM notifications
       await functions.createExecution(
         functionId: 'sendCommunityNotifications',
-        body: {
+        body: jsonEncode({
           'postId': postId,
           'authorId': authorId,
           'authorName': authorName,
           'postTitle': postTitle.length > 100
               ? '${postTitle.substring(0, 100)}...'
               : postTitle,
-        }.toString(),
+        }),
       );
 
       developer.log(

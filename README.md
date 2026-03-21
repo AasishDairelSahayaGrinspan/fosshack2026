@@ -1,148 +1,109 @@
-# Unravel (An Open-Source Project)
+# Unravel - Mental Wellness App
 
-**Your quiet place.** A premium mental wellness companion built with Flutter that blends mood tracking, guided practices, and supportive nudges to help users build sustainable self-care habits.
+> *Slow down. You're safe here.*
 
-## ✨ Features
+Unravel is a Flutter-based mental wellness companion designed to help you check in with yourself, build healthy habits, and find calm through guided breathing, journaling, mood tracking, and community support. Built with Appwrite Cloud as the backend, it offers a gentle, offline-friendly experience across Android and iOS.
 
-- **Daily Mood Check-ins** – Lightweight prompts capturing mood, energy, and stress levels with optional free-form notes.
-- **Emotion Journal** – Searchable, taggable entries with streak tracking and reflective writing reminders.
-- **Personalized Practice Queue** – AI-assisted recommendations for breathing, meditation, or CBT-inspired exercises.
-- **Guided Audio Sessions** – Downloadable, offline-friendly audio library with timers and ambient soundscapes.
-- **Grounding Toolkit** – Quick-access interventions (5-4-3-2-1 grounding, box breathing, body scan) optimized for touch gestures.
-- **Gratitude & Wins Board** – Visual board for micro-accomplishments to reinforce positive reframing.
-- **Goal & Habit Loops** – SMART goal templates, habit loop builder, and gentle reminder nudges.
-- **Insights Dashboard** – Weekly trend lines, trigger detection, and personalized suggestions from aggregated mood data.
-- **Safety Net** – Region-aware hotline directory, positive scripting, and contact escalation for trusted supporters.
-- **Community Challenges (Opt-in)** – Privacy-conscious group challenges with anonymized leaderboards and badges.
+## Features
 
-## 🛠️ Tech Stack
+### Core Wellness
+- **Daily Mood Check-ins** — Track mood (Calm, Okay, Low, Anxious, Overwhelmed) with optional notes
+- **Emotion Journal** — Searchable, taggable entries with prompts, streak tracking, and reminders
+- **Grounding Toolkit** — 4-4-6 Breathing, Box Breathing, 5-4-3-2-1 Grounding, Body Scan
+- **Personalized Practice Queue** — Context-aware recommendations based on daily needs (Focus, Calm, Release, Rest)
 
-| Layer | Stack |
-| --- | --- |
-| Framework | Flutter (Dart), SDK ^3.10.3 |
-| Animations | Lottie, flutter_animate, Reanimated transitions |
-| Typography | Google Fonts (via `google_fonts` package) |
-| Design System | Custom theme with `AppColors`, `AppTypography`, `AppTheme` |
-| Target Platforms | Android, iOS, Web, Windows, macOS, Linux |
+### Audio & Meditation
+- **Guided Podcast Sessions** — Open-source meditation, breathing, sleep, and mindfulness audio
+- **Curated Music Library** — Multi-language playlists with ambient soundscapes
+- **Zen Ambient Audio** — Royalty-free soundscapes during breathing exercises
 
+### Tracking & Insights
+- **Insights Dashboard** — Weekly mood trends, sleep metrics, habit tracking, recovery score
+- **Wellness Analytics** — Daily wellness score aggregating mood, sleep, stress, energy, anxiety
+- **Sleep & Dream Tracker** — Hours logged with dream journaling
+- **Activity Tracking** — Step counting, distance (GPS), calorie estimation
+- **Streak System** — Multi-day engagement tracking with gentle nudges
 
-## ✨ Features
+### Community & Support
+- **Community Feed** — Share posts (Achievements, Struggles, Victories) with likes and comments
+- **Community Chat** — Real-time messaging with Appwrite Realtime
+- **Safety Net** — Emergency hotlines (India/US/UK/International), positive scripts, trusted contacts
+- **Gratitude & Wins Board** — Track micro-accomplishments by category
 
-- **Daily Mood Check-ins** – Lightweight prompts capturing mood, energy, and stress levels with optional free-form notes.
-- **Emotion Journal** – Searchable, taggable entries with streak tracking and reflective writing reminders.
-- **Personalized Practice Queue** – AI-assisted recommendations for breathing, meditation, or CBT-inspired exercises.
-- **Guided Audio Sessions** – Downloadable, offline-friendly audio library with timers and ambient soundscapes.
-- **Grounding Toolkit** – Quick-access interventions (5-4-3-2-1 grounding, box breathing, body scan) optimized for touch gestures.
-- **Gratitude & Wins Board** – Visual board for micro-accomplishments to reinforce positive reframing.
-- **Goal & Habit Loops** – SMART goal templates, habit loop builder, and gentle reminder nudges.
-- **Insights Dashboard** – Weekly trend lines, trigger detection, and personalized suggestions from aggregated mood data.
-- **Safety Net** – Region-aware hotline directory, positive scripting, and contact escalation for trusted supporters.
-- **Community Challenges (Opt-in)** – Privacy-conscious group challenges with anonymized leaderboards and badges.
+### Personalization
+- **Custom Avatar Creator** — Layered 2D avatar with wheel-scroll selection for face, hair, eyes, mouth, accessories, clothing
+- **Onboarding** — Gender, age, relationship status, wellness concerns, sleep schedule, music preferences
+- **Dark/Light Theme** — Full theme support with smooth transitions
 
-## 🛠️ Tech Stack
+### Notifications
+- 6 notification types: Mood follow-up, evening journal, streak reminder, walking check-in, community updates, breathing nudge
 
-| Layer | Stack |
-| --- | --- |
-| Framework | Flutter (Dart), SDK ^3.10.3 |
-| Animations | Lottie, flutter_animate, Reanimated transitions |
-| Typography | Google Fonts (via `google_fonts` package) |
-| Design System | Custom theme with `AppColors`, `AppTypography`, `AppTheme` |
-| Target Platforms | Android, iOS, Web, Windows, macOS, Linux |
+## Tech Stack
 
-## 📁 Project Structure
+| Layer | Technology |
+|-------|-----------|
+| Framework | Flutter 3.10+ (Dart) |
+| Backend | Appwrite Cloud (v1.9) |
+| Auth | Email/Password, Google OAuth, Anonymous |
+| Database | Appwrite Databases (13 collections) |
+| Storage | Appwrite Storage (4 buckets) |
+| Realtime | Appwrite Realtime subscriptions |
+| Audio | just_audio |
+| Location | geolocator, pedometer_2 |
+| Animations | flutter_animate, Lottie |
+| Notifications | flutter_local_notifications |
 
-```
-lib/
-├── main.dart                   # App entry point (UnravelApp)
-├── screens/
-│   ├── splash_screen.dart      # Animated splash / onboarding
-│   ├── login_screen.dart       # Authentication screen
-│   ├── main_shell.dart         # Bottom navigation shell
-│   ├── home_screen.dart        # Home dashboard
-│   └── placeholder_screen.dart # Placeholder for upcoming screens
-├── theme/
-│   ├── app_colors.dart         # Color palette tokens
-│   ├── app_typography.dart     # Typography scale
-│   └── app_theme.dart          # Material ThemeData configuration
-└── widgets/
-    ├── frosted_glass_card.dart  # Glassmorphism card component
-    ├── gradient_background.dart # Animated gradient backgrounds
-    ├── mood_selector.dart       # Daily mood picker
-    ├── mood_chart.dart          # Weekly mood trend chart
-    ├── recovery_score_card.dart # Recovery score gauge card
-    ├── quick_action_button.dart # Quick action grid buttons
-    ├── pill_button.dart         # Rounded pill-style CTA button
-    └── streak_indicator.dart    # Streak tracking display
-```
+## Architecture
 
-## 🚀 Getting Started
+- **State Management**: Singleton services + ValueNotifier/ChangeNotifier (no Redux/BLoC/Riverpod)
+- **Data Layer**: Offline-first with Appwrite sync — all writes go to Appwrite first, fall back to SharedPreferences + JSON file backup
+- **Service Pattern**: AppwriteService → DatabaseService → LocalDataService (3-layer)
+
+## Database Collections
+
+| Collection | Purpose |
+|-----------|---------|
+| users | User profiles, preferences, avatar config |
+| mood_entries | Daily mood tracking (0-1 scale) |
+| journal_entries | Emotion journal with tags and prompts |
+| streaks | Consecutive check-in tracking |
+| recovery_scores | Computed wellness recovery scores |
+| posts | Community feed posts |
+| comments | Post comments |
+| sleep_entries | Sleep hours and dream logs |
+| breathing_sessions | Grounding exercise sessions |
+| gratitude_entries | Gratitude & wins board entries |
+| activity_logs | Steps, distance, calories |
+| wellness_logs | Aggregated daily analytics |
+| chat_messages | Community real-time chat |
+
+## Getting Started
 
 ### Prerequisites
-
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (^3.10.3)
-- Dart SDK (bundled with Flutter)
-- An IDE with Flutter support (VS Code, Android Studio, IntelliJ)
+- Flutter SDK 3.10+
+- Android Studio / VS Code
+- Appwrite Cloud account (or self-hosted)
 
 ### Setup
+1. Clone the repo
+2. Run `flutter pub get`
+3. Configure `lib/services/appwrite_constants.dart` with your Appwrite project details
+4. Set up Appwrite collections (see Database Collections table above)
+5. Enable Google OAuth in Appwrite Console
+6. Run `flutter run`
 
-```bash
-# Clone the repository
-git clone https://github.com/AasishDairelSahayaGrinspan/Unravel-Mental-Wellness-app
-cd Unravel-Mental-Wellness-app
-
-# Install dependencies
-flutter pub get
-
-# Run the app
-flutter run
+## Project Structure
+```
+lib/
+├── main.dart
+├── constants/        # Lottie URLs, static data
+├── models/           # AvatarConfig, CommunityModels
+├── screens/          # All app screens (25+)
+├── services/         # Backend services (13 singletons)
+├── theme/            # AppColors, AppTheme, AppTypography, ThemeProvider
+└── widgets/          # Reusable UI components (15+)
 ```
 
-### Platform-Specific
+## License
 
-```bash
-# Android
-flutter run -d android
-
-# iOS (macOS only)
-flutter run -d ios
-
-# Web
-flutter run -d chrome
-
-# Windows
-flutter run -d windows
-```
-
-## 🗺️ Roadmap
-
-- [x] Design system (colors, typography, theming)
-- [x] Splash screen with Lottie animations
-- [x] Login / authentication screen
-- [x] Bottom navigation shell
-- [x] Home dashboard with mood selector, recovery score, streak indicator, and mood chart
-- [x] Community push notifications for community updates
-- [ ] Complete emotion journal flow with offline persistence
-- [ ] Guided audio sessions player
-- [ ] Grounding toolkit interactions
-- [ ] Backend API integration (mood entries, sync)
-- [ ] Notification service for reminders and streak nudges
-- [ ] AI-assisted recommendation engine
-
-## 🤝 Contributing
-
-We welcome contributions! Areas where help is especially appreciated:
-
-- Inclusive UX writing and accessibility improvements
-- Evidence-based practice libraries (CBT, DBT, mindfulness)
-- Privacy-preserving analytics approaches
-- New widget components and screen designs
-
-Please open an issue before submitting large PRs so we can plan together.
-
-## 📄 License
-
-This project is distributed under the MIT License. See [LICENSE](LICENSE) for details.
-
-## 📬 Contact
-
-Questions or collaboration ideas? Open an issue or reach out via GitHub Discussions once enabled.
+MIT

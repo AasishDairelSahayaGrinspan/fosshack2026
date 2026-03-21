@@ -19,7 +19,7 @@ class CommunityChatScreen extends StatefulWidget {
 class _CommunityChatScreenState extends State<CommunityChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final List<_ChatMessage> _messages = [];
-  bool _isTyping = false;
+  final bool _isTyping = false;
 
   @override
   void initState() {

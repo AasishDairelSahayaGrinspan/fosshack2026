@@ -38,6 +38,8 @@ class _SplashScreenState extends State<SplashScreen> {
       final user = AuthService().currentUser;
       if (user != null) {
         await DatabaseService().updateStreak(user.$id);
+        // Sync local-only data to Appwrite in background
+        DatabaseService().syncLocalDataToRemote(user.$id);
       }
       await UserPreferencesService().loadFromRemote();
       CommunityService().communityPreference =

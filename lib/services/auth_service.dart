@@ -173,10 +173,11 @@ class AuthService {
     try {
       await LocalDataService().init();
 
-      // Appwrite SDK v22+ handles OAuth differently on web
-      // Simply call createOAuth2Session - Appwrite handles the redirect
-      // Make sure redirect URI is configured in Appwrite console
-      await _account.createOAuth2Session(provider: provider);
+      // For Android: Use the custom URI scheme from AndroidManifest.xml
+      // The scheme 'appwrite-callback-unravel-app://' is already configured
+      await _account.createOAuth2Session(
+        provider: provider,
+      );
 
       final user = await _account.get();
       _currentUser = LocalUser.fromAppwriteUser(user);

@@ -94,7 +94,9 @@ class _QuickActionButtonState extends State<QuickActionButton>
               const SizedBox(height: 10),
               Text(
                 widget.label,
-                style: AppTypography.caption(color: AppColors.secondary(context)),
+                style: AppTypography.caption(
+                  color: AppColors.secondary(context),
+                ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

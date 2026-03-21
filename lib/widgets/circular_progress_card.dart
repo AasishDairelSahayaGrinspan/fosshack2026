@@ -70,16 +70,34 @@ class _ArcPainter extends CustomPainter {
   final Color trackColor;
   final Color progressColor;
 
-  _ArcPainter({required this.progress, required this.trackColor, required this.progressColor});
+  _ArcPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.progressColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 4;
-    final track = Paint()..color = trackColor..style = PaintingStyle.stroke..strokeWidth = 5..strokeCap = StrokeCap.round;
+    final track = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
     canvas.drawCircle(center, radius, track);
-    final prog = Paint()..color = progressColor..style = PaintingStyle.stroke..strokeWidth = 5..strokeCap = StrokeCap.round;
-    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), -pi / 2, 2 * pi * progress, false, prog);
+    final prog = Paint()
+      ..color = progressColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi / 2,
+      2 * pi * progress,
+      false,
+      prog,
+    );
   }
 
   @override

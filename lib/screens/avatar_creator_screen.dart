@@ -54,25 +54,43 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
             children: [
               // Top bar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
-                      child: Icon(Icons.arrow_back_ios_rounded, color: AppColors.primary(context), size: 22),
+                      child: Icon(
+                        Icons.arrow_back_ios_rounded,
+                        color: AppColors.primary(context),
+                        size: 22,
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    Text('Create Avatar', style: AppTypography.sectionHeadingC(context)),
+                    Text(
+                      'Create Avatar',
+                      style: AppTypography.sectionHeadingC(context),
+                    ),
                     const Spacer(),
                     GestureDetector(
                       onTap: _save,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.softIndigo,
-                          borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusButton,
+                          ),
                         ),
-                        child: Text('Done', style: AppTypography.buttonText(color: Colors.white)),
+                        child: Text(
+                          'Done',
+                          style: AppTypography.buttonText(color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
@@ -86,7 +104,10 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.card(context),
-                  border: Border.all(color: AppColors.softIndigo.withValues(alpha: 0.2), width: 1.5),
+                  border: Border.all(
+                    color: AppColors.softIndigo.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.softIndigo.withValues(alpha: 0.15),
@@ -112,7 +133,10 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                       onTap: () => setState(() => _selectedTab = i),
                       child: AnimatedContainer(
                         duration: AppTheme.fadeInDuration,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: selected
                               ? AppColors.softIndigo.withValues(alpha: 0.15)
@@ -126,9 +150,16 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                         ),
                         child: Text(
                           _tabs[i],
-                          style: AppTypography.caption(
-                            color: selected ? AppColors.softIndigo : AppColors.tertiary(context),
-                          ).copyWith(fontWeight: selected ? FontWeight.w600 : FontWeight.w400),
+                          style:
+                              AppTypography.caption(
+                                color: selected
+                                    ? AppColors.softIndigo
+                                    : AppColors.tertiary(context),
+                              ).copyWith(
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
                         ),
                       ),
                     );
@@ -146,7 +177,10 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.card(context),
                     borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-                    border: Border.all(color: AppColors.cardBorder(context), width: 0.8),
+                    border: Border.all(
+                      color: AppColors.cardBorder(context),
+                      width: 0.8,
+                    ),
                   ),
                   child: _buildOptions(),
                 ),
@@ -169,50 +203,86 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
           (i) => setState(() => _config = _config.copyWith(bodyType: i)),
         );
       case 1:
-        return _buildColorGrid('Skin Color', AvatarConfig.skinColors, _config.skinColor,
-            (c) => setState(() => _config = _config.copyWith(skinColor: c)));
+        return _buildColorGrid(
+          'Skin Color',
+          AvatarConfig.skinColors,
+          _config.skinColor,
+          (c) => setState(() => _config = _config.copyWith(skinColor: c)),
+        );
       case 2:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildChipSelector('Hair Style', AvatarConfig.hairStyleNames, _config.hairStyle,
-                (i) => setState(() => _config = _config.copyWith(hairStyle: i))),
+            _buildChipSelector(
+              'Hair Style',
+              AvatarConfig.hairStyleNames,
+              _config.hairStyle,
+              (i) => setState(() => _config = _config.copyWith(hairStyle: i)),
+            ),
             const SizedBox(height: 16),
-            _buildColorGrid('Hair Color', AvatarConfig.hairColors, _config.hairColor,
-                (c) => setState(() => _config = _config.copyWith(hairColor: c))),
+            _buildColorGrid(
+              'Hair Color',
+              AvatarConfig.hairColors,
+              _config.hairColor,
+              (c) => setState(() => _config = _config.copyWith(hairColor: c)),
+            ),
           ],
         );
       case 3:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildChipSelector('Shirt Style', AvatarConfig.shirtStyleNames, _config.shirtStyle,
-                (i) => setState(() => _config = _config.copyWith(shirtStyle: i))),
+            _buildChipSelector(
+              'Shirt Style',
+              AvatarConfig.shirtStyleNames,
+              _config.shirtStyle,
+              (i) => setState(() => _config = _config.copyWith(shirtStyle: i)),
+            ),
             const SizedBox(height: 16),
-            _buildColorGrid('Shirt Color', AvatarConfig.shirtColors, _config.shirtColor,
-                (c) => setState(() => _config = _config.copyWith(shirtColor: c))),
+            _buildColorGrid(
+              'Shirt Color',
+              AvatarConfig.shirtColors,
+              _config.shirtColor,
+              (c) => setState(() => _config = _config.copyWith(shirtColor: c)),
+            ),
           ],
         );
       case 4:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildChipSelector('Pants Style', AvatarConfig.pantsStyleNames, _config.pantsStyle,
-                (i) => setState(() => _config = _config.copyWith(pantsStyle: i))),
+            _buildChipSelector(
+              'Pants Style',
+              AvatarConfig.pantsStyleNames,
+              _config.pantsStyle,
+              (i) => setState(() => _config = _config.copyWith(pantsStyle: i)),
+            ),
             const SizedBox(height: 16),
-            _buildColorGrid('Pants Color', AvatarConfig.pantsColors, _config.pantsColor,
-                (c) => setState(() => _config = _config.copyWith(pantsColor: c))),
+            _buildColorGrid(
+              'Pants Color',
+              AvatarConfig.pantsColors,
+              _config.pantsColor,
+              (c) => setState(() => _config = _config.copyWith(pantsColor: c)),
+            ),
           ],
         );
       case 5:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildChipSelector('Shoe Style', AvatarConfig.shoeStyleNames, _config.shoeStyle,
-                (i) => setState(() => _config = _config.copyWith(shoeStyle: i))),
+            _buildChipSelector(
+              'Shoe Style',
+              AvatarConfig.shoeStyleNames,
+              _config.shoeStyle,
+              (i) => setState(() => _config = _config.copyWith(shoeStyle: i)),
+            ),
             const SizedBox(height: 16),
-            _buildColorGrid('Shoe Color', AvatarConfig.shoeColors, _config.shoeColor,
-                (c) => setState(() => _config = _config.copyWith(shoeColor: c))),
+            _buildColorGrid(
+              'Shoe Color',
+              AvatarConfig.shoeColors,
+              _config.shoeColor,
+              (c) => setState(() => _config = _config.copyWith(shoeColor: c)),
+            ),
           ],
         );
       case 6:
@@ -222,11 +292,21 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
     }
   }
 
-  Widget _buildChipSelector(String label, List<String> options, int selected, ValueChanged<int> onSelect) {
+  Widget _buildChipSelector(
+    String label,
+    List<String> options,
+    int selected,
+    ValueChanged<int> onSelect,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTypography.captionC(context).copyWith(fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: AppTypography.captionC(
+            context,
+          ).copyWith(fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
@@ -237,20 +317,34 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
               onTap: () => onSelect(i),
               child: AnimatedContainer(
                 duration: AppTheme.fadeInDuration,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.softIndigo.withValues(alpha: 0.12) : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.softIndigo.withValues(alpha: 0.12)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? AppColors.softIndigo.withValues(alpha: 0.4) : AppColors.dividerColor(context),
+                    color: isSelected
+                        ? AppColors.softIndigo.withValues(alpha: 0.4)
+                        : AppColors.dividerColor(context),
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
                 child: Text(
                   options[i],
-                  style: AppTypography.caption(
-                    color: isSelected ? AppColors.softIndigo : AppColors.primary(context),
-                  ).copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400),
+                  style:
+                      AppTypography.caption(
+                        color: isSelected
+                            ? AppColors.softIndigo
+                            : AppColors.primary(context),
+                      ).copyWith(
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
                 ),
               ),
             );
@@ -260,11 +354,21 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
     );
   }
 
-  Widget _buildColorGrid(String label, List<Color> colors, Color selected, ValueChanged<Color> onSelect) {
+  Widget _buildColorGrid(
+    String label,
+    List<Color> colors,
+    Color selected,
+    ValueChanged<Color> onSelect,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTypography.captionC(context).copyWith(fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: AppTypography.captionC(
+            context,
+          ).copyWith(fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 10),
         Wrap(
           spacing: 10,
@@ -281,11 +385,19 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                   color: c,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isSelected ? AppColors.softIndigo : AppColors.dividerColor(context),
+                    color: isSelected
+                        ? AppColors.softIndigo
+                        : AppColors.dividerColor(context),
                     width: isSelected ? 2.5 : 1,
                   ),
                   boxShadow: isSelected
-                      ? [BoxShadow(color: c.withValues(alpha: 0.4), blurRadius: 8, spreadRadius: 1)]
+                      ? [
+                          BoxShadow(
+                            color: c.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ]
                       : null,
                 ),
               ),
@@ -300,7 +412,12 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Accessories', style: AppTypography.captionC(context).copyWith(fontWeight: FontWeight.w500)),
+        Text(
+          'Accessories',
+          style: AppTypography.captionC(
+            context,
+          ).copyWith(fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
@@ -319,12 +436,19 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
               },
               child: AnimatedContainer(
                 duration: AppTheme.fadeInDuration,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.softIndigo.withValues(alpha: 0.12) : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.softIndigo.withValues(alpha: 0.12)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? AppColors.softIndigo.withValues(alpha: 0.4) : AppColors.dividerColor(context),
+                    color: isSelected
+                        ? AppColors.softIndigo.withValues(alpha: 0.4)
+                        : AppColors.dividerColor(context),
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
@@ -334,14 +458,23 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                     Icon(
                       _accessoryIcon(name),
                       size: 16,
-                      color: isSelected ? AppColors.softIndigo : AppColors.tertiary(context),
+                      color: isSelected
+                          ? AppColors.softIndigo
+                          : AppColors.tertiary(context),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       name[0].toUpperCase() + name.substring(1),
-                      style: AppTypography.caption(
-                        color: isSelected ? AppColors.softIndigo : AppColors.primary(context),
-                      ).copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400),
+                      style:
+                          AppTypography.caption(
+                            color: isSelected
+                                ? AppColors.softIndigo
+                                : AppColors.primary(context),
+                          ).copyWith(
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
                     ),
                   ],
                 ),

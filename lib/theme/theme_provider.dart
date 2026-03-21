@@ -26,8 +26,9 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   void toggleTheme() {
-    _themeMode =
-        _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    _themeMode = _themeMode == ThemeMode.light
+        ? ThemeMode.dark
+        : ThemeMode.light;
     _persist();
     notifyListeners();
   }
@@ -41,7 +42,10 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> _persist() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_key, _themeMode == ThemeMode.dark ? 'dark' : 'light');
+      await prefs.setString(
+        _key,
+        _themeMode == ThemeMode.dark ? 'dark' : 'light',
+      );
     } catch (_) {}
   }
 }

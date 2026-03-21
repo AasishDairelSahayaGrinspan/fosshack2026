@@ -5,7 +5,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 
-/// Timer Screen — circular gradient timer with Focus and Relax modes.
+/// Timer Screen with focus/relax modes and a scrollable duration picker.
 class TimerScreen extends StatefulWidget {
   const TimerScreen({super.key});
 
@@ -20,15 +20,17 @@ class _TimerScreenState extends State<TimerScreen>
   TimerMode _mode = TimerMode.focus;
   bool _isRunning = false;
   bool _isComplete = false;
+  int _focusMinutes = 25;
+  int _relaxMinutes = 10;
 
   late AnimationController _timerController;
   late AnimationController _pulseController;
+  late FixedExtentScrollController _minuteWheelController;
 
-  // Focus: 25 min, Relax: 10 min
-  Duration get _totalDuration =>
-      _mode == TimerMode.focus
-          ? const Duration(minutes: 25)
-          : const Duration(minutes: 10);
+  int get _selectedMinutes =>
+      _mode == TimerMode.focus ? _focusMinutes : _relaxMinutes;
+
+  Duration get _totalDuration => Duration(minutes: _selectedMinutes);
 
   @override
   void initState() {
@@ -50,12 +52,17 @@ class _TimerScreenState extends State<TimerScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+
+    _minuteWheelController = FixedExtentScrollController(
+      initialItem: _selectedMinutes - 1,
+    );
   }
 
   @override
   void dispose() {
     _timerController.dispose();
     _pulseController.dispose();
+    _minuteWheelController.dispose();
     super.dispose();
   }
 
@@ -63,6 +70,31 @@ class _TimerScreenState extends State<TimerScreen>
     if (_isRunning) return;
     setState(() {
       _mode = mode;
+      _isComplete = false;
+      _timerController.duration = _totalDuration;
+      _timerController.reset();
+    });
+    _syncMinuteWheel();
+  }
+
+  void _syncMinuteWheel() {
+    if (!_minuteWheelController.hasClients) return;
+    _minuteWheelController.animateToItem(
+      _selectedMinutes - 1,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _onMinuteChanged(int index) {
+    if (_isRunning) return;
+    final minutes = index + 1;
+    setState(() {
+      if (_mode == TimerMode.focus) {
+        _focusMinutes = minutes;
+      } else {
+        _relaxMinutes = minutes;
+      }
       _isComplete = false;
       _timerController.duration = _totalDuration;
       _timerController.reset();
@@ -127,22 +159,24 @@ class _TimerScreenState extends State<TimerScreen>
 
               const SizedBox(height: 16),
 
-              // ─── Mode Selector ───
-              _buildModeSelector()
-                  .animate()
+              _buildModeSelector().animate().fadeIn(
+                duration: const Duration(milliseconds: 500),
+                curve: AppTheme.gentleCurve,
+              ),
+
+              const SizedBox(height: 12),
+
+              _buildDurationPicker()
+                  .animate(delay: const Duration(milliseconds: 100))
                   .fadeIn(
                     duration: const Duration(milliseconds: 500),
                     curve: AppTheme.gentleCurve,
                   ),
 
-              // ─── Timer Circle ───
-              Expanded(
-                child: Center(
-                  child: _buildTimerCircle(),
-                ),
-              ),
+              const SizedBox(height: 10),
 
-              // ─── Controls ───
+              Expanded(child: Center(child: _buildTimerCircle())),
+
               _buildControls()
                   .animate(delay: const Duration(milliseconds: 200))
                   .fadeIn(
@@ -152,21 +186,20 @@ class _TimerScreenState extends State<TimerScreen>
 
               const SizedBox(height: 24),
 
-              // ─── Message ───
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
                 child: Text(
                   _isComplete
                       ? (_mode == TimerMode.focus
-                          ? 'Well done. You showed up.'
-                          : 'You gave yourself space.')
+                            ? 'Well done. You showed up.'
+                            : 'You gave yourself space.')
                       : (_isRunning
-                          ? (_mode == TimerMode.focus
-                              ? 'Stay present.'
-                              : 'Let everything soften.')
-                          : (_mode == TimerMode.focus
-                              ? 'Ready when you are.'
-                              : 'Take your time.')),
+                            ? (_mode == TimerMode.focus
+                                  ? 'Stay present.'
+                                  : 'Let everything soften.')
+                            : (_mode == TimerMode.focus
+                                  ? 'Ready when you are.'
+                                  : 'Take your time.')),
                   key: ValueKey<String>('$_isRunning$_isComplete$_mode'),
                   style: AppTypography.emotionalText(),
                   textAlign: TextAlign.center,
@@ -221,7 +254,11 @@ class _TimerScreenState extends State<TimerScreen>
         ),
         child: Row(
           children: [
-            _buildModeTab(TimerMode.focus, 'Focus', Icons.center_focus_strong_outlined),
+            _buildModeTab(
+              TimerMode.focus,
+              'Focus',
+              Icons.center_focus_strong_outlined,
+            ),
             _buildModeTab(TimerMode.relax, 'Relax', Icons.spa_outlined),
           ],
         ),
@@ -231,7 +268,9 @@ class _TimerScreenState extends State<TimerScreen>
 
   Widget _buildModeTab(TimerMode mode, String label, IconData icon) {
     final isSelected = _mode == mode;
-    final color = mode == TimerMode.focus ? AppColors.softIndigo : AppColors.sageGreen;
+    final color = mode == TimerMode.focus
+        ? AppColors.softIndigo
+        : AppColors.sageGreen;
 
     return Expanded(
       child: GestureDetector(
@@ -240,7 +279,9 @@ class _TimerScreenState extends State<TimerScreen>
           duration: AppTheme.fadeInDuration,
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white.withValues(alpha: 0.8) : Colors.transparent,
+            color: isSelected
+                ? Colors.white.withValues(alpha: 0.8)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(AppTheme.radiusButton),
             boxShadow: isSelected ? AppColors.subtleShadow : null,
           ),
@@ -255,16 +296,81 @@ class _TimerScreenState extends State<TimerScreen>
               const SizedBox(width: 6),
               Text(
                 label,
-                style: AppTypography.uiLabel(
-                  color: isSelected ? color : AppColors.tertiary(context),
-                ).copyWith(
-                  fontWeight: isSelected ? FontWeight.w400 : FontWeight.w300,
-                ),
+                style:
+                    AppTypography.uiLabel(
+                      color: isSelected ? color : AppColors.tertiary(context),
+                    ).copyWith(
+                      fontWeight: isSelected
+                          ? FontWeight.w400
+                          : FontWeight.w300,
+                    ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDurationPicker() {
+    return Column(
+      children: [
+        Text(
+          'Session length',
+          style: AppTypography.caption(color: AppColors.tertiary(context)),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 112,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 132,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _modeColor.withValues(alpha: 0.25)),
+                ),
+              ),
+              ListWheelScrollView.useDelegate(
+                controller: _minuteWheelController,
+                itemExtent: 34,
+                diameterRatio: 1.25,
+                perspective: 0.004,
+                squeeze: 1.08,
+                physics: _isRunning
+                    ? const NeverScrollableScrollPhysics()
+                    : const FixedExtentScrollPhysics(),
+                onSelectedItemChanged: _onMinuteChanged,
+                childDelegate: ListWheelChildBuilderDelegate(
+                  childCount: 60,
+                  builder: (context, i) {
+                    if (i < 0 || i >= 60) return null;
+                    final isSelected = i + 1 == _selectedMinutes;
+                    return Center(
+                      child: Text(
+                        '${i + 1} min',
+                        style:
+                            AppTypography.uiLabel(
+                              color: isSelected
+                                  ? _modeColor
+                                  : AppColors.tertiary(context),
+                            ).copyWith(
+                              fontWeight: isSelected
+                                  ? FontWeight.w500
+                                  : FontWeight.w300,
+                            ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -290,7 +396,6 @@ class _TimerScreenState extends State<TimerScreen>
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Outer glow
                     Container(
                       width: 260,
                       height: 260,
@@ -305,36 +410,35 @@ class _TimerScreenState extends State<TimerScreen>
                         ],
                       ),
                     ),
-                    // Progress ring
                     CustomPaint(
                       size: const Size(240, 240),
                       painter: _TimerRingPainter(
                         progress: progress,
-                        trackColor: AppColors.dividerColor(context).withValues(alpha: 0.3),
+                        trackColor: AppColors.dividerColor(
+                          context,
+                        ).withValues(alpha: 0.3),
                         progressColor: _modeColor,
                         strokeWidth: 5,
                       ),
                     ),
-                    // Inner content
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           _formatTime(remaining),
-                          style: AppTypography.heroHeading(
-                            color: AppColors.primary(context),
-                          ).copyWith(
-                            fontSize: 44,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 2,
-                          ),
+                          style:
+                              AppTypography.heroHeading(
+                                color: AppColors.primary(context),
+                              ).copyWith(
+                                fontSize: 44,
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 2,
+                              ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _mode == TimerMode.focus ? '25 minutes' : '10 minutes',
-                          style: AppTypography.caption(
-                            color: _modeColor,
-                          ),
+                          '$_selectedMinutes minutes',
+                          style: AppTypography.caption(color: _modeColor),
                         ),
                       ],
                     ),
@@ -354,7 +458,6 @@ class _TimerScreenState extends State<TimerScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Reset
           if (_timerController.value > 0)
             GestureDetector(
               onTap: _resetTimer,
@@ -379,7 +482,6 @@ class _TimerScreenState extends State<TimerScreen>
 
           if (_timerController.value > 0) const SizedBox(width: 24),
 
-          // Play/Pause
           GestureDetector(
             onTap: _toggleTimer,
             child: AnimatedContainer(
@@ -405,8 +507,8 @@ class _TimerScreenState extends State<TimerScreen>
                 _isComplete
                     ? Icons.refresh_rounded
                     : (_isRunning
-                        ? Icons.pause_rounded
-                        : Icons.play_arrow_rounded),
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded),
                 color: _modeColor,
                 size: 30,
               ),
@@ -437,7 +539,6 @@ class _TimerRingPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - strokeWidth;
 
-    // Track
     final trackPaint = Paint()
       ..color = trackColor
       ..style = PaintingStyle.stroke
@@ -445,7 +546,6 @@ class _TimerRingPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     canvas.drawCircle(center, radius, trackPaint);
 
-    // Progress
     final progressPaint = Paint()
       ..color = progressColor
       ..style = PaintingStyle.stroke

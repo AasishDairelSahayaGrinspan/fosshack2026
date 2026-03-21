@@ -90,7 +90,9 @@ class _MoodChartState extends State<MoodChart>
                     lineColor: AppColors.softIndigo,
                     fillColor: AppColors.softIndigo.withValues(alpha: 0.08),
                     dotColor: AppColors.softIndigo,
-                    gridColor: AppColors.dividerColor(context).withValues(alpha: 0.4),
+                    gridColor: AppColors.dividerColor(
+                      context,
+                    ).withValues(alpha: 0.4),
                     dotInnerColor: AppColors.card(context),
                   ),
                 );

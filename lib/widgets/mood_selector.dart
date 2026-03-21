@@ -39,16 +39,46 @@ class _MoodSelectorState extends State<MoodSelector> {
       NotificationService().scheduleMoodFollowUp(_moodScores[index]);
       widget.onMoodSaved?.call(_moodScores[index]);
     } catch (e, st) {
-      developer.log('Failed to save mood', name: 'MoodSelector', error: e, stackTrace: st);
+      developer.log(
+        'Failed to save mood',
+        name: 'MoodSelector',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
   static const List<Map<String, dynamic>> _moods = [
-    {'icon': Icons.spa_rounded, 'emoji': '😌', 'label': 'Calm', 'color': AppColors.sageGreen, 'glow': Color(0xFF304057)},
-    {'icon': Icons.sentiment_satisfied_rounded, 'emoji': '🙂', 'label': 'Okay', 'color': AppColors.softIndigo, 'glow': Color(0xFFDA5E5A)},
-    {'icon': Icons.cloud_rounded, 'emoji': '😔', 'label': 'Low', 'color': AppColors.orangeE2814d, 'glow': Color(0xFFE2814D)},
-    {'icon': Icons.electric_bolt_rounded, 'emoji': '😰', 'label': 'Anxious', 'color': AppColors.warmCoral, 'glow': Color(0xFFFDB903)},
-    {'icon': Icons.whatshot_rounded, 'emoji': '😣', 'label': 'Overwhelmed', 'color': AppColors.coralDa5e5a, 'glow': Color(0xFFFFFFFF)},
+    {
+      'icon': Icons.spa_rounded,
+      'emoji': '😌',
+      'label': 'Calm',
+      'color': AppColors.sageGreen,
+    },
+    {
+      'icon': Icons.thumb_up_alt_rounded,
+      'emoji': '🙂',
+      'label': 'Okay',
+      'color': AppColors.softIndigo,
+    },
+    {
+      'icon': Icons.cloud_rounded,
+      'emoji': '😔',
+      'label': 'Low',
+      'color': AppColors.orangeE2814d,
+    },
+    {
+      'icon': Icons.bolt_rounded,
+      'emoji': '😰',
+      'label': 'Anxious',
+      'color': AppColors.warmCoral,
+    },
+    {
+      'icon': Icons.whatshot_rounded,
+      'emoji': '😣',
+      'label': 'Overwhelmed',
+      'color': AppColors.coralDa5e5a,
+    },
   ];
 
   @override
@@ -73,72 +103,64 @@ class _MoodSelectorState extends State<MoodSelector> {
             itemBuilder: (context, index) {
               final isSelected = _selectedIndex == index;
               final moodColor = _moods[index]['color'] as Color;
-              final glowColor = _moods[index]['glow'] as Color;
               return GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedIndex = index);
-                      _saveMood(index);
-                    },
-                    child: AnimatedContainer(
-                      duration: AppTheme.fadeInDuration,
-                      curve: AppTheme.defaultCurve,
-                      width: 76,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? moodColor.withValues(alpha: 0.12)
-                            : AppColors.card(context),
-                        borderRadius: BorderRadius.circular(
-                          AppTheme.radiusCard,
-                        ),
-                        border: Border.all(
+                onTap: () {
+                  setState(() => _selectedIndex = index);
+                  _saveMood(index);
+                },
+                child: AnimatedContainer(
+                  duration: AppTheme.fadeInDuration,
+                  curve: AppTheme.defaultCurve,
+                  width: 76,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? moodColor.withValues(alpha: 0.1)
+                        : AppColors.card(context),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+                    border: Border.all(
+                      color: isSelected
+                          ? moodColor.withValues(alpha: 0.4)
+                          : AppColors.dividerColor(context),
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedScale(
+                        scale: isSelected ? 1.3 : 1.0,
+                        duration: AppTheme.fadeInDuration,
+                        curve: AppTheme.defaultCurve,
+                        child: Icon(
+                          _moods[index]['icon'] as IconData,
                           color: isSelected
-                              ? moodColor.withValues(alpha: 0.5)
-                              : AppColors.dividerColor(context),
-                          width: isSelected ? 1.8 : 1,
+                              ? _moods[index]['color'] as Color
+                              : AppColors.tertiary(context),
+                          size: 28,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: glowColor.withValues(alpha: isSelected ? 0.7 : 0.5),
-                            blurRadius: isSelected ? 20 : 12,
-                            spreadRadius: isSelected ? 4 : 2,
-                          ),
-                        ],
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedScale(
-                            scale: isSelected ? 1.3 : 1.0,
-                            duration: AppTheme.fadeInDuration,
-                            curve: AppTheme.defaultCurve,
-                            child: Icon(
-                              _moods[index]['icon'] as IconData,
-                              color: isSelected ? _moods[index]['color'] as Color : AppColors.tertiary(context),
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _moods[index]['label'] as String,
-                            style: AppTypography.caption(
+                      const SizedBox(height: 8),
+                      Text(
+                        _moods[index]['label'] as String,
+                        style:
+                            AppTypography.caption(
                               color: isSelected
                                   ? moodColor
                                   : AppColors.tertiary(context),
                             ).copyWith(
-                              fontWeight:
-                                  isSelected ? FontWeight.w500 : FontWeight.w300,
+                              fontWeight: isSelected
+                                  ? FontWeight.w500
+                                  : FontWeight.w300,
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(
-                    duration: const Duration(milliseconds: 250),
-                    curve: AppTheme.gentleCurve,
-                  );
+                    ],
+                  ),
+                ),
+              ).animate().fadeIn(
+                duration: const Duration(milliseconds: 250),
+                curve: AppTheme.gentleCurve,
+              );
             },
           ),
         ),

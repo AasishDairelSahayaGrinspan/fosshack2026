@@ -501,7 +501,11 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                     color: AppColors.tertiary(context),
                     label: '',
                     onTap: () {
-                      SharePlus.instance.share(ShareParams(text: '${post.caption}\n\n— shared from Unravel'));
+                      SharePlus.instance.share(
+                        ShareParams(
+                          text: '${post.caption}\n\n— shared from Unravel',
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -529,7 +533,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               child: CircularProgressIndicator(
                 value: loadingProgress.expectedTotalBytes != null
                     ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
+                          loadingProgress.expectedTotalBytes!
                     : null,
               ),
             ),
@@ -588,54 +592,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               Text(label, style: AppTypography.caption(color: color)),
             ],
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPostImage(String imagePath) {
-    // Check if it's a network URL (Appwrite storage) or local file
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return Image.network(
-        imagePath,
-        width: double.infinity,
-        height: 250,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: double.infinity,
-            height: 250,
-            color: AppColors.card(context),
-            child: Center(
-              child: Icon(
-                Icons.image_not_supported_outlined,
-                color: AppColors.tertiary(context),
-                size: 32,
-              ),
-            ),
-          );
-        },
-      );
-    }
-    // Local file
-    final file = File(imagePath);
-    if (file.existsSync()) {
-      return Image.file(
-        file,
-        width: double.infinity,
-        height: 250,
-        fit: BoxFit.cover,
-      );
-    }
-    return Container(
-      width: double.infinity,
-      height: 250,
-      color: AppColors.card(context),
-      child: Center(
-        child: Icon(
-          Icons.image_not_supported_outlined,
-          color: AppColors.tertiary(context),
-          size: 32,
         ),
       ),
     );

@@ -107,10 +107,7 @@ class _MainShellState extends State<MainShell> {
         );
       },
       child: Scaffold(
-        body: IndexedStack(
-          index: safeIndex,
-          children: _screens,
-        ),
+        body: IndexedStack(index: safeIndex, children: _screens),
         bottomNavigationBar: _buildBottomNavBar(context),
       ),
     );
@@ -200,10 +197,7 @@ class _MainShellState extends State<MainShell> {
               : Colors.transparent,
           borderRadius: BorderRadius.circular(AppTheme.radiusButton),
           border: isHighlighted
-              ? Border.all(
-                  color: AppColors.amberFdb903,
-                  width: 1.2,
-                )
+              ? Border.all(color: AppColors.amberFdb903, width: 1.2)
               : null,
           boxShadow: isHighlighted
               ? [

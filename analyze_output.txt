@@ -1,0 +1,45 @@
+Analyzing Unravel...                                            
+
+   info - Unnecessary use of multiple underscores - lib\screens\avatar_creator_screen.dart:129:41 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\avatar_customization_screen.dart:291:31 - unnecessary_underscores
+   info - The private field _isTyping could be 'final' - lib\screens\community_chat_screen.dart:22:8 - prefer_final_fields
+   info - Unnecessary use of multiple underscores - lib\screens\home_screen.dart:639:43 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\home_screen.dart:771:43 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\journal_screen.dart:527:37 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\journal_screen.dart:527:41 - unnecessary_underscores
+warning - The value of the field '_languages' isn't used - lib\screens\music_screen.dart:24:29 - unused_field
+   info - Unnecessary use of multiple underscores - lib\screens\podcast_screen.dart:342:31 - unnecessary_underscores
+warning - Unused import: 'dart:developer' - lib\screens\profile_screen.dart:1:8 - unused_import
+warning - Unused import: 'package:shared_preferences/shared_preferences.dart' - lib\screens\profile_screen.dart:4:8 - unused_import
+warning - Unused import: '../widgets/doodle_refresh.dart' - lib\screens\profile_screen.dart:10:8 - unused_import
+   info - Unnecessary use of multiple underscores - lib\screens\splash_screen.dart:119:39 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\splash_screen.dart:119:43 - unnecessary_underscores
+warning - Unused import: 'package:flutter/foundation.dart' - lib\services\auth_service.dart:6:8 - unused_import
+warning - Unused import: 'oauth_config.dart' - lib\services\auth_service.dart:10:8 - unused_import
+   info - 'createDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.createRow` instead - lib\services\database_service.dart:82:17 - deprecated_member_use
+   info - 'updateDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.updateRow` instead - lib\services\database_service.dart:96:21 - deprecated_member_use
+   info - 'getDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.getRow` instead - lib\services\database_service.dart:129:29 - deprecated_member_use
+   info - 'updateDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.updateRow` instead - lib\services\database_service.dart:161:17 - deprecated_member_use
+   info - 'createDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.createRow` instead - lib\services\database_service.dart:204:29 - deprecated_member_use
+   info - 'listDocuments' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.listRows` instead - lib\services\database_service.dart:244:32 - deprecated_member_use
+   info - 'createDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.createRow` instead - lib\services\database_service.dart:400:29 - deprecated_member_use
+   info - 'listDocuments' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.listRows` instead - lib\services\database_service.dart:438:32 - deprecated_member_use
+   info - 'deleteDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.deleteRow` instead - lib\services\database_service.dart:498:17 - deprecated_member_use
+   info - 'getDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.getRow` instead - lib\services\database_service.dart:527:29 - deprecated_member_use
+   info - 'createDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.createRow` instead - lib\services\database_service.dart:545:21 - deprecated_member_use
+   info - 'updateDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.updateRow` instead - lib\services\database_service.dart:608:17 - deprecated_member_use
+   info - 'createDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.createRow` instead - lib\services\database_service.dart:621:21 - deprecated_member_use
+   info - 'createDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.createRow` instead - lib\services\database_service.dart:663:17 - deprecated_member_use
+   info - 'listDocuments' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.listRows` instead - lib\services\database_service.dart:694:32 - deprecated_member_use
+   info - 'createDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.createRow` instead - lib\services\database_service.dart:764:29 - deprecated_member_use
+   info - 'listDocuments' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.listRows` instead - lib\services\database_service.dart:798:32 - deprecated_member_use
+   info - 'updateDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.updateRow` instead - lib\services\database_service.dart:888:17 - deprecated_member_use
+   info - 'createDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.createRow` instead - lib\services\database_service.dart:926:29 - deprecated_member_use
+   info - 'listDocuments' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.listRows` instead - lib\services\database_service.dart:967:32 - deprecated_member_use
+   info - 'getDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.getRow` instead - lib\services\user_preferences_service.dart:75:28 - deprecated_member_use
+   info - 'updateDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.updateRow` instead - lib\services\user_preferences_service.dart:107:18 - deprecated_member_use
+   info - 'createDocument' is deprecated and shouldn't be used. This API has been deprecated since 1.8.0. Please use `TablesDB.createRow` instead - lib\services\user_preferences_service.dart:116:20 - deprecated_member_use
+warning - Unnecessary type check; the result is always 'true' - lib\widgets\avatar_renderer.dart:39:28 - unnecessary_type_check
+warning - Dead code - lib\widgets\avatar_renderer.dart:39:58 - dead_code
+
+41 issues found. (ran in 11.1s)

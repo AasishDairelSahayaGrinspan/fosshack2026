@@ -25,11 +25,11 @@ class ActivityData {
   }
 
   Map<String, dynamic> toMap() => {
-        'steps': steps,
-        'distanceKm': distanceKm,
-        'calories': calories,
-        'date': DateTime.now().toIso8601String().substring(0, 10),
-      };
+    'steps': steps,
+    'distanceKm': distanceKm,
+    'calories': calories,
+    'date': DateTime.now().toIso8601String().substring(0, 10),
+  };
 }
 
 class ActivityService {
@@ -40,8 +40,9 @@ class ActivityService {
   static const String _tag = 'ActivityService';
 
   final ValueNotifier<bool> isWalking = ValueNotifier<bool>(false);
-  final ValueNotifier<ActivityData> todayData =
-      ValueNotifier<ActivityData>(const ActivityData());
+  final ValueNotifier<ActivityData> todayData = ValueNotifier<ActivityData>(
+    const ActivityData(),
+  );
   final ValueNotifier<bool> permissionGranted = ValueNotifier<bool>(false);
 
   StreamSubscription<int>? _stepSub;
@@ -52,6 +53,7 @@ class ActivityService {
   Timer? _walkingDebounce;
   int _walkingSeconds = 0;
   Position? _lastPosition;
+  DateTime? _lastStepTime;
   String? _trackingDate; // date string for the current tracking session
 
   Future<bool> requestPermissions() async {
@@ -68,7 +70,12 @@ class ActivityService {
       permissionGranted.value = true;
       return true;
     } catch (e, st) {
-      developer.log('Permission request failed', name: _tag, error: e, stackTrace: st);
+      developer.log(
+        'Permission request failed',
+        name: _tag,
+        error: e,
+        stackTrace: st,
+      );
       return false;
     }
   }
@@ -86,7 +93,11 @@ class ActivityService {
           await startTracking();
         }
       } catch (e) {
-        developer.log('Auto-start permission check failed', name: _tag, error: e);
+        developer.log(
+          'Auto-start permission check failed',
+          name: _tag,
+          error: e,
+        );
       }
     }
   }
@@ -130,57 +141,121 @@ class ActivityService {
     // Start pedometer
     try {
       final pedometer = Pedometer();
-      _stepSub = pedometer.stepCountStream().listen((stepCount) {
-        _checkDateRollover();
-        if (!_baseSet) {
+      _stepSub = pedometer.stepCountStream().listen(
+        (stepCount) {
+          _checkDateRollover();
+          if (!_baseSet) {
+            _baseSteps = stepCount;
+            _baseSet = true;
+          }
+          final sessionSteps = stepCount - _baseSteps;
+          final totalSteps =
+              todayData.value.steps + sessionSteps.clamp(0, 999999);
           _baseSteps = stepCount;
-          _baseSet = true;
-        }
-        final sessionSteps = stepCount - _baseSteps;
-        final totalSteps = todayData.value.steps + sessionSteps.clamp(0, 999999);
-        _baseSteps = stepCount;
-        final cal = totalSteps * 0.04;
-        todayData.value = todayData.value.copyWith(
-          steps: totalSteps.toInt(),
-          calories: cal,
-        );
-        _saveTodayData();
-        _detectWalking();
-      }, onError: (e) {
-        developer.log('Pedometer error', name: _tag, error: e);
-      });
+          final cal = totalSteps * 0.04;
+          todayData.value = todayData.value.copyWith(
+            steps: totalSteps.toInt(),
+            calories: cal,
+          );
+          _lastStepTime = DateTime.now();
+          _saveTodayData();
+          _detectWalking();
+        },
+        onError: (e) {
+          developer.log('Pedometer error', name: _tag, error: e);
+        },
+      );
     } catch (e, st) {
-      developer.log('Failed to start pedometer', name: _tag, error: e, stackTrace: st);
+      developer.log(
+        'Failed to start pedometer',
+        name: _tag,
+        error: e,
+        stackTrace: st,
+      );
     }
 
     // Start GPS-based distance tracking
     try {
       final locationSettings = const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 5, // minimum 5 meters between updates
+        distanceFilter: 10, // minimum 10 meters between updates
       );
-      _positionSub = Geolocator.getPositionStream(locationSettings: locationSettings).listen((position) {
-        _checkDateRollover();
-        if (_lastPosition != null) {
-          final distanceMeters = Geolocator.distanceBetween(
-            _lastPosition!.latitude,
-            _lastPosition!.longitude,
-            position.latitude,
-            position.longitude,
+      _positionSub =
+          Geolocator.getPositionStream(
+            locationSettings: locationSettings,
+          ).listen(
+            (position) {
+              _checkDateRollover();
+
+              // Stationary detection: if no steps in last 30s, ignore GPS (drift)
+              if (_lastStepTime == null ||
+                  DateTime.now().difference(_lastStepTime!).inSeconds > 30) {
+                _lastPosition = position;
+                return;
+              }
+
+              if (_lastPosition != null) {
+                // Only use GPS readings with good accuracy (< 20 meters)
+                if (position.accuracy > 20) {
+                  developer.log(
+                    'Skipping GPS reading - poor accuracy: ${position.accuracy}m',
+                    name: _tag,
+                  );
+                  return;
+                }
+
+                final distanceMeters = Geolocator.distanceBetween(
+                  _lastPosition!.latitude,
+                  _lastPosition!.longitude,
+                  position.latitude,
+                  position.longitude,
+                );
+
+                // Validate distance calculation to prevent GPS drift accumulation
+                // Check: reasonable distance (0-500m) and reasonable speed
+                // Average walking speed: 1.4 m/s (5 km/h)
+                // Allow up to 6 m/s (~21 km/h) as reasonable max for walking/jogging
+                const maxReasonableSpeed = 6.0;
+                // Minimum movement threshold: ignore GPS noise below 8 meters
+                if (distanceMeters >= 8 && distanceMeters < 500) {
+                  // Calculate time difference in seconds
+                  final timeDiffSeconds = position.timestamp
+                      .difference(_lastPosition!.timestamp)
+                      .inMilliseconds /
+                      1000;
+                  final speed = timeDiffSeconds > 0
+                      ? distanceMeters / timeDiffSeconds
+                      : 0;
+
+                  // Only accept if speed is reasonable
+                  if (speed <= maxReasonableSpeed) {
+                    final newDistKm =
+                        todayData.value.distanceKm + (distanceMeters / 1000.0);
+                    todayData.value = todayData.value.copyWith(
+                      distanceKm: newDistKm,
+                    );
+                    _saveTodayData();
+                  } else {
+                    developer.log(
+                      'Skipping GPS reading - unreasonable speed: ${speed.toStringAsFixed(1)} m/s',
+                      name: _tag,
+                    );
+                  }
+                }
+              }
+              _lastPosition = position;
+            },
+            onError: (e) {
+              developer.log('Position stream error', name: _tag, error: e);
+            },
           );
-          // Only add reasonable distances (filter GPS jumps > 500m)
-          if (distanceMeters > 0 && distanceMeters < 500) {
-            final newDistKm = todayData.value.distanceKm + (distanceMeters / 1000.0);
-            todayData.value = todayData.value.copyWith(distanceKm: newDistKm);
-            _saveTodayData();
-          }
-        }
-        _lastPosition = position;
-      }, onError: (e) {
-        developer.log('Position stream error', name: _tag, error: e);
-      });
     } catch (e, st) {
-      developer.log('Failed to start position stream', name: _tag, error: e, stackTrace: st);
+      developer.log(
+        'Failed to start position stream',
+        name: _tag,
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -224,7 +299,10 @@ class ActivityService {
     return bucket;
   }
 
-  Future<void> _saveActivityLogs(String userId, List<Map<String, dynamic>> logs) async {
+  Future<void> _saveActivityLogs(
+    String userId,
+    List<Map<String, dynamic>> logs,
+  ) async {
     await LocalDataService().saveActivityLogs(userId, logs);
   }
 

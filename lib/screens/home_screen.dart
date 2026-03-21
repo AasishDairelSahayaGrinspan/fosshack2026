@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -26,6 +27,9 @@ import 'sleep_tracker_screen.dart';
 import 'journal_screen.dart';
 import 'timer_screen.dart';
 import 'insights_screen.dart';
+import 'podcast_screen.dart';
+import 'gratitude_screen.dart';
+import 'safety_net_screen.dart';
 
 /// Unravel Home Screen - the emotional dashboard.
 class HomeScreen extends StatefulWidget {
@@ -117,11 +121,26 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user == null) return;
 
     final db = DatabaseService();
-    final scoreFuture = db.getLatestRecoveryScore(user.$id).catchError((_) => 100.0);
-    final moodFuture = db.getMoodEntries(user.$id, days: 7).catchError((_) => LocalRowList(rows: <LocalRow>[]));
-    final streakFuture = db.getOrCreateStreak(user.$id).catchError((_) => LocalRow($id: user.$id, data: <String, dynamic>{'currentStreak': 0}));
+    final scoreFuture = db
+        .getLatestRecoveryScore(user.$id)
+        .catchError((_) => 100.0);
+    final moodFuture = db
+        .getMoodEntries(user.$id, days: 7)
+        .catchError((_) => LocalRowList(rows: <LocalRow>[]));
+    final streakFuture = db
+        .getOrCreateStreak(user.$id)
+        .catchError(
+          (_) => LocalRow(
+            $id: user.$id,
+            data: <String, dynamic>{'currentStreak': 0},
+          ),
+        );
 
-    final results = await Future.wait<dynamic>([scoreFuture, moodFuture, streakFuture]);
+    final results = await Future.wait<dynamic>([
+      scoreFuture,
+      moodFuture,
+      streakFuture,
+    ]);
     if (!mounted) return;
 
     final rawScore = (results[0] as num?)?.toDouble() ?? 100.0;
@@ -150,8 +169,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final prefix = hour < 12
         ? 'Good morning'
         : hour < 17
-            ? 'Good afternoon'
-            : 'Good evening';
+        ? 'Good afternoon'
+        : 'Good evening';
     return '$prefix, $name.';
   }
 
@@ -168,15 +187,16 @@ class _HomeScreenState extends State<HomeScreen> {
               curve: AppTheme.gentleCurve,
             ),
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.04),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(
-                  parent: animation,
-                  curve: AppTheme.gentleCurve,
-                ),
-              ),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0.04),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: AppTheme.gentleCurve,
+                    ),
+                  ),
               child: child,
             ),
           );
@@ -194,45 +214,183 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'Focus':
         setState(() {
           _needSuggestions = [
-            _Suggestion(Icons.timer_outlined, 'Try a focus timer session', AppColors.sageGreen, () => _navigate(context, const TimerScreen())),
-            _Suggestion(Icons.music_note_outlined, 'Listen to instrumental focus music', AppColors.softIndigo, () {
-              AppNavigationService().setMusicRecommendation('Focus mood: Try Focus Mode / Instrumental calm.');
-              AppNavigationService().requestTab(AppTabTarget.music);
-            }),
-            _Suggestion(Icons.air_rounded, 'Start with a short breathing exercise', AppColors.warmCoral, () => _navigate(context, const BreathingScreen())),
+            _Suggestion(
+              Icons.timer_outlined,
+              'Try a focus timer session',
+              AppColors.sageGreen,
+              () => _navigate(context, const TimerScreen()),
+            ),
+            _Suggestion(
+              Icons.music_note_outlined,
+              'Listen to instrumental focus music',
+              AppColors.softIndigo,
+              () {
+                AppNavigationService().setMusicRecommendation(
+                  'Focus mood: Try Focus Mode / Instrumental calm.',
+                );
+                AppNavigationService().requestTab(AppTabTarget.music);
+              },
+            ),
+            _Suggestion(
+              Icons.air_rounded,
+              'Start with a short breathing exercise',
+              AppColors.warmCoral,
+              () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.av_timer_rounded,
+              'Pomodoro Focus — 25-min deep work',
+              AppColors.orangeE2814d,
+              () => _navigate(context, const TimerScreen()),
+            ),
+            _Suggestion(
+              Icons.favorite_border_rounded,
+              'Gratitude Check — count your wins',
+              AppColors.sageGreen,
+              () => _navigate(context, const GratitudeScreen()),
+            ),
+            _Suggestion(
+              Icons.edit_note_rounded,
+              'Journal Intentions — set your focus',
+              AppColors.softIndigo,
+              () => _navigate(context, const JournalScreen()),
+            ),
           ];
         });
         break;
       case 'Calm':
         setState(() {
           _needSuggestions = [
-            _Suggestion(Icons.air_rounded, 'Try a slow breathing session', AppColors.softIndigo, () => _navigate(context, const BreathingScreen())),
-            _Suggestion(Icons.music_note_outlined, 'Play gentle calming music', AppColors.sageGreen, () {
-              AppNavigationService().setMusicRecommendation('Calm mood: Try Soft Tamil Evenings or Deep Calm.');
-              AppNavigationService().requestTab(AppTabTarget.music);
-            }),
-            _Suggestion(Icons.edit_note_rounded, 'Write down what\'s on your mind', AppColors.orangeE2814d, () => _navigate(context, const JournalScreen())),
+            _Suggestion(
+              Icons.air_rounded,
+              'Try a slow breathing session',
+              AppColors.softIndigo,
+              () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.music_note_outlined,
+              'Play gentle calming music',
+              AppColors.sageGreen,
+              () {
+                AppNavigationService().setMusicRecommendation(
+                  'Calm mood: Try Soft Tamil Evenings or Deep Calm.',
+                );
+                AppNavigationService().requestTab(AppTabTarget.music);
+              },
+            ),
+            _Suggestion(
+              Icons.edit_note_rounded,
+              'Write down what\'s on your mind',
+              AppColors.orangeE2814d,
+              () => _navigate(context, const JournalScreen()),
+            ),
+            _Suggestion(
+              Icons.accessibility_new_rounded,
+              'Body Scan — release tension slowly',
+              AppColors.warmCoral,
+              () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.visibility_outlined,
+              '5-4-3-2-1 Grounding — anchor yourself',
+              AppColors.sageGreen,
+              () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.headphones_rounded,
+              'Listen to a calming Podcast',
+              AppColors.softIndigo,
+              () => _navigate(context, const PodcastScreen()),
+            ),
           ];
         });
         break;
       case 'Release thoughts':
         setState(() {
           _needSuggestions = [
-            _Suggestion(Icons.edit_note_rounded, 'Open your journal and write freely', AppColors.orangeE2814d, () => _navigate(context, const JournalScreen())),
-            _Suggestion(Icons.air_rounded, 'Breathe first, then write', AppColors.softIndigo, () => _navigate(context, const BreathingScreen())),
-            _Suggestion(Icons.people_outline_rounded, 'Share with the community', AppColors.warmCoral, () => AppNavigationService().requestTab(AppTabTarget.community)),
+            _Suggestion(
+              Icons.edit_note_rounded,
+              'Open your journal and write freely',
+              AppColors.orangeE2814d,
+              () => _navigate(context, const JournalScreen()),
+            ),
+            _Suggestion(
+              Icons.air_rounded,
+              'Breathe first, then write',
+              AppColors.softIndigo,
+              () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.people_outline_rounded,
+              'Share with the community',
+              AppColors.warmCoral,
+              () => AppNavigationService().requestTab(AppTabTarget.community),
+            ),
+            _Suggestion(
+              Icons.favorite_border_rounded,
+              'Gratitude & Wins — celebrate progress',
+              AppColors.sageGreen,
+              () => _navigate(context, const GratitudeScreen()),
+            ),
+            _Suggestion(
+              Icons.shield_outlined,
+              'Safety Net — reach out for support',
+              AppColors.warmCoral,
+              () => _navigate(context, const SafetyNetScreen()),
+            ),
+            _Suggestion(
+              Icons.square_outlined,
+              'Box Breathing — steady your mind',
+              AppColors.softIndigo,
+              () => _navigate(context, const BreathingScreen()),
+            ),
           ];
         });
         break;
       case 'Rest':
         setState(() {
           _needSuggestions = [
-            _Suggestion(Icons.nightlight_outlined, 'Log your sleep and wind down', AppColors.warmCoral, () => _navigate(context, const SleepTrackerScreen())),
-            _Suggestion(Icons.music_note_outlined, 'Play soft ambient tracks', AppColors.sageGreen, () {
-              AppNavigationService().setMusicRecommendation('Rest mood: Try Sleep Mode and soft ambient tracks.');
-              AppNavigationService().requestTab(AppTabTarget.music);
-            }),
-            _Suggestion(Icons.air_rounded, 'A gentle breathing session before rest', AppColors.softIndigo, () => _navigate(context, const BreathingScreen())),
+            _Suggestion(
+              Icons.nightlight_outlined,
+              'Log your sleep and wind down',
+              AppColors.warmCoral,
+              () => _navigate(context, const SleepTrackerScreen()),
+            ),
+            _Suggestion(
+              Icons.music_note_outlined,
+              'Play soft ambient tracks',
+              AppColors.sageGreen,
+              () {
+                AppNavigationService().setMusicRecommendation(
+                  'Rest mood: Try Sleep Mode and soft ambient tracks.',
+                );
+                AppNavigationService().requestTab(AppTabTarget.music);
+              },
+            ),
+            _Suggestion(
+              Icons.air_rounded,
+              'A gentle breathing session before rest',
+              AppColors.softIndigo,
+              () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.headphones_rounded,
+              'Sleep Stories Podcast — drift off gently',
+              AppColors.orangeE2814d,
+              () => _navigate(context, const PodcastScreen()),
+            ),
+            _Suggestion(
+              Icons.accessibility_new_rounded,
+              'Body Scan — relax every muscle',
+              AppColors.sageGreen,
+              () => _navigate(context, const BreathingScreen()),
+            ),
+            _Suggestion(
+              Icons.favorite_border_rounded,
+              'Gratitude Before Bed — end on a high',
+              AppColors.softIndigo,
+              () => _navigate(context, const GratitudeScreen()),
+            ),
           ];
         });
         break;
@@ -259,10 +417,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     RepaintBoundary(child: _buildGreetingHeader(context)),
                     const SizedBox(height: 32),
                     RepaintBoundary(
-                      child: MoodSelector(
-                        onMoodSaved: (_) => _loadData(),
-                      ),
+                      child: MoodSelector(onMoodSaved: (_) => _loadData()),
                     ),
+                    const SizedBox(height: 16),
+                    // ── Daily Quote ──
+                    Center(
+                      child: Text(
+                        _dailyQuote,
+                        style: AppTypography.emotionalTextC(context).copyWith(
+                          fontStyle: FontStyle.italic,
+                          fontSize: 14,
+                          height: 1.6,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                        .animate()
+                        .fadeIn(
+                          duration: const Duration(milliseconds: 700),
+                          curve: AppTheme.gentleCurve,
+                        ),
                     const SizedBox(height: 28),
                     RepaintBoundary(
                       child: RecoveryScoreCard(score: _recoveryScore),
@@ -271,9 +445,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     RepaintBoundary(child: _buildActivityCard(context)),
                     const SizedBox(height: 28),
                     RepaintBoundary(
-                      child: DailyCheckin(
-                        onNeedSelected: _handleNeedSelection,
-                      ),
+                      child: DailyCheckin(onNeedSelected: _handleNeedSelection),
                     ),
                     if (_needSuggestions.isNotEmpty) ...[
                       const SizedBox(height: 14),
@@ -281,7 +453,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: AppColors.card(context),
-                          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusCard,
+                          ),
                           border: Border.all(
                             color: AppColors.softIndigo.withValues(alpha: 0.25),
                           ),
@@ -292,55 +466,117 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.auto_awesome_rounded, size: 16, color: AppColors.softIndigo),
+                                const Icon(
+                                  Icons.auto_awesome_rounded,
+                                  size: 16,
+                                  color: AppColors.softIndigo,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Here are some things you can try',
-                                  style: AppTypography.captionC(context).copyWith(
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  style: AppTypography.captionC(
+                                    context,
+                                  ).copyWith(fontWeight: FontWeight.w500),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            ..._needSuggestions.map((s) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: GestureDetector(
-                                onTap: s.onTap,
-                                behavior: HitTestBehavior.opaque,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        color: s.color.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(s.icon, color: s.color, size: 16),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        s.label,
-                                        style: AppTypography.captionC(context).copyWith(
-                                          fontWeight: FontWeight.w400,
+                            ..._needSuggestions.map(
+                              (s) => Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: GestureDetector(
+                                  onTap: s.onTap,
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 32,
+                                        height: 32,
+                                        decoration: BoxDecoration(
+                                          color: s.color.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          s.icon,
+                                          color: s.color,
+                                          size: 16,
                                         ),
                                       ),
-                                    ),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: AppColors.tertiary(context),
-                                      size: 18,
-                                    ),
-                                  ],
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          s.label,
+                                          style: AppTypography.captionC(context)
+                                              .copyWith(
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.chevron_right_rounded,
+                                        color: AppColors.tertiary(context),
+                                        size: 18,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            )),
+                            ),
                           ],
                         ),
                       ),
                     ],
+                    const SizedBox(height: 28),
+                    Text(
+                      'Guided Sessions',
+                      style: AppTypography.sectionHeadingC(context),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      height: 100,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          _buildGuidedSessionCard(
+                            context,
+                            icon: Icons.self_improvement_rounded,
+                            label: '10-min Calm',
+                            color: AppColors.softIndigo,
+                            onTap: () => _navigate(context, const PodcastScreen()),
+                          ),
+                          _buildGuidedSessionCard(
+                            context,
+                            icon: Icons.air_rounded,
+                            label: 'Quick Breathe',
+                            color: AppColors.sageGreen,
+                            onTap: () => _navigate(context, const BreathingScreen()),
+                          ),
+                          _buildGuidedSessionCard(
+                            context,
+                            icon: Icons.nightlight_outlined,
+                            label: 'Sleep Wind-Down',
+                            color: AppColors.warmCoral,
+                            onTap: () => _navigate(context, const PodcastScreen()),
+                          ),
+                          _buildGuidedSessionCard(
+                            context,
+                            icon: Icons.directions_walk_rounded,
+                            label: 'Mindful Walk',
+                            color: AppColors.orangeE2814d,
+                            onTap: () => _navigate(context, const PodcastScreen()),
+                          ),
+                          _buildGuidedSessionCard(
+                            context,
+                            icon: Icons.wb_sunny_outlined,
+                            label: 'Morning Reset',
+                            color: AppColors.sageGreen,
+                            onTap: () => _navigate(context, const BreathingScreen()),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 28),
                     Text(
                       'Explore',
@@ -377,7 +613,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.nightlight_outlined,
                       label: 'Sleep Tracker',
                       iconColor: AppColors.warmCoral,
-                      onTap: () => _navigate(context, const SleepTrackerScreen()),
+                      onTap: () =>
+                          _navigate(context, const SleepTrackerScreen()),
                     ),
                     QuickActionButton(
                       icon: Icons.edit_note_rounded,
@@ -391,6 +628,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       iconColor: AppColors.coralDa5e5a,
                       onTap: () => _navigate(context, const InsightsScreen()),
                     ),
+                    QuickActionButton(
+                      icon: Icons.podcasts_rounded,
+                      label: 'Podcast',
+                      iconColor: AppColors.softIndigo,
+                      onTap: () => _navigate(context, const PodcastScreen()),
+                    ),
+                    QuickActionButton(
+                      icon: Icons.emoji_events_outlined,
+                      label: 'Gratitude',
+                      iconColor: AppColors.amberFdb903,
+                      onTap: () =>
+                          _navigate(context, const GratitudeScreen()),
+                    ),
+                    QuickActionButton(
+                      icon: Icons.sos_rounded,
+                      label: 'Safety Net',
+                      iconColor: AppColors.coralDa5e5a,
+                      onTap: () => _navigate(context, const SafetyNetScreen()),
+                    ),
                   ]),
                 ),
               ),
@@ -402,7 +658,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 24),
                     RepaintBoundary(
                       child: CommunityActivityCard(
-                        onTap: () => AppNavigationService().requestTab(AppTabTarget.community),
+                        onTap: () => AppNavigationService().requestTab(
+                          AppTabTarget.community,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -468,20 +726,15 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(_getGreeting(), style: AppTypography.heroHeadingC(context)),
               const SizedBox(height: 6),
-              Text(
-                'How is your mind today?',
-                style: AppTypography.subtitleC(context),
-              ),
               Padding(
                 padding: const EdgeInsets.only(top: 10),
                 child: Opacity(
                   opacity: 0.7,
                   child: Text(
                     _dailyQuote,
-                    style: AppTypography.subtitleC(context).copyWith(
-                      fontStyle: FontStyle.italic,
-                      fontSize: 12,
-                    ),
+                    style: AppTypography.subtitleC(
+                      context,
+                    ).copyWith(fontStyle: FontStyle.italic, fontSize: 12),
                   ),
                 ),
               ),
@@ -516,7 +769,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? ValueListenableBuilder<bool>(
                     valueListenable: ActivityService().isWalking,
                     builder: (_, walking, __) => CustomAvatar(
-                      config: AvatarConfig.fromMap(UserPreferencesService().avatarConfigMap!),
+                      config: AvatarConfig.fromMap(
+                        UserPreferencesService().avatarConfigMap!,
+                      ),
                       size: 54,
                       isWalking: walking,
                     ),
@@ -541,7 +796,9 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               color: AppColors.card(context),
               borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-              border: Border.all(color: AppColors.softIndigo.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AppColors.softIndigo.withValues(alpha: 0.2),
+              ),
               boxShadow: AppColors.subtleShadow,
             ),
             child: Column(
@@ -549,13 +806,27 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.directions_walk_rounded, color: AppColors.sageGreen, size: 20),
+                    Icon(
+                      Icons.directions_walk_rounded,
+                      color: AppColors.sageGreen,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
-                    Text('Track your walks', style: AppTypography.captionC(context).copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      'Track your walks',
+                      style: AppTypography.captionC(
+                        context,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
                     const Spacer(),
                     GestureDetector(
-                      onTap: () => setState(() => _activityPermissionDismissed = true),
-                      child: Icon(Icons.close_rounded, size: 18, color: AppColors.tertiary(context)),
+                      onTap: () =>
+                          setState(() => _activityPermissionDismissed = true),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: AppColors.tertiary(context),
+                      ),
                     ),
                   ],
                 ),
@@ -567,19 +838,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 12),
                 GestureDetector(
                   onTap: () async {
-                    final granted = await ActivityService().requestPermissions();
+                    final granted = await ActivityService()
+                        .requestPermissions();
                     if (granted) {
                       await ActivityService().startTracking();
                       if (mounted) setState(() {});
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.softIndigo,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                      borderRadius: BorderRadius.circular(
+                        AppTheme.radiusButton,
+                      ),
                     ),
-                    child: Text('Allow', style: AppTypography.buttonText(color: Colors.white)),
+                    child: Text(
+                      'Allow',
+                      style: AppTypography.buttonText(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -595,7 +875,9 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: AppColors.card(context),
             borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-            border: Border.all(color: AppColors.sageGreen.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AppColors.sageGreen.withValues(alpha: 0.2),
+            ),
             boxShadow: AppColors.subtleShadow,
           ),
           child: Column(
@@ -603,21 +885,38 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.directions_walk_rounded, color: AppColors.sageGreen, size: 20),
+                  Icon(
+                    Icons.directions_walk_rounded,
+                    color: AppColors.sageGreen,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
-                  Text('Today\'s Activity', style: AppTypography.captionC(context).copyWith(fontWeight: FontWeight.w600)),
+                  Text(
+                    'Today\'s Activity',
+                    style: AppTypography.captionC(
+                      context,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
                   const Spacer(),
                   ValueListenableBuilder<bool>(
                     valueListenable: ActivityService().isWalking,
                     builder: (_, walking, __) {
                       if (!walking) return const SizedBox.shrink();
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.sageGreen.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text('Walking', style: AppTypography.caption(color: AppColors.sageGreen).copyWith(fontSize: 10)),
+                        child: Text(
+                          'Walking',
+                          style: AppTypography.caption(
+                            color: AppColors.sageGreen,
+                          ).copyWith(fontSize: 10),
+                        ),
                       );
                     },
                   ),
@@ -627,9 +926,24 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _activityStat(context, Icons.directions_walk_rounded, '${data.steps}', 'Steps'),
-                  _activityStat(context, Icons.straighten_rounded, '${data.distanceKm.toStringAsFixed(1)} km', 'Distance'),
-                  _activityStat(context, Icons.local_fire_department_rounded, data.calories.toStringAsFixed(0), 'Calories'),
+                  _activityStat(
+                    context,
+                    Icons.directions_walk_rounded,
+                    '${data.steps}',
+                    'Steps',
+                  ),
+                  _activityStat(
+                    context,
+                    Icons.straighten_rounded,
+                    '${data.distanceKm.toStringAsFixed(1)} km',
+                    'Distance',
+                  ),
+                  _activityStat(
+                    context,
+                    Icons.local_fire_department_rounded,
+                    data.calories.toStringAsFixed(0),
+                    'Calories',
+                  ),
                 ],
               ),
             ],
@@ -639,14 +953,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _activityStat(BuildContext context, IconData icon, String value, String label) {
+  Widget _activityStat(
+    BuildContext context,
+    IconData icon,
+    String value,
+    String label,
+  ) {
     return Column(
       children: [
         Icon(icon, color: AppColors.sageGreen, size: 20),
         const SizedBox(height: 4),
-        Text(value, style: AppTypography.uiLabelC(context).copyWith(fontWeight: FontWeight.w600, fontSize: 15)),
-        Text(label, style: AppTypography.captionC(context).copyWith(fontSize: 10)),
+        Text(
+          value,
+          style: AppTypography.uiLabelC(
+            context,
+          ).copyWith(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
+        Text(
+          label,
+          style: AppTypography.captionC(context).copyWith(fontSize: 10),
+        ),
       ],
+    );
+  }
+
+  Widget _buildGuidedSessionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 120,
+          height: 100,
+          decoration: BoxDecoration(
+            color: AppColors.card(context),
+            borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+            border: Border.all(
+              color: color.withValues(alpha: 0.25),
+            ),
+            boxShadow: AppColors.subtleShadow,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: AppTypography.captionC(context).copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

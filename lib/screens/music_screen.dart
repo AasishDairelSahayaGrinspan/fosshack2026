@@ -10,7 +10,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 
-/// Music Screen - mood-aware playlist companion.
+/// Music Screen - mood-aware playlist companion with language-first organization.
 class MusicScreen extends StatefulWidget {
   const MusicScreen({super.key});
 
@@ -20,17 +20,7 @@ class MusicScreen extends StatefulWidget {
 
 class _MusicScreenState extends State<MusicScreen> {
   String? _recommendation;
-
-  static const List<String> _languages = [
-    'English',
-    'Tamil',
-    'Hindi',
-    'Telugu',
-    'Malayalam',
-    'Korean',
-    'Japanese',
-    'Instrumental',
-  ];
+  String? _selectedLanguage; // Language-first approach
 
   List<String> get _selectedLanguages =>
       UserPreferencesService().musicLanguages;
@@ -198,7 +188,10 @@ class _MusicScreenState extends State<MusicScreen> {
         {'title': 'Re:Stacks', 'artist': 'Bon Iver'},
         {'title': 'Nuvole Bianche', 'artist': 'Ludovico Einaudi'},
         {'title': 'River Flows in You', 'artist': 'Yiruma'},
-        {'title': "Comptine d'un autre \u00e9t\u00e9", 'artist': 'Yann Tiersen'},
+        {
+          'title': "Comptine d'un autre \u00e9t\u00e9",
+          'artist': 'Yann Tiersen',
+        },
         {'title': 'Arrival of the Birds', 'artist': 'The Cinematic Orchestra'},
       ],
     },
@@ -569,16 +562,589 @@ class _MusicScreenState extends State<MusicScreen> {
         {'title': 'Holocene', 'artist': 'Bon Iver'},
       ],
     },
+    // ── English: Stressed & Sleep ──
+    {
+      'title': 'Stressed to Calm English',
+      'mood': 'Stressed',
+      'language': 'English',
+      'icon': Icons.bolt_rounded,
+      'color': AppColors.warmCoral,
+      'description': 'Release tension and ease anxiety.',
+      'songs': [
+        {'title': 'Let It Be', 'artist': 'The Beatles'},
+        {'title': 'Skinny Love', 'artist': 'Bon Iver'},
+        {'title': 'Fix You', 'artist': 'Coldplay'},
+        {'title': 'Creep', 'artist': 'Radiohead'},
+        {'title': 'Someone Like You', 'artist': 'Adele'},
+        {'title': 'Tears in Heaven', 'artist': 'Eric Clapton'},
+        {'title': 'Black', 'artist': 'Pearl Jam'},
+        {'title': 'Hallelujah', 'artist': 'Leonard Cohen'},
+        {'title': 'Wonderwall', 'artist': 'Oasis'},
+        {'title': 'The Night We Met', 'artist': 'Lord Huron'},
+      ],
+    },
+    {
+      'title': 'Sleep English',
+      'mood': 'Sleep',
+      'language': 'English',
+      'icon': Icons.nightlight_outlined,
+      'color': AppColors.softIndigo,
+      'description': 'Drift into peaceful slumber.',
+      'songs': [
+        {'title': 'Weightless', 'artist': 'Marconi Union'},
+        {'title': 'Golden Slumbers', 'artist': 'The Beatles'},
+        {'title': 'Falling Slowly', 'artist': 'Glen Hansard & Markéta Irglová'},
+        {'title': 'Ocean Avenue', 'artist': 'Yellowcard'},
+        {'title': 'Sunset', 'artist': 'The Midnight'},
+        {'title': 'Night Owl', 'artist': 'Glee Cast'},
+        {'title': 'Lullaby', 'artist': 'The Cure'},
+        {'title': 'Dreaming of Sleep', 'artist': 'Big Light'},
+        {'title': 'Sleep', 'artist': 'MC Yogi'},
+        {'title': 'Sleepwalking', 'artist': 'The Chain Gang of 1974'},
+      ],
+    },
+    // ── Tamil: Stressed & Sleep ──
+    {
+      'title': 'Stressed Tamil',
+      'mood': 'Stressed',
+      'language': 'Tamil',
+      'icon': Icons.bolt_rounded,
+      'color': AppColors.warmCoral,
+      'description': 'Release tension with soothing Tamil tracks.',
+      'songs': [
+        {'title': 'Veere Veere', 'artist': 'Kaavalan'},
+        {'title': 'Mazhai Kuruvi', 'artist': 'Nikhil Siddhartha'},
+        {'title': 'Yen Irundhaal', 'artist': 'Jee'},
+        {'title': 'Aasa Kooda Irundhu', 'artist': 'Dhanush'},
+        {'title': 'Yethu Uruppada', 'artist': 'Thaman'},
+        {'title': 'Vaayai Moodi Pesavum', 'artist': 'Rahman'},
+        {'title': 'Vaanam Kottatum', 'artist': 'Govind Vasantha'},
+        {'title': 'Kathaipoma', 'artist': 'Shabareesh Varma'},
+        {'title': 'Nermaiyil', 'artist': 'Rajesh Murugesan'},
+        {'title': 'Unna Naan Sollren', 'artist': 'GV Prakash Kumar'},
+      ],
+    },
+    {
+      'title': 'Sleep Tamil',
+      'mood': 'Sleep',
+      'language': 'Tamil',
+      'icon': Icons.nightlight_outlined,
+      'color': AppColors.softIndigo,
+      'description': 'Restful Tamil melodies for bedtime.',
+      'songs': [
+        {'title': 'Nadhi Chirukili', 'artist': 'Karthik'},
+        {'title': 'Irukkum Kanda', 'artist': 'Thaman'},
+        {'title': 'Unakum Enakum', 'artist': 'Jee'},
+        {'title': 'Mazhai Pozhiyum', 'artist': 'Govind Vasantha'},
+        {'title': 'Apo Nee Enna Solla', 'artist': 'Anirudh'},
+        {'title': 'Kathanandhan', 'artist': 'Thaman'},
+        {'title': 'Thani Oruvan', 'artist': 'Jee'},
+        {'title': 'Irukkum Vaalkai', 'artist': 'Govind Vasantha'},
+        {'title': 'Kadhal Kili', 'artist': 'Jee'},
+        {'title': 'Idhayam Padikatu', 'artist': 'Thaman'},
+      ],
+    },
+    // ── Hindi: Stressed, Sleep, Focus ──
+    {
+      'title': 'Stressed Hindi',
+      'mood': 'Stressed',
+      'language': 'Hindi',
+      'icon': Icons.bolt_rounded,
+      'color': AppColors.warmCoral,
+      'description': 'Soothing Hindi tracks for tense moments.',
+      'songs': [
+        {'title': 'Main Aur Mera Tanhaayi', 'artist': 'Mohit Chauhan'},
+        {'title': 'Tum Ho', 'artist': 'Anushka Manchanda'},
+        {'title': 'Akele Hain', 'artist': 'A.R. Rahman'},
+        {'title': 'Pehla Pehla Pyaar', 'artist': 'Rishi Kapoor'},
+        {'title': 'Jiya Jaye', 'artist': 'Vishal Dadlani'},
+        {'title': 'Aankhein Khuli Ho Ya Bandh', 'artist': 'Shankar Mahadevan'},
+        {'title': 'Ek Pal Ka Jeena', 'artist': 'Sonu Nigam'},
+        {'title': 'Yaad Aa Raha Hai', 'artist': 'Sonu Nigam'},
+        {'title': 'Tere Naina', 'artist': 'A.R. Rahman'},
+        {'title': 'Jaane Nahi Denge Tummhe', 'artist': 'Shankar Mahadevan'},
+      ],
+    },
+    {
+      'title': 'Sleep Hindi',
+      'mood': 'Sleep',
+      'language': 'Hindi',
+      'icon': Icons.nightlight_outlined,
+      'color': AppColors.softIndigo,
+      'description': 'Gentle Hindi lullabies for restful sleep.',
+      'songs': [
+        {'title': 'Sukhiyaan', 'artist': 'A.R. Rahman'},
+        {'title': 'Sone De', 'artist': 'Shankar Mahadevan'},
+        {'title': 'Rat Bhar', 'artist': 'Sonu Nigam'},
+        {'title': 'Raaste Se Jayenge', 'artist': 'A.R. Rahman'},
+        {'title': 'Raatein Bhar', 'artist': 'Sunidhi Chauhan'},
+        {'title': 'Chanda Hai Tu', 'artist': 'Sonu Nigam'},
+        {'title': 'Neend Na Aaye', 'artist': 'Shankar Mahadevan'},
+        {'title': 'Khwaab Dekhta Hoon', 'artist': 'A.R. Rahman'},
+        {'title': 'Nindiya Se Bhara', 'artist': 'Suresh Wadkar'},
+        {'title': 'Sapne Mein', 'artist': 'Sunidhi Chauhan'},
+      ],
+    },
+    {
+      'title': 'Focus Hindi',
+      'mood': 'Focus',
+      'language': 'Hindi',
+      'icon': Icons.school_rounded,
+      'color': AppColors.softIndigo,
+      'description': 'Instrumental and lo-fi Hindi for concentration.',
+      'songs': [
+        {'title': 'Yahan Rahta Nahi', 'artist': 'A.R. Rahman'},
+        {'title': 'Khamoshiyan', 'artist': 'A.R. Rahman'},
+        {'title': 'Chandni Raat', 'artist': 'A.R. Rahman'},
+        {'title': 'Rabba', 'artist': 'Shankar Mahadevan'},
+        {'title': 'Tere Haathon Mein', 'artist': 'A.R. Rahman'},
+        {'title': 'Shuddh Desi', 'artist': 'Raftaar'},
+        {'title': 'Teri Umeed', 'artist': 'Shankar Mahadevan'},
+        {'title': 'Arziyan', 'artist': 'A.R. Rahman'},
+        {'title': 'Dilse Re', 'artist': 'A.R. Rahman'},
+        {'title': 'Maa', 'artist': 'Shankar Mahadevan'},
+      ],
+    },
+    // ── Telugu: Healing, Stressed, Focus, Sleep ──
+    {
+      'title': 'Telugu Healing',
+      'mood': 'Healing',
+      'language': 'Telugu',
+      'icon': Icons.healing_outlined,
+      'color': AppColors.orangeE2814d,
+      'description': 'Motivational Telugu anthems for recovery.',
+      'songs': [
+        {'title': 'Arere O Priya', 'artist': 'M.M. Keeravani'},
+        {'title': 'Rangu Rangu', 'artist': 'Sid Sriram'},
+        {'title': 'Chandamama', 'artist': 'Haricharan'},
+        {'title': 'Velalo', 'artist': 'Anirudh Ravichander'},
+        {'title': 'Chandni Raathon Mein', 'artist': 'Sid Sriram'},
+        {'title': 'Thogata Chusthava', 'artist': 'M.M. Keeravani'},
+        {'title': 'Arjun Reddy Title', 'artist': 'Radhan'},
+        {'title': 'Vennela Pothe', 'artist': 'Chandrabose'},
+        {'title': 'Manasulona', 'artist': 'Haricharan'},
+        {'title': 'Prema Khandana', 'artist': 'Sid Sriram'},
+      ],
+    },
+    {
+      'title': 'Telugu Stressed',
+      'mood': 'Stressed',
+      'language': 'Telugu',
+      'icon': Icons.bolt_rounded,
+      'color': AppColors.warmCoral,
+      'description': 'Soothing Telugu tracks to ease tension.',
+      'songs': [
+        {'title': 'Nee Siggu', 'artist': 'Haricharan'},
+        {'title': 'Nela Ticket', 'artist': 'Anirudh Ravichander'},
+        {'title': 'Oye Manasunda', 'artist': 'Radhan'},
+        {'title': 'Chinnadi Chinnadi', 'artist': 'Sid Sriram'},
+        {'title': 'Rana Khandaya', 'artist': 'M.M. Keeravani'},
+        {'title': 'Mandara', 'artist': 'Haricharan'},
+        {'title': 'Thanam', 'artist': 'Anirudh Ravichander'},
+        {'title': 'Telangana', 'artist': 'M.M. Keeravani'},
+        {'title': 'Ninninchuke Vartha', 'artist': 'Haricharan'},
+        {'title': 'Nee Kavali', 'artist': 'Radhan'},
+      ],
+    },
+    {
+      'title': 'Telugu Focus',
+      'mood': 'Focus',
+      'language': 'Telugu',
+      'icon': Icons.school_rounded,
+      'color': AppColors.softIndigo,
+      'description': 'Instrumental Telugu for deep work.',
+      'songs': [
+        {'title': 'Vasantam', 'artist': 'Anirudh Ravichander'},
+        {'title': 'Taratam', 'artist': 'M.M. Keeravani'},
+        {'title': 'Pranam', 'artist': 'Radhan'},
+        {'title': 'Sukhinchutundi', 'artist': 'Haricharan'},
+        {'title': 'Naa Helane', 'artist': 'Sid Sriram'},
+        {'title': 'Kotha Kathalu', 'artist': 'Anirudh Ravichander'},
+        {'title': 'Ananda Bhairava', 'artist': 'M.M. Keeravani'},
+        {'title': 'Chandra Chakram', 'artist': 'Radhan'},
+        {'title': 'Mandala', 'artist': 'Haricharan'},
+        {'title': 'Rhythmic Telugu', 'artist': 'Anirudh Ravichander'},
+      ],
+    },
+    {
+      'title': 'Telugu Sleep',
+      'mood': 'Sleep',
+      'language': 'Telugu',
+      'icon': Icons.nightlight_outlined,
+      'color': AppColors.softIndigo,
+      'description': 'Gentle Telugu melodies for sleep.',
+      'songs': [
+        {'title': 'Sukhapradam', 'artist': 'Haricharan'},
+        {'title': 'Nidra Gaanam', 'artist': 'M.M. Keeravani'},
+        {'title': 'Chandrika', 'artist': 'Anirudh Ravichander'},
+        {'title': 'Sukham Chuva', 'artist': 'Sid Sriram'},
+        {'title': 'Vennelu', 'artist': 'Radhan'},
+        {'title': 'Shanti Geetam', 'artist': 'Haricharan'},
+        {'title': 'Ratri Raagam', 'artist': 'M.M. Keeravani'},
+        {'title': 'Nishaachara', 'artist': 'Anirudh Ravichander'},
+        {'title': 'Svapna Geetam', 'artist': 'Radhan'},
+        {'title': 'Nidrikari', 'artist': 'Sid Sriram'},
+      ],
+    },
+    // ── Malayalam: Healing, Stressed, Focus, Sleep ──
+    {
+      'title': 'Malayalam Healing',
+      'mood': 'Healing',
+      'language': 'Malayalam',
+      'icon': Icons.healing_outlined,
+      'color': AppColors.orangeE2814d,
+      'description': 'Uplifting Malayalam songs for recovery.',
+      'songs': [
+        {'title': 'Aaro Njan', 'artist': 'Vijay Yesudas'},
+        {'title': 'Aniruddhan Vandana', 'artist': 'K.J. Yesudas'},
+        {'title': 'Mazha Pozhiyunna', 'artist': 'Sujatha Mohan'},
+        {'title': 'Njangalil', 'artist': 'Haricharan'},
+        {'title': 'Sthithapragna', 'artist': 'Vineeth Sreenivasan'},
+        {'title': 'Thava Tharavum', 'artist': 'Sujatha Mohan'},
+        {'title': 'Aananda Bhairava', 'artist': 'K.J. Yesudas'},
+        {'title': 'Guruvayurappan', 'artist': 'Haricharan'},
+        {'title': 'Puthumazhayil', 'artist': 'Vijay Yesudas'},
+        {'title': 'Malikamaavu', 'artist': 'Sujatha Mohan'},
+      ],
+    },
+    {
+      'title': 'Malayalam Stressed',
+      'mood': 'Stressed',
+      'language': 'Malayalam',
+      'icon': Icons.bolt_rounded,
+      'color': AppColors.warmCoral,
+      'description': 'Soothing Malayalam for tense moments.',
+      'songs': [
+        {'title': 'Chandavrutha', 'artist': 'K.J. Yesudas'},
+        {'title': 'Neerikili', 'artist': 'Vineeth Sreenivasan'},
+        {'title': 'Thiruvananthapuram', 'artist': 'Haricharan'},
+        {'title': 'Vaneetha Vadanam', 'artist': 'Sujatha Mohan'},
+        {'title': 'Kripa Sagar', 'artist': 'Vijay Yesudas'},
+        {'title': 'Prabhandha', 'artist': 'K.J. Yesudas'},
+        {'title': 'Dakshinamurti', 'artist': 'Haricharan'},
+        {'title': 'Sarvaprani', 'artist': 'Vineeth Sreenivasan'},
+        {'title': 'Shankara Narayana', 'artist': 'Sujatha Mohan'},
+        {'title': 'Ananda Lahari', 'artist': 'Vijay Yesudas'},
+      ],
+    },
+    {
+      'title': 'Malayalam Focus',
+      'mood': 'Focus',
+      'language': 'Malayalam',
+      'icon': Icons.school_rounded,
+      'color': AppColors.softIndigo,
+      'description': 'Instrumental Malayalam for concentration.',
+      'songs': [
+        {'title': 'Ragam Ganam', 'artist': 'K.J. Yesudas'},
+        {'title': 'Taalam', 'artist': 'Haricharan'},
+        {'title': 'Ragas Rekha', 'artist': 'Vineeth Sreenivasan'},
+        {'title': 'Rasa Vilas', 'artist': 'Sujatha Mohan'},
+        {'title': 'Priya Raga', 'artist': 'Vijay Yesudas'},
+        {'title': 'Sabda Brahman', 'artist': 'K.J. Yesudas'},
+        {'title': 'Chitra Raga', 'artist': 'Haricharan'},
+        {'title': 'Ardhanareeswara', 'artist': 'Vineeth Sreenivasan'},
+        {'title': 'Bhaava Ganam', 'artist': 'Sujatha Mohan'},
+        {'title': 'Rasa Tantra', 'artist': 'Vijay Yesudas'},
+      ],
+    },
+    {
+      'title': 'Malayalam Sleep',
+      'mood': 'Sleep',
+      'language': 'Malayalam',
+      'icon': Icons.nightlight_outlined,
+      'color': AppColors.softIndigo,
+      'description': 'Gentle Malayalam lullabies.',
+      'songs': [
+        {'title': 'Nidrayil Padi', 'artist': 'K.J. Yesudas'},
+        {'title': 'Svapna Kaavyam', 'artist': 'Haricharan'},
+        {'title': 'Chandrika Ratri', 'artist': 'Vineeth Sreenivasan'},
+        {'title': 'Sukha Nidra', 'artist': 'Sujatha Mohan'},
+        {'title': 'Nidrabhanga', 'artist': 'Vijay Yesudas'},
+        {'title': 'Raat Ki Baatein', 'artist': 'K.J. Yesudas'},
+        {'title': 'Nishachar Ganam', 'artist': 'Haricharan'},
+        {'title': 'Aanandam Nidra', 'artist': 'Vineeth Sreenivasan'},
+        {'title': 'Chandamama Raatri', 'artist': 'Sujatha Mohan'},
+        {'title': 'Svapna Drishti', 'artist': 'Vijay Yesudas'},
+      ],
+    },
+    // ── Korean: Healing, Stressed, Focus, Sleep ──
+    {
+      'title': 'Korean Healing',
+      'mood': 'Healing',
+      'language': 'Korean',
+      'icon': Icons.healing_outlined,
+      'color': AppColors.orangeE2814d,
+      'description': 'Uplifting Korean songs for recovery.',
+      'songs': [
+        {'title': 'Through the Night', 'artist': 'IU'},
+        {'title': 'Tear', 'artist': 'BTS'},
+        {'title': 'Spring Day', 'artist': 'BTS'},
+        {'title': 'Best Day of My Life', 'artist': 'AMERICAN AUTHORS'},
+        {'title': 'Epiphany', 'artist': 'Jin'},
+        {'title': 'Dimple', 'artist': 'BTS'},
+        {'title': 'Life Goes On', 'artist': 'BTS'},
+        {'title': 'Butter', 'artist': 'BTS'},
+        {'title': 'Permission to Dance', 'artist': 'BTS'},
+        {'title': 'Yet To Come', 'artist': 'BTS'},
+      ],
+    },
+    {
+      'title': 'Korean Stressed',
+      'mood': 'Stressed',
+      'language': 'Korean',
+      'icon': Icons.bolt_rounded,
+      'color': AppColors.warmCoral,
+      'description': 'Soothing Korean tracks for tension relief.',
+      'songs': [
+        {'title': 'Falling', 'artist': 'IU'},
+        {'title': 'Moonlight', 'artist': 'AKMU'},
+        {'title': 'You Were Beautiful', 'artist': 'DAY6'},
+        {'title': 'Beautiful', 'artist': 'Crush'},
+        {'title': 'She', 'artist': 'Dodie'},
+        {'title': 'Goodbye', 'artist': 'Bol4'},
+        {'title': 'Nostalgia', 'artist': 'IU'},
+        {'title': 'Wish You Were Here', 'artist': 'Boynextdoor'},
+        {'title': 'Lonely', 'artist': 'Justin Bieber ft. Benny Blanco'},
+        {'title': 'Euphoria', 'artist': 'BTS'},
+      ],
+    },
+    {
+      'title': 'Korean Focus',
+      'mood': 'Focus',
+      'language': 'Korean',
+      'icon': Icons.school_rounded,
+      'color': AppColors.softIndigo,
+      'description': 'Korean lo-fi and instrumental for work.',
+      'songs': [
+        {'title': 'Paper Hearts', 'artist': 'BTS'},
+        {'title': 'Reflection', 'artist': 'Jungkook'},
+        {'title': 'Lost', 'artist': 'Frank Ocean'},
+        {'title': 'Night City', 'artist': 'Korean Indie'},
+        {'title': 'Study Mode', 'artist': 'Lo-fi Korea'},
+        {'title': 'Morning Commute', 'artist': 'K-indie'},
+        {'title': 'Quiet Moments', 'artist': 'Korean Chill'},
+        {'title': 'Campus Walk', 'artist': 'Study Beats'},
+        {'title': 'Focus Time', 'artist': 'Korean Lo-fi'},
+        {'title': 'Work Vibes', 'artist': 'Chill Korean'},
+      ],
+    },
+    {
+      'title': 'Korean Sleep',
+      'mood': 'Sleep',
+      'language': 'Korean',
+      'icon': Icons.nightlight_outlined,
+      'color': AppColors.softIndigo,
+      'description': 'Gentle Korean lullabies for bedtime.',
+      'songs': [
+        {'title': 'Gogo', 'artist': 'BTS'},
+        {'title': 'Fly to My Room', 'artist': 'BTS'},
+        {'title': 'Pied Piper', 'artist': 'BTS'},
+        {'title': 'Angel', 'artist': 'IU'},
+        {'title': 'Wind', 'artist': 'IU'},
+        {'title': 'Starry Night', 'artist': 'TAEYEON'},
+        {'title': 'Sleepy', 'artist': 'Bol4'},
+        {'title': 'Good Night', 'artist': 'Korean Artists'},
+        {'title': 'Dream On', 'artist': 'Korean Indie'},
+        {'title': 'Goodnight Seoul', 'artist': 'Korean Chill'},
+      ],
+    },
+    // ── Japanese: Healing, Stressed, Focus, Sleep ──
+    {
+      'title': 'Japanese Healing',
+      'mood': 'Healing',
+      'language': 'Japanese',
+      'icon': Icons.healing_outlined,
+      'color': AppColors.orangeE2814d,
+      'description': 'Uplifting Japanese songs for recovery.',
+      'songs': [
+        {'title': 'Sparkle', 'artist': 'RADWIMPS'},
+        {'title': 'Nandemonaiya', 'artist': 'RADWIMPS'},
+        {'title': 'Hikaru Nara', 'artist': 'Goose House'},
+        {'title': 'Taiko no Tatsujin', 'artist': 'Naoki Morita'},
+        {'title': 'Tenshi no Yubikiri', 'artist': 'Hisaishi Joe'},
+        {'title': 'Hopeful Chant', 'artist': 'Isao Tomita'},
+        {'title': 'Cherry Blossoms', 'artist': 'Traditional Japanese'},
+        {'title': 'Rising Sun', 'artist': 'Japanese Composers'},
+        {'title': 'New Beginning', 'artist': 'Tetsuya Akikawa'},
+        {'title': 'Tomorrow Will Be Better', 'artist': 'Japanese Artists'},
+      ],
+    },
+    {
+      'title': 'Japanese Stressed',
+      'mood': 'Stressed',
+      'language': 'Japanese',
+      'icon': Icons.bolt_rounded,
+      'color': AppColors.warmCoral,
+      'description': 'Soothing Japanese for anxiety relief.',
+      'songs': [
+        {'title': 'Zenzenzense', 'artist': 'RADWIMPS'},
+        {'title': 'Kataware Doki', 'artist': 'RADWIMPS'},
+        {'title': 'Mizuiro', 'artist': 'RADWIMPS'},
+        {'title': 'Tears', 'artist': 'Yuuki Ozaki'},
+        {'title': 'Bamboo Forest', 'artist': 'Nature Sounds'},
+        {'title': 'Peaceful Garden', 'artist': 'Traditional Japanese'},
+        {'title': 'Zen Meditation', 'artist': 'Japanese Masters'},
+        {'title': 'Gentle Rain', 'artist': 'Japanese Composers'},
+        {'title': 'Harmony', 'artist': 'Japanese Wellness'},
+        {'title': 'Tranquil', 'artist': 'Isao Tomita'},
+      ],
+    },
+    {
+      'title': 'Japanese Focus',
+      'mood': 'Focus',
+      'language': 'Japanese',
+      'icon': Icons.school_rounded,
+      'color': AppColors.softIndigo,
+      'description': 'Japanese lo-fi and instrumental for work.',
+      'songs': [
+        {'title': 'Concentration', 'artist': 'Japanese Lo-fi'},
+        {'title': 'Study Session', 'artist': 'Tokyo Chill'},
+        {'title': 'Deep Focus', 'artist': 'Japanese Beats'},
+        {'title': 'Work Flow', 'artist': 'Chill Vibes Japan'},
+        {'title': 'Mind Clear', 'artist': 'Japanese Instrumental'},
+        {'title': 'Zen Work', 'artist': 'Japanese Masters'},
+        {'title': 'Office Vibes', 'artist': 'Lo-fi Japan'},
+        {'title': 'Productive Hour', 'artist': 'Japanese Composers'},
+        {'title': 'Focused Energy', 'artist': 'Study Beats'},
+        {'title': 'Workflow', 'artist': 'Tokyo Lo-fi'},
+      ],
+    },
+    {
+      'title': 'Japanese Sleep',
+      'mood': 'Sleep',
+      'language': 'Japanese',
+      'icon': Icons.nightlight_outlined,
+      'color': AppColors.softIndigo,
+      'description': 'Gentle Japanese lullabies.',
+      'songs': [
+        {'title': 'Kaze ni Naru', 'artist': 'Joe Hisaishi'},
+        {'title': 'Suteki Da Ne', 'artist': 'Nobuo Uematsu'},
+        {'title': 'Ashitaka Hishoku', 'artist': 'Joe Hisaishi'},
+        {'title': 'Howl\'s Moving Castle Theme', 'artist': 'Joe Hisaishi'},
+        {'title': 'The Name of Life', 'artist': 'Joe Hisaishi'},
+        {'title': 'Goodnight Lullaby', 'artist': 'Traditional Japanese'},
+        {'title': 'Sweet Dreams', 'artist': 'Japanese Wellness'},
+        {'title': 'Restful Night', 'artist': 'Isao Tomita'},
+        {'title': 'Peaceful Sleep', 'artist': 'Japanese Composers'},
+        {'title': 'Dream Land', 'artist': 'Tetsuya Akikawa'},
+      ],
+    },
+    // ── Instrumental: Happy, Healing, Stressed, Sleep ──
+    {
+      'title': 'Instrumental Happy',
+      'mood': 'Happy',
+      'language': 'Instrumental',
+      'icon': Icons.sentiment_very_satisfied_rounded,
+      'color': AppColors.warmCoral,
+      'description': 'Uplifting instrumental for good vibes.',
+      'songs': [
+        {'title': 'Wake Up', 'artist': 'Shawn Mendes Instrumental'},
+        {'title': 'Sunshine', 'artist': 'Lo-fi Beats'},
+        {'title': 'Happy Day', 'artist': 'Royalty Free Music'},
+        {'title': 'Good Morning', 'artist': 'Chill Instruments'},
+        {'title': 'Joyful', 'artist': 'Peaceful Piano'},
+        {'title': 'Uplifting', 'artist': 'Cinematic Sounds'},
+        {'title': 'Bright Future', 'artist': 'Modern Instruments'},
+        {'title': 'Dancing', 'artist': 'World Music'},
+        {'title': 'Celebration', 'artist': 'Festival Beats'},
+        {'title': 'Smile', 'artist': 'Happy Music'},
+      ],
+    },
+    {
+      'title': 'Instrumental Healing',
+      'mood': 'Healing',
+      'language': 'Instrumental',
+      'icon': Icons.healing_outlined,
+      'color': AppColors.orangeE2814d,
+      'description': 'Restorative instrumental for recovery.',
+      'songs': [
+        {'title': 'Healing Light', 'artist': 'Ambient Masters'},
+        {'title': 'Recovery', 'artist': 'Therapeutic Sounds'},
+        {'title': 'Inner Peace', 'artist': 'Zen Garden'},
+        {'title': 'Renewal', 'artist': 'Wellness Vibes'},
+        {'title': 'Transformation', 'artist': 'Healing Frequencies'},
+        {'title': 'Mending', 'artist': 'Soulful Instruments'},
+        {'title': 'Growth', 'artist': 'Inspirational Beats'},
+        {'title': 'Rising', 'artist': 'Uplifting Sounds'},
+        {'title': 'Wholeness', 'artist': 'Holistic Music'},
+        {'title': 'Restoration', 'artist': 'Therapeutic Harmony'},
+      ],
+    },
+    {
+      'title': 'Instrumental Stressed',
+      'mood': 'Stressed',
+      'language': 'Instrumental',
+      'icon': Icons.bolt_rounded,
+      'color': AppColors.warmCoral,
+      'description': 'Calming instrumental to ease anxiety.',
+      'songs': [
+        {'title': 'Release', 'artist': 'Ambient Therapy'},
+        {'title': 'Breathe', 'artist': 'Mindful Sounds'},
+        {'title': 'Let Go', 'artist': 'Stress Relief'},
+        {'title': 'Serenity', 'artist': 'Peaceful Strings'},
+        {'title': 'Unwind', 'artist': 'Relaxation Music'},
+        {'title': 'Calm Waters', 'artist': 'Nature Sounds'},
+        {'title': 'Soothe', 'artist': 'Therapeutic Waves'},
+        {'title': 'Balance', 'artist': 'Equilibrium Sounds'},
+        {'title': 'Quietude', 'artist': 'Silent Music'},
+        {'title': 'Harmony', 'artist': 'Peaceful Ensemble'},
+      ],
+    },
+    {
+      'title': 'Instrumental Sleep',
+      'mood': 'Sleep',
+      'language': 'Instrumental',
+      'icon': Icons.nightlight_outlined,
+      'color': AppColors.softIndigo,
+      'description': 'Restful instrumental for deep sleep.',
+      'songs': [
+        {'title': 'Dreamland', 'artist': 'Sleep Music'},
+        {'title': 'Night Whispers', 'artist': 'Ambient Dreams'},
+        {'title': 'Slumber', 'artist': 'Lullaby Sounds'},
+        {'title': 'Twilight', 'artist': 'Night Soundscape'},
+        {'title': 'Restful', 'artist': 'Sleep Therapy'},
+        {'title': 'Nocturne', 'artist': 'Classical Sleep'},
+        {'title': 'Dreamscape', 'artist': 'Night Music'},
+        {'title': 'Drifting', 'artist': 'Sleep Frequencies'},
+        {'title': 'Starlight Lullaby', 'artist': 'Bedtime Sounds'},
+        {'title': 'Midnight Serenity', 'artist': 'Night Harmony'},
+      ],
+    },
   ];
 
-  List<Map<String, dynamic>> get _filteredPlaylists {
-    if (_selectedLanguages.isEmpty) return _playlists;
-    final filtered = _playlists
-        .where((pl) =>
-            pl['language'] == 'All' ||
-            _selectedLanguages.contains(pl['language']))
+  /// Get all unique languages available in playlists
+  Set<String> get _availableLanguages =>
+      _playlists.map((pl) => pl['language'] as String).toSet();
+
+  /// Get unique moods for a specific language
+  List<String> _getMoodsForLanguage(String language) {
+    final moods = <String>{};
+    for (final pl in _playlists) {
+      if (pl['language'] == language) {
+        moods.add(pl['mood'] as String);
+      }
+    }
+    // Order moods: Happy, Calm, Healing, Focus, Stressed, Sleep
+    const moodOrder = ['Happy', 'Calm', 'Healing', 'Focus', 'Stressed', 'Sleep'];
+    return moods
+        .where((m) => moodOrder.contains(m))
+        .toList()
+        .cast<String>();
+  }
+
+  /// Get playlists for a specific language and mood
+  List<Map<String, dynamic>> _getPlaylistsForLanguageAndMood(
+    String language,
+    String mood,
+  ) {
+    return _playlists
+        .where((pl) => pl['language'] == language && pl['mood'] == mood)
         .toList();
-    return filtered.isEmpty ? _playlists : filtered;
+  }
+
+  /// Count playlists for a language
+  int _getPlaylistCountForLanguage(String language) {
+    return _playlists.where((pl) => pl['language'] == language).length;
   }
 
   @override
@@ -586,13 +1152,23 @@ class _MusicScreenState extends State<MusicScreen> {
     super.initState();
     _recommendation = AppNavigationService().musicRecommendation.value;
     AppNavigationService().musicRecommendation.addListener(_onRecommendation);
+    // Set initial language from user preferences or default to first available
+    _initializeLanguage();
+  }
+
+  void _initializeLanguage() {
+    if (_selectedLanguages.isNotEmpty) {
+      _selectedLanguage = _selectedLanguages.first;
+    } else if (_availableLanguages.isNotEmpty) {
+      _selectedLanguage = _availableLanguages.first;
+    }
   }
 
   @override
   void dispose() {
-    AppNavigationService()
-        .musicRecommendation
-        .removeListener(_onRecommendation);
+    AppNavigationService().musicRecommendation.removeListener(
+      _onRecommendation,
+    );
     super.dispose();
   }
 
@@ -628,7 +1204,9 @@ class _MusicScreenState extends State<MusicScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Playlists curated for your mood.',
+                  _selectedLanguage == null
+                      ? 'Select your language to get started'
+                      : 'Playlists curated for your mood in ${_selectedLanguage!}.',
                   style: AppTypography.subtitle(
                     color: Colors.white.withValues(alpha: 0.7),
                   ),
@@ -679,17 +1257,108 @@ class _MusicScreenState extends State<MusicScreen> {
                   const SizedBox(height: 12),
                 ],
                 Text(
-                  'For Your Mood',
+                  'Select Language',
                   style: AppTypography.sectionHeading(color: Colors.white),
                 ),
-                const SizedBox(height: 10),
-                ..._filteredPlaylists.map((pl) => _buildPlaylistCard(pl)),
+                const SizedBox(height: 12),
+                _buildLanguageSelector(),
+                if (_selectedLanguage != null) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'For Your Mood',
+                    style: AppTypography.sectionHeading(color: Colors.white),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildMoodSection(),
+                ],
                 const SizedBox(height: 20),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  /// Build language selector with chips showing playlist counts
+  Widget _buildLanguageSelector() {
+    final available = _availableLanguages.toList()..sort();
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: [
+          ...available.map((lang) {
+            final isSelected = _selectedLanguage == lang;
+            final count = _getPlaylistCountForLanguage(lang);
+            return GestureDetector(
+              onTap: () => setState(() => _selectedLanguage = lang),
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.warmCoral.withValues(alpha: 0.3)
+                      : Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.warmCoral.withValues(alpha: 0.8)
+                        : Colors.white.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      lang,
+                      style: AppTypography.uiLabel(
+                        color: isSelected ? Colors.white : Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$count playlists',
+                      style: AppTypography.caption(
+                        color: isSelected
+                            ? Colors.white.withValues(alpha: 0.8)
+                            : Colors.white.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ).animate().fadeIn(duration: const Duration(milliseconds: 300));
+          }),
+        ],
+      ),
+    );
+  }
+
+  /// Build mood section with all moods and their playlists for selected language
+  Widget _buildMoodSection() {
+    if (_selectedLanguage == null) return const SizedBox.shrink();
+
+    final moods = _getMoodsForLanguage(_selectedLanguage!);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...moods.map((mood) {
+          final playlists = _getPlaylistsForLanguageAndMood(_selectedLanguage!, mood);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                mood,
+                style: AppTypography.uiLabel(color: Colors.white),
+              ),
+              const SizedBox(height: 8),
+              ...playlists.map((pl) => _buildPlaylistCard(pl)),
+              const SizedBox(height: 20),
+            ],
+          );
+        }),
+      ],
     );
   }
 
@@ -716,11 +1385,7 @@ class _MusicScreenState extends State<MusicScreen> {
                 color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(
-                playlist['icon'] as IconData,
-                color: color,
-                size: 24,
-              ),
+              child: Icon(playlist['icon'] as IconData, color: color, size: 24),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -750,9 +1415,7 @@ class _MusicScreenState extends State<MusicScreen> {
           ],
         ),
       ),
-    ).animate().fadeIn(
-          duration: const Duration(milliseconds: 300),
-        );
+    ).animate().fadeIn(duration: const Duration(milliseconds: 300));
   }
 
   void _openPlaylistDetail(Map<String, dynamic> playlist) {
@@ -787,8 +1450,10 @@ class _PlaylistDetailScreen extends StatelessWidget {
           child: Column(
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     GestureDetector(
@@ -815,7 +1480,8 @@ class _PlaylistDetailScreen extends StatelessWidget {
                           Text(
                             playlist['title'] as String,
                             style: AppTypography.sectionHeading(
-                                color: Colors.white),
+                              color: Colors.white,
+                            ),
                           ),
                           Text(
                             '${songs.length} tracks',
@@ -832,8 +1498,10 @@ class _PlaylistDetailScreen extends StatelessWidget {
               Expanded(
                 child: ListView.builder(
                   physics: const BouncingScrollPhysics(),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   itemCount: songs.length,
                   itemBuilder: (context, i) {
                     final song = songs[i] as Map<String, String>;
@@ -858,8 +1526,9 @@ class _PlaylistDetailScreen extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radiusSmall),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusSmall,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -883,8 +1552,9 @@ class _PlaylistDetailScreen extends StatelessWidget {
                                   Text(
                                     song['artist']!,
                                     style: AppTypography.caption(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.45),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.45,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -906,8 +1576,9 @@ class _PlaylistDetailScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 child: GestureDetector(
                   onTap: () {
-                    final title =
-                        Uri.encodeComponent(playlist['title'] as String);
+                    final title = Uri.encodeComponent(
+                      playlist['title'] as String,
+                    );
                     launchUrl(
                       Uri.parse('https://open.spotify.com/search/$title'),
                       mode: LaunchMode.externalApplication,
@@ -918,8 +1589,9 @@ class _PlaylistDetailScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1DB954).withValues(alpha: 0.15),
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusButton),
+                      borderRadius: BorderRadius.circular(
+                        AppTheme.radiusButton,
+                      ),
                       border: Border.all(
                         color: const Color(0xFF1DB954).withValues(alpha: 0.3),
                       ),

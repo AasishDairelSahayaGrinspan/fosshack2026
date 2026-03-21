@@ -64,7 +64,10 @@ class _DailyCheckinState extends State<DailyCheckin> {
               child: AnimatedContainer(
                 duration: AppTheme.fadeInDuration,
                 curve: AppTheme.defaultCurve,
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? color.withValues(alpha: 0.12)
@@ -107,21 +110,24 @@ class _DailyCheckinState extends State<DailyCheckin> {
                     const SizedBox(width: 10),
                     Text(
                       option['label'] as String,
-                      style: AppTypography.uiLabel(
-                        color: isSelected ? color : AppColors.secondary(context),
-                      ).copyWith(
-                        fontWeight: isSelected ? FontWeight.w400 : FontWeight.w300,
-                      ),
+                      style:
+                          AppTypography.uiLabel(
+                            color: isSelected
+                                ? color
+                                : AppColors.secondary(context),
+                          ).copyWith(
+                            fontWeight: isSelected
+                                ? FontWeight.w400
+                                : FontWeight.w300,
+                          ),
                     ),
                   ],
                 ),
               ),
-            )
-                .animate()
-                .fadeIn(
-                  duration: const Duration(milliseconds: 250),
-                  curve: AppTheme.gentleCurve,
-                );
+            ).animate().fadeIn(
+              duration: const Duration(milliseconds: 250),
+              curve: AppTheme.gentleCurve,
+            );
           }),
         ),
       ],

@@ -76,7 +76,12 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
           dreamDescription: '',
         );
       } catch (e, st) {
-        developer.log('Failed to save sleep log', name: 'SleepTracker', error: e, stackTrace: st);
+        developer.log(
+          'Failed to save sleep log',
+          name: 'SleepTracker',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
 
@@ -97,7 +102,12 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
         }
       });
     } catch (e, st) {
-      developer.log('Failed to load sleep data', name: 'SleepTracker', error: e, stackTrace: st);
+      developer.log(
+        'Failed to load sleep data',
+        name: 'SleepTracker',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -117,11 +127,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.black,
-              AppColors.black,
-              AppColors.ink304057,
-            ],
+            colors: [AppColors.black, AppColors.black, AppColors.ink304057],
           ),
         ),
         child: Stack(
@@ -152,8 +158,9 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.amberFdb903
-                                      .withValues(alpha: 0.3),
+                                  color: AppColors.amberFdb903.withValues(
+                                    alpha: 0.3,
+                                  ),
                                   blurRadius: 40,
                                   spreadRadius: 10,
                                 ),
@@ -181,12 +188,10 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                           ),
                         ],
                       ),
-                    )
-                        .animate()
-                        .fadeIn(
-                          duration: const Duration(milliseconds: 600),
-                          curve: AppTheme.gentleCurve,
-                        ),
+                    ).animate().fadeIn(
+                      duration: const Duration(milliseconds: 600),
+                      curve: AppTheme.gentleCurve,
+                    ),
 
                     const SizedBox(height: 40),
 
@@ -360,9 +365,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                 children: [
                   Icon(
                     _saved ? Icons.check_rounded : Icons.save_outlined,
-                    color: _saved
-                        ? AppColors.sageGreen
-                        : AppColors.amberFdb903,
+                    color: _saved ? AppColors.sageGreen : AppColors.amberFdb903,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
@@ -404,12 +407,27 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
 
   String _formattedToday() {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     const days = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-      'Friday', 'Saturday', 'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
     ];
     final now = DateTime.now();
     return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
@@ -434,9 +452,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
         children: [
           Text(
             'This Week',
-            style: AppTypography.sectionHeading(
-              color: AppColors.amberFdb903,
-            ),
+            style: AppTypography.sectionHeading(color: AppColors.amberFdb903),
           ),
           const SizedBox(height: 4),
           Text(
@@ -474,8 +490,7 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                                 style: AppTypography.caption(
                                   color: isToday
                                       ? AppColors.amberFdb903
-                                      : Colors.white
-                                          .withValues(alpha: 0.4),
+                                      : Colors.white.withValues(alpha: 0.4),
                                 ).copyWith(fontSize: 10),
                               ),
                             const SizedBox(height: 4),
@@ -485,8 +500,9 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                               height: barH,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(6),
-                                color: Colors.white
-                                    .withValues(alpha: isToday ? 0.7 : 0.35),
+                                color: Colors.white.withValues(
+                                  alpha: isToday ? 0.7 : 0.35,
+                                ),
                                 boxShadow: barH > 0
                                     ? [
                                         BoxShadow(
@@ -499,8 +515,8 @@ class _SleepTrackerScreenState extends State<SleepTrackerScreen>
                                         BoxShadow(
                                           color: AppColors.amberFdb903
                                               .withValues(
-                                            alpha: isToday ? 0.2 : 0.06,
-                                          ),
+                                                alpha: isToday ? 0.2 : 0.06,
+                                              ),
                                           blurRadius: 20,
                                           spreadRadius: 0,
                                         ),
@@ -568,9 +584,7 @@ class _AnimatedStars extends StatelessWidget {
       builder: (context, child) {
         return CustomPaint(
           size: MediaQuery.of(context).size,
-          painter: _StarsPainter(
-            twinkle: controller.value,
-          ),
+          painter: _StarsPainter(twinkle: controller.value),
         );
       },
     );
@@ -594,10 +608,8 @@ class _StarsPainter extends CustomPainter {
       final phase = rng.nextDouble();
 
       // Each star twinkles at its own phase
-      final opacity =
-          0.2 + 0.6 * ((sin((twinkle + phase) * pi * 2) + 1) / 2);
-      starPaint.color =
-          Colors.white.withValues(alpha: opacity);
+      final opacity = 0.2 + 0.6 * ((sin((twinkle + phase) * pi * 2) + 1) / 2);
+      starPaint.color = Colors.white.withValues(alpha: opacity);
 
       canvas.drawCircle(Offset(x, y), baseRadius, starPaint);
     }

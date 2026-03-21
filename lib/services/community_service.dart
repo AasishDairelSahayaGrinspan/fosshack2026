@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:appwrite/appwrite.dart';
@@ -8,6 +9,7 @@ import 'appwrite_constants.dart';
 import 'appwrite_service.dart';
 import 'auth_service.dart';
 import 'database_service.dart';
+import 'notification_service.dart';
 import 'storage_service.dart';
 
 /// Community data service — Appwrite-backed with realtime subscriptions.
@@ -38,25 +40,31 @@ class CommunityService extends ChangeNotifier {
         'databases.${AppwriteConstants.databaseId}.collections.${AppwriteConstants.postsCollection}.documents',
       ]);
 
-      _postsSubscription!.stream.listen((event) {
-        developer.log('Realtime post event: ${event.events}', name: _tag);
-        // Reload posts on any change
-        loadPosts();
-      }, onError: (error) {
-        developer.log('Realtime posts error', name: _tag, error: error);
-      });
+      _postsSubscription!.stream.listen(
+        (event) {
+          developer.log('Realtime post event: ${event.events}', name: _tag);
+          // Reload posts on any change
+          loadPosts();
+        },
+        onError: (error) {
+          developer.log('Realtime posts error', name: _tag, error: error);
+        },
+      );
 
       // Subscribe to comments collection
       _commentsSubscription = realtime.subscribe([
         'databases.${AppwriteConstants.databaseId}.collections.${AppwriteConstants.commentsCollection}.documents',
       ]);
 
-      _commentsSubscription!.stream.listen((event) {
-        developer.log('Realtime comment event: ${event.events}', name: _tag);
-        notifyListeners();
-      }, onError: (error) {
-        developer.log('Realtime comments error', name: _tag, error: error);
-      });
+      _commentsSubscription!.stream.listen(
+        (event) {
+          developer.log('Realtime comment event: ${event.events}', name: _tag);
+          notifyListeners();
+        },
+        onError: (error) {
+          developer.log('Realtime comments error', name: _tag, error: error);
+        },
+      );
     } catch (e) {
       developer.log('subscribeToRealtime failed', name: _tag, error: e);
     }
@@ -94,7 +102,8 @@ class CommunityService extends ChangeNotifier {
         caption: (d['caption'] as String?) ?? '',
         moodTag: d['moodTag'] as String?,
         postType: (d['postType'] as String?) ?? 'All',
-        timestamp: DateTime.tryParse((d['timestamp'] as String?) ?? '') ??
+        timestamp:
+            DateTime.tryParse((d['timestamp'] as String?) ?? '') ??
             DateTime.now(),
         likesCount: (d['likesCount'] as num?)?.toInt() ?? 0,
         isLiked: _isLikedByCurrentUser(d['likedBy']),
@@ -107,7 +116,7 @@ class CommunityService extends ChangeNotifier {
                 text: (c['text'] as String?) ?? '',
                 timestamp:
                     DateTime.tryParse((c['timestamp'] as String?) ?? '') ??
-                        DateTime.now(),
+                    DateTime.now(),
               ),
             )
             .toList(),
@@ -133,7 +142,7 @@ class CommunityService extends ChangeNotifier {
         text: (d['text'] as String?) ?? '',
         timestamp:
             DateTime.tryParse((d['timestamp'] as String?) ?? '') ??
-                DateTime.now(),
+            DateTime.now(),
       );
     }).toList();
   }
@@ -180,6 +189,93 @@ class CommunityService extends ChangeNotifier {
       ),
     );
     notifyListeners();
+
+    // Send push notifications to other users
+    _sendCommunityNotification(
+      postId: doc.$id,
+      authorId: user.$id,
+      authorName: user.name.isNotEmpty ? user.name : 'someone',
+      postTitle: caption,
+    );
+  }
+
+  /// Send community update notification to all other users.
+  /// Excludes the post creator to avoid self-notification.
+  Future<void> _sendCommunityNotification({
+    required String postId,
+    required String authorId,
+    required String authorName,
+    required String postTitle,
+  }) async {
+    try {
+      // Show local notification on this device
+      await NotificationService().showCommunityPostNotification(
+        postId: postId,
+        authorName: authorName,
+        postTitle: postTitle,
+      );
+
+      // Trigger server-side notifications via Appwrite Cloud Function
+      await _triggerServerNotifications(
+        postId: postId,
+        authorId: authorId,
+        authorName: authorName,
+        postTitle: postTitle,
+      );
+
+      developer.log(
+        'Community notification triggered for post: $postId',
+        name: _tag,
+      );
+    } catch (e, st) {
+      developer.log(
+        'Failed to send community notification',
+        name: _tag,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  /// Trigger server-side push notifications via Appwrite.
+  /// This calls a Cloud Function that sends FCM notifications to all users except the post creator.
+  Future<void> _triggerServerNotifications({
+    required String postId,
+    required String authorId,
+    required String authorName,
+    required String postTitle,
+  }) async {
+    try {
+      final appwrite = AppwriteService();
+      final functions = appwrite.functions;
+
+      // Call the cloud function to send notifications
+      // The function will query all users, filter out the author, and send FCM notifications
+      await functions.createExecution(
+        functionId: 'sendCommunityNotifications',
+        body: jsonEncode({
+          'postId': postId,
+          'authorId': authorId,
+          'authorName': authorName,
+          'postTitle': postTitle.length > 100
+              ? '${postTitle.substring(0, 100)}...'
+              : postTitle,
+        }),
+      );
+
+      developer.log(
+        'Server notification function triggered for post: $postId',
+        name: _tag,
+      );
+    } catch (e, st) {
+      // Log but don't fail - local notification was still sent
+      developer.log(
+        'Server notification function call failed (local notification was sent)',
+        name: _tag,
+        error: e,
+        stackTrace: st,
+      );
+    }
   }
 
   Future<void> toggleLike(String postId) async {

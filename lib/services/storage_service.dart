@@ -99,10 +99,7 @@ class StorageService {
 
   /// Download file as bytes.
   Future<Uint8List> downloadFile(String bucketId, String fileId) async {
-    return await _storage.getFileDownload(
-      bucketId: bucketId,
-      fileId: fileId,
-    );
+    return await _storage.getFileDownload(bucketId: bucketId, fileId: fileId);
   }
 
   /// Delete a file.

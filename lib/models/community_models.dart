@@ -23,7 +23,8 @@ class Post {
   final String? imagePath;
   final String caption;
   final String? moodTag;
-  final String postType; // 'Achievements', 'Heartbreak', 'Struggles', 'Victories'
+  final String
+  postType; // 'Achievements', 'Heartbreak', 'Struggles', 'Victories'
   final DateTime timestamp;
   int likesCount;
   bool isLiked;

@@ -38,6 +38,8 @@ class _SplashScreenState extends State<SplashScreen> {
       final user = AuthService().currentUser;
       if (user != null) {
         await DatabaseService().updateStreak(user.$id);
+        // Sync local-only data to Appwrite in background
+        DatabaseService().syncLocalDataToRemote(user.$id);
       }
       await UserPreferencesService().loadFromRemote();
       CommunityService().communityPreference =
@@ -86,20 +88,20 @@ class _SplashScreenState extends State<SplashScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Unravel',
-                    style: AppTypography.heroHeading().copyWith(
-                      fontSize: 42,
-                      letterSpacing: 1.5,
-                    ),
-                  )
+                        'Unravel',
+                        style: AppTypography.heroHeading().copyWith(
+                          fontSize: 42,
+                          letterSpacing: 1.5,
+                        ),
+                      )
                       .animate()
                       .fadeIn(duration: const Duration(milliseconds: 900))
                       .slideY(begin: 0.12, end: 0),
                   const SizedBox(height: 12),
                   Text(
-                    'Slow down. You\'re safe here.',
-                    style: AppTypography.emotionalText(),
-                  )
+                        'Slow down. You\'re safe here.',
+                        style: AppTypography.emotionalText(),
+                      )
                       .animate(delay: const Duration(milliseconds: 350))
                       .fadeIn(duration: const Duration(milliseconds: 700)),
                 ],

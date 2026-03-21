@@ -88,31 +88,31 @@ class AppColors {
 
   // Soft shadows
   static List<BoxShadow> get softShadow => [
-        BoxShadow(
-          color: shadow,
-          blurRadius: 24,
-          offset: const Offset(0, 8),
-          spreadRadius: 0,
-        ),
-      ];
+    BoxShadow(
+      color: shadow,
+      blurRadius: 24,
+      offset: const Offset(0, 8),
+      spreadRadius: 0,
+    ),
+  ];
 
   static List<BoxShadow> get subtleShadow => [
-        BoxShadow(
-          color: shadow,
-          blurRadius: 16,
-          offset: const Offset(0, 4),
-          spreadRadius: 0,
-        ),
-      ];
+    BoxShadow(
+      color: shadow,
+      blurRadius: 16,
+      offset: const Offset(0, 4),
+      spreadRadius: 0,
+    ),
+  ];
 
   static List<BoxShadow> get darkSoftShadow => [
-        BoxShadow(
-          color: darkShadow,
-          blurRadius: 24,
-          offset: const Offset(0, 8),
-          spreadRadius: 0,
-        ),
-      ];
+    BoxShadow(
+      color: darkShadow,
+      blurRadius: 24,
+      offset: const Offset(0, 8),
+      spreadRadius: 0,
+    ),
+  ];
 
   // Context-aware helpers
   static Color bg(BuildContext context) =>
@@ -120,28 +120,28 @@ class AppColors {
 
   static Color card(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkCard
-          : cardBackground;
+      ? darkCard
+      : cardBackground;
 
   static Color cardBorder(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkCardBorder
-          : divider;
+      ? darkCardBorder
+      : divider;
 
   static Color primary(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkTextPrimary
-          : textPrimary;
+      ? darkTextPrimary
+      : textPrimary;
 
   static Color secondary(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkTextSecondary
-          : textSecondary;
+      ? darkTextSecondary
+      : textSecondary;
 
   static Color tertiary(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkTextTertiary
-          : textTertiary;
+      ? darkTextTertiary
+      : textTertiary;
 
   static Color dividerColor(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? darkDivider : divider;
@@ -151,26 +151,26 @@ class AppColors {
 
   static List<BoxShadow> cardShadow(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkSoftShadow
-          : subtleShadow;
+      ? darkSoftShadow
+      : subtleShadow;
 
   static Color frosted(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0x33000000)
-          : frostedGlass;
+      ? const Color(0x33000000)
+      : frostedGlass;
 
   static Color frostedBorder(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0x33FFFFFF)
-          : frostedGlassBorder;
+      ? const Color(0x33FFFFFF)
+      : frostedGlassBorder;
 
   static List<Color> bgGradient(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? [darkBg, darkBgSecondary]
-          : [cream, lightBlush];
+      ? [darkBg, darkBgSecondary]
+      : [cream, lightBlush];
 
   static List<Color> bgGradientAlt(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? [darkBgSecondary, darkSurface]
-          : [paleLilac, softPeach];
+      ? [darkBgSecondary, darkSurface]
+      : [paleLilac, softPeach];
 }

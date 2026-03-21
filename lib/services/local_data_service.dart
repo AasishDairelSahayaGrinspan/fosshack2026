@@ -382,6 +382,27 @@ class LocalDataService {
     await _persist();
   }
 
+  // ─── Generic list storage (for wellness_logs, gratitude, etc.) ───
+
+  List<Map<String, dynamic>> getGenericList(String key) {
+    final bucket = _bucketMap('generic');
+    final raw = bucket[key];
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .toList();
+    }
+    return <Map<String, dynamic>>[];
+  }
+
+  Future<void> saveGenericList(
+      String key, List<Map<String, dynamic>> items) async {
+    final bucket = _bucketMap('generic');
+    bucket[key] = items;
+    await _persist();
+  }
+
   Future<void> addAnalytics(
     String event, {
     Map<String, dynamic>? payload,

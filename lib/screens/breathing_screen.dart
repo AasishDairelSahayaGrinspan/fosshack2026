@@ -7,8 +7,11 @@ import '../theme/app_typography.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
 
-/// Breathing Screen — relaxation intro → 4/4/6 breathing cycle,
-/// ripple animation around the circle, zen music toggle.
+/// Grounding exercise types
+enum GroundingExercise { breathing446, boxBreathing, grounding54321, bodyScan }
+
+/// Breathing / Grounding Toolkit Screen
+/// Supports 4-4-6 breathing, box breathing, 5-4-3-2-1 grounding, and body scan.
 class BreathingScreen extends StatefulWidget {
   const BreathingScreen({super.key});
 
@@ -16,7 +19,7 @@ class BreathingScreen extends StatefulWidget {
   State<BreathingScreen> createState() => _BreathingScreenState();
 }
 
-enum _BreathingPhase { idle, relaxIntro, active }
+enum _Phase { idle, relaxIntro, active }
 
 class _BreathingScreenState extends State<BreathingScreen>
     with TickerProviderStateMixin {
@@ -27,7 +30,11 @@ class _BreathingScreenState extends State<BreathingScreen>
   late AnimationController _ripple2Controller;
   late AnimationController _ripple3Controller;
 
-  _BreathingPhase _phase = _BreathingPhase.idle;
+  // Body scan / 54321 step controller
+  late AnimationController _stepProgressController;
+
+  _Phase _phase = _Phase.idle;
+  GroundingExercise _selectedExercise = GroundingExercise.breathing446;
   bool _ambientEnabled = true;
   DateTime? _sessionStart;
   String _phaseText = 'Tap to begin';
@@ -35,10 +42,49 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   AudioPlayer? _audioPlayer;
 
-  // 4s inhale + 4s hold + 6s exhale = 14s total
-  static const _cycleDuration = Duration(seconds: 14);
-  static const double _inhaleEnd = 4 / 14;
-  static const double _holdEnd = 8 / 14;
+  // --- Breathing timings ---
+  // 4-4-6: 14s total
+  Duration get _cycleDuration {
+    switch (_selectedExercise) {
+      case GroundingExercise.breathing446:
+        return const Duration(seconds: 14);
+      case GroundingExercise.boxBreathing:
+        return const Duration(seconds: 16);
+      default:
+        return const Duration(seconds: 14);
+    }
+  }
+
+  double get _inhaleEnd {
+    switch (_selectedExercise) {
+      case GroundingExercise.breathing446:
+        return 4 / 14;
+      case GroundingExercise.boxBreathing:
+        return 4 / 16;
+      default:
+        return 4 / 14;
+    }
+  }
+
+  double get _holdEnd {
+    switch (_selectedExercise) {
+      case GroundingExercise.breathing446:
+        return 8 / 14;
+      case GroundingExercise.boxBreathing:
+        return 8 / 16; // inhale 4 + hold 4
+      default:
+        return 8 / 14;
+    }
+  }
+
+  double get _exhaleEnd {
+    switch (_selectedExercise) {
+      case GroundingExercise.boxBreathing:
+        return 12 / 16; // inhale 4 + hold 4 + exhale 4
+      default:
+        return 1.0;
+    }
+  }
 
   // 8 mantra gradient colors
   static const List<List<Color>> _mantraColors = [
@@ -54,12 +100,62 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   int _colorIndex = 0;
 
-  // Zen audio URLs (royalty-free ambient tones)
+  // Zen audio URLs
   static const List<String> _zenAudioUrls = [
     'https://cdn.pixabay.com/audio/2022/02/23/audio_ea70ad08e0.mp3',
     'https://cdn.pixabay.com/audio/2021/11/13/audio_cb57bdd79e.mp3',
     'https://cdn.pixabay.com/audio/2024/11/04/audio_6e69386af8.mp3',
   ];
+
+  // --- 5-4-3-2-1 Grounding ---
+  int _groundingStepIndex = 0;
+  static const List<_GroundingStep> _groundingSteps = [
+    _GroundingStep(5, 'things you can see', [
+      Color(0xFF6B9BD2),
+      Color(0xFF4A7FB5),
+    ]),
+    _GroundingStep(4, 'things you can feel', [
+      Color(0xFF7BC67E),
+      Color(0xFF5AAF5D),
+    ]),
+    _GroundingStep(3, 'things you can hear', [
+      Color(0xFFE2814D),
+      Color(0xFFD06B38),
+    ]),
+    _GroundingStep(2, 'things you can smell', [
+      Color(0xFFDA5E5A),
+      Color(0xFFC04844),
+    ]),
+    _GroundingStep(1, 'thing you can taste', [
+      Color(0xFFFDB903),
+      Color(0xFFE5A600),
+    ]),
+  ];
+
+  // --- Body Scan ---
+  int _bodyScanIndex = 0;
+  static const List<String> _bodyParts = [
+    'Feet',
+    'Legs',
+    'Hips',
+    'Stomach',
+    'Chest',
+    'Hands',
+    'Arms',
+    'Shoulders',
+    'Neck',
+    'Face',
+    'Whole Body',
+  ];
+  static const _bodyScanHoldDuration = Duration(seconds: 8);
+
+  // Exercise labels for chip bar
+  static const Map<GroundingExercise, String> _exerciseLabels = {
+    GroundingExercise.breathing446: '4-4-6 Breathing',
+    GroundingExercise.boxBreathing: 'Box Breathing',
+    GroundingExercise.grounding54321: '5-4-3-2-1',
+    GroundingExercise.bodyScan: 'Body Scan',
+  };
 
   @override
   void initState() {
@@ -74,19 +170,17 @@ class _BreathingScreenState extends State<BreathingScreen>
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
 
-    _colorController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          setState(() {
-            _colorIndex = (_colorIndex + 1) % _mantraColors.length;
+    _colorController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 15))
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              setState(() {
+                _colorIndex = (_colorIndex + 1) % _mantraColors.length;
+              });
+              _colorController.forward(from: 0);
+            }
           });
-          _colorController.forward(from: 0);
-        }
-      });
 
-    // Ripple controllers — staggered
     _ripple1Controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2400),
@@ -100,6 +194,11 @@ class _BreathingScreenState extends State<BreathingScreen>
       duration: const Duration(milliseconds: 2400),
     );
 
+    _stepProgressController = AnimationController(
+      vsync: this,
+      duration: _bodyScanHoldDuration,
+    );
+
     _breathController.addListener(_updatePhaseText);
     _initAudio();
   }
@@ -109,7 +208,6 @@ class _BreathingScreenState extends State<BreathingScreen>
       _audioPlayer = AudioPlayer();
       await _audioPlayer!.setLoopMode(LoopMode.all);
       await _audioPlayer!.setVolume(0.3);
-      // Try each URL until one works
       for (final url in _zenAudioUrls) {
         try {
           await _audioPlayer!.setUrl(url);
@@ -119,7 +217,6 @@ class _BreathingScreenState extends State<BreathingScreen>
         }
       }
     } catch (_) {
-      // Audio not available — breathing still works without it
       _audioPlayer = null;
     }
   }
@@ -144,7 +241,12 @@ class _BreathingScreenState extends State<BreathingScreen>
   }
 
   void _updatePhaseText() {
-    if (_phase != _BreathingPhase.active) return;
+    if (_phase != _Phase.active) return;
+    if (_selectedExercise != GroundingExercise.breathing446 &&
+        _selectedExercise != GroundingExercise.boxBreathing) {
+      return;
+    }
+
     final progress = _breathController.value;
     String newPhase;
     String newSubtext;
@@ -155,6 +257,13 @@ class _BreathingScreenState extends State<BreathingScreen>
     } else if (progress < _holdEnd) {
       newPhase = 'Hold';
       newSubtext = 'Gently hold...';
+    } else if (_selectedExercise == GroundingExercise.boxBreathing &&
+        progress < _exhaleEnd) {
+      newPhase = 'Exhale';
+      newSubtext = 'Let it all go...';
+    } else if (_selectedExercise == GroundingExercise.boxBreathing) {
+      newPhase = 'Hold';
+      newSubtext = 'Hold gently...';
     } else {
       newPhase = 'Exhale';
       newSubtext = 'Let it all go...';
@@ -169,18 +278,16 @@ class _BreathingScreenState extends State<BreathingScreen>
   }
 
   Future<void> _startSession() async {
-    if (_phase != _BreathingPhase.idle) return;
+    if (_phase != _Phase.idle) return;
 
-    // Phase 1: Ask user to sit relaxed
     setState(() {
-      _phase = _BreathingPhase.relaxIntro;
+      _phase = _Phase.relaxIntro;
       _phaseText = 'Sit relaxed';
       _phaseSubtext = 'Find a quiet spot and sit comfortably.';
     });
 
     _startRipples();
 
-    // Start zen music softly during intro
     if (_ambientEnabled && _audioPlayer != null) {
       try {
         await _audioPlayer!.seek(Duration.zero);
@@ -188,41 +295,113 @@ class _BreathingScreenState extends State<BreathingScreen>
       } catch (_) {}
     }
 
-    // Wait 5 seconds
     await Future.delayed(const Duration(seconds: 5));
-    if (!mounted || _phase != _BreathingPhase.relaxIntro) return;
+    if (!mounted || _phase != _Phase.relaxIntro) return;
 
-    // Phase 2: Ask to relax
     setState(() {
       _phaseText = 'Relax';
       _phaseSubtext = 'Close your eyes. Let go of all tension...';
     });
 
     await Future.delayed(const Duration(seconds: 5));
-    if (!mounted || _phase != _BreathingPhase.relaxIntro) return;
+    if (!mounted || _phase != _Phase.relaxIntro) return;
 
     setState(() {
       _phaseText = 'Ready';
-      _phaseSubtext = 'Let\'s begin breathing together.';
+      _phaseSubtext = "Let's begin.";
     });
 
     await Future.delayed(const Duration(seconds: 2));
-    if (!mounted || _phase != _BreathingPhase.relaxIntro) return;
+    if (!mounted || _phase != _Phase.relaxIntro) return;
 
-    // Phase 2: Start breathing
     setState(() {
-      _phase = _BreathingPhase.active;
+      _phase = _Phase.active;
       _sessionStart = DateTime.now();
-      _phaseText = 'Inhale';
-      _phaseSubtext = 'Breathe in slowly...';
     });
 
-    _breathController.repeat();
     _colorController.forward(from: 0);
+
+    switch (_selectedExercise) {
+      case GroundingExercise.breathing446:
+      case GroundingExercise.boxBreathing:
+        _breathController.duration = _cycleDuration;
+        setState(() {
+          _phaseText = 'Inhale';
+          _phaseSubtext = 'Breathe in slowly...';
+        });
+        _breathController.repeat();
+        break;
+      case GroundingExercise.grounding54321:
+        _groundingStepIndex = 0;
+        _updateGroundingText();
+        break;
+      case GroundingExercise.bodyScan:
+        _bodyScanIndex = 0;
+        _runBodyScan();
+        break;
+    }
+  }
+
+  void _updateGroundingText() {
+    if (_groundingStepIndex >= _groundingSteps.length) return;
+    final step = _groundingSteps[_groundingStepIndex];
+    setState(() {
+      _phaseText = '${step.count}';
+      _phaseSubtext = 'Name ${step.count} ${step.label}';
+    });
+  }
+
+  void _advanceGroundingStep() {
+    if (_phase != _Phase.active) return;
+    if (_selectedExercise != GroundingExercise.grounding54321) return;
+
+    if (_groundingStepIndex < _groundingSteps.length - 1) {
+      setState(() => _groundingStepIndex++);
+      _updateGroundingText();
+    } else {
+      // Complete
+      setState(() {
+        _phaseText = 'Well done';
+        _phaseSubtext = 'You are grounded and present.';
+      });
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) _stopSession();
+      });
+    }
+  }
+
+  Future<void> _runBodyScan() async {
+    while (mounted &&
+        _phase == _Phase.active &&
+        _bodyScanIndex < _bodyParts.length) {
+      final part = _bodyParts[_bodyScanIndex];
+      setState(() {
+        _phaseText = part;
+        _phaseSubtext = _bodyScanIndex == _bodyParts.length - 1
+            ? 'Feel your whole body relax...'
+            : 'Relax your ${part.toLowerCase()}...';
+      });
+
+      _stepProgressController.duration = _bodyScanHoldDuration;
+      _stepProgressController.forward(from: 0);
+
+      await Future.delayed(_bodyScanHoldDuration);
+      if (!mounted || _phase != _Phase.active) return;
+
+      _bodyScanIndex++;
+    }
+
+    if (mounted && _phase == _Phase.active) {
+      setState(() {
+        _phaseText = 'Complete';
+        _phaseSubtext = 'Your body is at ease.';
+      });
+      await Future.delayed(const Duration(seconds: 3));
+      if (mounted) _stopSession();
+    }
   }
 
   void _stopSession() {
-    // Save session
     if (_sessionStart != null) {
       final duration = DateTime.now().difference(_sessionStart!).inSeconds;
       final user = AuthService().currentUser;
@@ -240,21 +419,26 @@ class _BreathingScreenState extends State<BreathingScreen>
     _breathController.reset();
     _colorController.stop();
     _colorController.reset();
+    _stepProgressController.stop();
+    _stepProgressController.reset();
     _stopRipples();
-
-    // Stop music
     _audioPlayer?.pause();
 
     setState(() {
-      _phase = _BreathingPhase.idle;
+      _phase = _Phase.idle;
       _phaseText = 'Tap to begin';
       _phaseSubtext = 'Find a comfortable position.';
+      _groundingStepIndex = 0;
+      _bodyScanIndex = 0;
     });
   }
 
   void _onCircleTap() {
-    if (_phase == _BreathingPhase.idle) {
+    if (_phase == _Phase.idle) {
       _startSession();
+    } else if (_selectedExercise == GroundingExercise.grounding54321 &&
+        _phase == _Phase.active) {
+      _advanceGroundingStep();
     } else {
       _stopSession();
     }
@@ -262,11 +446,16 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   void _toggleAmbient() {
     setState(() => _ambientEnabled = !_ambientEnabled);
-    if (_ambientEnabled && _phase != _BreathingPhase.idle) {
+    if (_ambientEnabled && _phase != _Phase.idle) {
       _audioPlayer?.play();
     } else {
       _audioPlayer?.pause();
     }
+  }
+
+  void _selectExercise(GroundingExercise exercise) {
+    if (_phase != _Phase.idle) _stopSession();
+    setState(() => _selectedExercise = exercise);
   }
 
   @override
@@ -277,11 +466,24 @@ class _BreathingScreenState extends State<BreathingScreen>
     _ripple1Controller.dispose();
     _ripple2Controller.dispose();
     _ripple3Controller.dispose();
+    _stepProgressController.dispose();
     _audioPlayer?.dispose();
     super.dispose();
   }
 
   double _circleScale(double progress) {
+    if (_selectedExercise == GroundingExercise.boxBreathing) {
+      if (progress < _inhaleEnd) {
+        return progress / _inhaleEnd;
+      } else if (progress < _holdEnd) {
+        return 1.0;
+      } else if (progress < _exhaleEnd) {
+        return 1.0 - ((progress - _holdEnd) / (_exhaleEnd - _holdEnd));
+      } else {
+        return 0.0;
+      }
+    }
+    // 4-4-6
     if (progress < _inhaleEnd) {
       return progress / _inhaleEnd;
     } else if (progress < _holdEnd) {
@@ -289,6 +491,15 @@ class _BreathingScreenState extends State<BreathingScreen>
     } else {
       return 1.0 - ((progress - _holdEnd) / (1 - _holdEnd));
     }
+  }
+
+  List<Color> get _activeGradientColors {
+    if (_selectedExercise == GroundingExercise.grounding54321 &&
+        _phase == _Phase.active &&
+        _groundingStepIndex < _groundingSteps.length) {
+      return _groundingSteps[_groundingStepIndex].colors;
+    }
+    return [AppColors.warmLavender, AppColors.softPeach];
   }
 
   @override
@@ -311,14 +522,27 @@ class _BreathingScreenState extends State<BreathingScreen>
             t,
           )!;
 
-          return Container(
+          final useMantra =
+              _phase != _Phase.idle &&
+              (_selectedExercise == GroundingExercise.breathing446 ||
+                  _selectedExercise == GroundingExercise.boxBreathing);
+
+          final gradientColors = useMantra
+              ? [c1, c2]
+              : _phase == _Phase.active &&
+                    _selectedExercise == GroundingExercise.grounding54321
+              ? _activeGradientColors
+              : _phase != _Phase.idle
+              ? [c1, c2]
+              : [AppColors.warmLavender, AppColors.softPeach];
+
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 800),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: _phase != _BreathingPhase.idle
-                    ? [c1, c2]
-                    : [AppColors.warmLavender, AppColors.softPeach],
+                colors: gradientColors,
               ),
             ),
             child: child,
@@ -328,11 +552,16 @@ class _BreathingScreenState extends State<BreathingScreen>
           child: Column(
             children: [
               _buildTopBar(),
+              _buildExerciseSelector(),
               Expanded(
                 child: Center(
                   child: GestureDetector(
                     onTap: _onCircleTap,
-                    child: _buildBreathCircleWithRipples(),
+                    child:
+                        _selectedExercise == GroundingExercise.bodyScan &&
+                            _phase == _Phase.active
+                        ? _buildBodyScanVisual()
+                        : _buildBreathCircleWithRipples(),
                   ),
                 ),
               ),
@@ -353,7 +582,17 @@ class _BreathingScreenState extends State<BreathingScreen>
                     Text(
                       _phaseSubtext,
                       style: AppTypography.subtitle(color: Colors.white70),
+                      textAlign: TextAlign.center,
                     ),
+                    if (_selectedExercise == GroundingExercise.grounding54321 &&
+                        _phase == _Phase.active)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(
+                          'Tap to continue',
+                          style: AppTypography.caption(color: Colors.white54),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -367,6 +606,52 @@ class _BreathingScreenState extends State<BreathingScreen>
     );
   }
 
+  Widget _buildExerciseSelector() {
+    return SizedBox(
+      height: 42,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: GroundingExercise.values.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final exercise = GroundingExercise.values[i];
+          final isSelected = exercise == _selectedExercise;
+          return GestureDetector(
+            onTap: () => _selectExercise(exercise),
+            child: AnimatedContainer(
+              duration: AppTheme.fadeInDuration,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+                border: Border.all(
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.6)
+                      : Colors.white.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  _exerciseLabels[exercise]!,
+                  style: AppTypography.caption(
+                    color: isSelected ? Colors.white : Colors.white70,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    ).animate().fadeIn(
+      delay: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 500),
+      curve: AppTheme.gentleCurve,
+    );
+  }
+
   Widget _buildBreathCircleWithRipples() {
     return SizedBox(
       width: 300,
@@ -374,13 +659,9 @@ class _BreathingScreenState extends State<BreathingScreen>
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Ripple 1
           _buildRipple(_ripple1Controller),
-          // Ripple 2
           _buildRipple(_ripple2Controller),
-          // Ripple 3
           _buildRipple(_ripple3Controller),
-          // Main circle
           _buildBreathCircle(),
         ],
       ),
@@ -414,7 +695,10 @@ class _BreathingScreenState extends State<BreathingScreen>
     return AnimatedBuilder(
       animation: _breathController,
       builder: (context, child) {
-        final scale = _phase == _BreathingPhase.active
+        final scale =
+            _phase == _Phase.active &&
+                (_selectedExercise == GroundingExercise.breathing446 ||
+                    _selectedExercise == GroundingExercise.boxBreathing)
             ? 0.5 + (_circleScale(_breathController.value) * 0.5)
             : 0.5;
 
@@ -430,14 +714,14 @@ class _BreathingScreenState extends State<BreathingScreen>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.softIndigo
-                        .withValues(alpha: glowOpacity),
+                    color: AppColors.softIndigo.withValues(alpha: glowOpacity),
                     blurRadius: 60,
                     spreadRadius: 20,
                   ),
                   BoxShadow(
-                    color: AppColors.paleLilac
-                        .withValues(alpha: glowOpacity * 0.8),
+                    color: AppColors.paleLilac.withValues(
+                      alpha: glowOpacity * 0.8,
+                    ),
                     blurRadius: 80,
                     spreadRadius: 10,
                   ),
@@ -459,11 +743,111 @@ class _BreathingScreenState extends State<BreathingScreen>
                     width: 2,
                   ),
                 ),
+                child:
+                    _selectedExercise == GroundingExercise.grounding54321 &&
+                        _phase == _Phase.active &&
+                        _groundingStepIndex < _groundingSteps.length
+                    ? Center(
+                        child: Text(
+                          '${_groundingSteps[_groundingStepIndex].count}',
+                          style: AppTypography.heroHeading(
+                            color: Colors.white,
+                          ).copyWith(fontSize: 64),
+                        ),
+                      )
+                    : null,
               ),
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildBodyScanVisual() {
+    return SizedBox(
+      width: 300,
+      height: 300,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          _buildRipple(_ripple1Controller),
+          _buildRipple(_ripple2Controller),
+          _buildRipple(_ripple3Controller),
+          AnimatedBuilder(
+            animation: _glowController,
+            builder: (context, child) {
+              final glowOpacity = 0.15 + (_glowController.value * 0.15);
+              return Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.softIndigo.withValues(
+                        alpha: glowOpacity,
+                      ),
+                      blurRadius: 60,
+                      spreadRadius: 20,
+                    ),
+                  ],
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.softIndigo.withValues(alpha: 0.3),
+                        AppColors.paleLilac.withValues(alpha: 0.15),
+                        Colors.white.withValues(alpha: 0.05),
+                      ],
+                      stops: const [0.0, 0.6, 1.0],
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.self_improvement_rounded,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        size: 48,
+                      ),
+                      const SizedBox(height: 12),
+                      // Progress indicator
+                      SizedBox(
+                        width: 100,
+                        child: AnimatedBuilder(
+                          animation: _stepProgressController,
+                          builder: (context, child) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: _stepProgressController.value,
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.2,
+                                ),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Colors.white70,
+                                ),
+                                minHeight: 4,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -475,7 +859,7 @@ class _BreathingScreenState extends State<BreathingScreen>
         children: [
           GestureDetector(
             onTap: () {
-              if (_phase != _BreathingPhase.idle) _stopSession();
+              if (_phase != _Phase.idle) _stopSession();
               Navigator.of(context).pop();
             },
             child: Container(
@@ -492,16 +876,17 @@ class _BreathingScreenState extends State<BreathingScreen>
               ),
             ),
           ),
-          Text('Breathing', style: AppTypography.uiLabel(color: Colors.white)),
+          Text(
+            'Grounding Toolkit',
+            style: AppTypography.uiLabel(color: Colors.white),
+          ),
           const SizedBox(width: 42),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(
-          duration: const Duration(milliseconds: 500),
-          curve: AppTheme.gentleCurve,
-        );
+    ).animate().fadeIn(
+      duration: const Duration(milliseconds: 500),
+      curve: AppTheme.gentleCurve,
+    );
   }
 
   Widget _buildControls() {
@@ -519,21 +904,23 @@ class _BreathingScreenState extends State<BreathingScreen>
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _phase != _BreathingPhase.idle
+                color: _phase != _Phase.idle
                     ? AppColors.warmCoral.withValues(alpha: 0.15)
                     : AppColors.softIndigo.withValues(alpha: 0.15),
                 border: Border.all(
-                  color: _phase != _BreathingPhase.idle
+                  color: _phase != _Phase.idle
                       ? AppColors.warmCoral.withValues(alpha: 0.3)
                       : AppColors.softIndigo.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
               child: Icon(
-                _phase != _BreathingPhase.idle
-                    ? Icons.pause_rounded
+                _phase != _Phase.idle
+                    ? (_selectedExercise == GroundingExercise.grounding54321
+                          ? Icons.arrow_forward_rounded
+                          : Icons.pause_rounded)
                     : Icons.play_arrow_rounded,
-                color: _phase != _BreathingPhase.idle
+                color: _phase != _Phase.idle
                     ? AppColors.warmCoral
                     : AppColors.softIndigo,
                 size: 28,
@@ -584,14 +971,47 @@ class _BreathingScreenState extends State<BreathingScreen>
               ),
             ),
           ),
+          // Stop button (shown during active session for grounding/bodyscan)
+          if (_phase != _Phase.idle &&
+              (_selectedExercise == GroundingExercise.grounding54321 ||
+                  _selectedExercise == GroundingExercise.bodyScan)) ...[
+            const SizedBox(width: 24),
+            GestureDetector(
+              onTap: _stopSession,
+              child: AnimatedContainer(
+                duration: AppTheme.fadeInDuration,
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.warmCoral.withValues(alpha: 0.15),
+                  border: Border.all(
+                    color: AppColors.warmCoral.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.stop_rounded,
+                  color: AppColors.warmCoral,
+                  size: 28,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
-    )
-        .animate()
-        .fadeIn(
-          delay: const Duration(milliseconds: 300),
-          duration: const Duration(milliseconds: 500),
-          curve: AppTheme.gentleCurve,
-        );
+    ).animate().fadeIn(
+      delay: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 500),
+      curve: AppTheme.gentleCurve,
+    );
   }
+}
+
+class _GroundingStep {
+  final int count;
+  final String label;
+  final List<Color> colors;
+
+  const _GroundingStep(this.count, this.label, this.colors);
 }

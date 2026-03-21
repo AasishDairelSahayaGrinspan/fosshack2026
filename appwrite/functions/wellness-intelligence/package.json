@@ -1,0 +1,10 @@
+{
+  "name": "wellness-intelligence-function",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "src/main.js",
+  "dependencies": {
+    "node-appwrite": "^15.0.0"
+  }
+}

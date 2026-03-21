@@ -28,6 +28,9 @@ class AppwriteConstants {
   static const String wellnessLogsCollection = 'wellness_logs';
   static const String chatMessagesCollection = 'chat_messages';
 
+  // ─── Functions ───
+  static const String wellnessFunctionId = 'wellness_intelligence';
+
   // ─── Storage Buckets ───
   static const String profilePicsBucket = 'profile_pics';
   static const String journalMediaBucket = 'journal_media';

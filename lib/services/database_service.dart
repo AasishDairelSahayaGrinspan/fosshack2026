@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:math';
 
@@ -8,7 +9,7 @@ import 'appwrite_service.dart';
 import 'auth_service.dart';
 import 'local_data_service.dart';
 import 'storage_service.dart';
-import 'wellness_analytics_service.dart';
+import 'wellness_cloud_service.dart';
 
 class LocalRow {
   final String $id;
@@ -101,17 +102,10 @@ class DatabaseService {
             data: data,
           );
         } catch (updateErr) {
-          developer.log(
-            'createUserProfile update fallback failed',
-            name: _tag,
-            error: updateErr,
-          );
+          developer.log('createUserProfile update fallback failed', name: _tag, error: updateErr);
         }
       } else {
-        developer.log(
-          'createUserProfile remote failed: ${e.message}',
-          name: _tag,
-        );
+        developer.log('createUserProfile remote failed: ${e.message}', name: _tag);
       }
     } catch (e) {
       developer.log('createUserProfile remote failed', name: _tag, error: e);
@@ -166,10 +160,7 @@ class DatabaseService {
         data: data,
       );
     } on AppwriteException catch (e) {
-      developer.log(
-        'updateUserProfile remote failed: ${e.message}',
-        name: _tag,
-      );
+      developer.log('updateUserProfile remote failed: ${e.message}', name: _tag);
     } catch (e) {
       developer.log('updateUserProfile remote failed', name: _tag, error: e);
     }
@@ -223,21 +214,82 @@ class DatabaseService {
     row['id'] = docId;
     final entries = LocalDataService().getMoodEntries(userId);
     entries.add(row);
-    entries.sort(
-      (a, b) => (a['timestamp'] as String).compareTo(b['timestamp'] as String),
-    );
+    entries.sort((a, b) => (a['timestamp'] as String).compareTo(b['timestamp'] as String));
     await LocalDataService().saveMoodEntries(userId, entries);
+    unawaited(_syncWellnessFromMoodEntry(userId: userId, mood: mood, note: note));
     await _recomputeRecoveryFromMood(userId);
     await LocalDataService().addAnalytics(
       'mood_saved',
       payload: <String, dynamic>{'userId': userId, 'mood': mood},
     );
-    // Sync wellness analytics
-    WellnessAnalyticsService().syncDailyWellnessLog(userId);
     return LocalRow($id: docId, data: row);
   }
 
-  Future<LocalRowList> getMoodEntries(String userId, {int days = 7}) async {
+  Future<void> _syncWellnessFromMoodEntry({
+    required String userId,
+    required double mood,
+    String? note,
+  }) async {
+    try {
+      final boundedMood = mood.clamp(0.0, 1.0);
+      final mood5 = ((boundedMood * 4.0) + 1.0).round().clamp(1, 5);
+      final energy5 = mood5;
+      final stress5 = (6 - mood5).clamp(1, 5);
+      final anxiety5 = (6 - mood5).clamp(1, 5);
+
+      final sleepLogs = LocalDataService().getSleepLogs(userId)
+        ..sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
+      final latestSleep = sleepLogs
+          .map((l) => (l['hours'] as num?)?.toDouble() ?? 0.0)
+          .firstWhere((v) => v > 0.0, orElse: () => 7.0);
+
+      final response = await WellnessCloudService().logDailyMetrics(
+        userId: userId,
+        mood: mood5,
+        sleep: latestSleep,
+        stress: stress5,
+        energy: energy5,
+        anxiety: anxiety5,
+        exercise: null,
+        journaling: note,
+      );
+
+      if (response['success'] == true) {
+        final score = (response['wellnessScore'] as num?)?.toDouble() ?? 0.0;
+        await LocalDataService().addWellnessLog(userId, <String, dynamic>{
+          'date': DateTime.now().toIso8601String(),
+          'mood': mood5,
+          'sleepHours': latestSleep,
+          'stress': stress5,
+          'energy': energy5,
+          'anxiety': anxiety5,
+          'exercised': null,
+          'journalText': note,
+          'wellnessScore': score,
+        });
+      }
+    } catch (e, st) {
+      developer.log(
+        'wellness cloud sync failed',
+        name: _tag,
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> getCloudWellnessTrend(String userId) {
+    return WellnessCloudService().getTrend(userId: userId);
+  }
+
+  Future<Map<String, dynamic>> getCloudWellnessInsights(String userId) {
+    return WellnessCloudService().getInsights(userId: userId);
+  }
+
+  Future<LocalRowList> getMoodEntries(
+    String userId, {
+    int days = 7,
+  }) async {
     await _ensureUserId(userId);
 
     // Try to fetch from Appwrite
@@ -267,10 +319,7 @@ class DatabaseService {
           ...remoteEntries,
           ...localEntries.where((e) => !remoteIds.contains(e['id'])),
         ];
-        merged.sort(
-          (a, b) =>
-              (a['timestamp'] as String).compareTo(b['timestamp'] as String),
-        );
+        merged.sort((a, b) => (a['timestamp'] as String).compareTo(b['timestamp'] as String));
         await LocalDataService().saveMoodEntries(userId, merged);
       }
     } on AppwriteException catch (e) {
@@ -318,10 +367,8 @@ class DatabaseService {
   Future<void> _recomputeRecoveryFromMood(String userId) async {
     final entries = LocalDataService().getMoodEntries(userId);
     final prefs = LocalDataService().getUserPrefs(userId);
-    final baseline = ((prefs['moodBaseline'] as num?)?.toDouble() ?? 0.5).clamp(
-      0.0,
-      1.0,
-    );
+    final baseline = ((prefs['moodBaseline'] as num?)?.toDouble() ?? 0.5)
+        .clamp(0.0, 1.0);
 
     final byDay = <String, List<double>>{};
     for (final entry in entries) {
@@ -342,9 +389,8 @@ class DatabaseService {
 
       final baselineShift = (avg - baseline) * 22.0;
       final trend = prevAvg == null ? 0.0 : (avg - prevAvg) * 18.0;
-      final volatilityPenalty = prevAvg == null
-          ? 0.0
-          : (avg - prevAvg).abs() * 6.0;
+      final volatilityPenalty =
+          prevAvg == null ? 0.0 : (avg - prevAvg).abs() * 6.0;
       final consistencyBonus = min(values.length, 3) * 1.2;
       final delta =
           baselineShift + trend + consistencyBonus - volatilityPenalty;
@@ -426,8 +472,6 @@ class DatabaseService {
       'journal_saved',
       payload: <String, dynamic>{'userId': userId},
     );
-    // Sync wellness analytics
-    WellnessAnalyticsService().syncDailyWellnessLog(userId);
     return LocalRow($id: docId, data: row);
   }
 
@@ -463,10 +507,7 @@ class DatabaseService {
             ...remoteEntries,
             ...localEntries.where((e) => !remoteIds.contains(e['id'])),
           ];
-          merged.sort(
-            (a, b) =>
-                (b['timestamp'] as String).compareTo(a['timestamp'] as String),
-          );
+          merged.sort((a, b) => (b['timestamp'] as String).compareTo(a['timestamp'] as String));
           await LocalDataService().saveJournalEntries(userId, merged);
         }
         return LocalRowList(
@@ -476,10 +517,7 @@ class DatabaseService {
         );
       }
     } on AppwriteException catch (e) {
-      developer.log(
-        'getJournalEntries remote failed: ${e.message}',
-        name: _tag,
-      );
+      developer.log('getJournalEntries remote failed: ${e.message}', name: _tag);
     } catch (e) {
       developer.log('getJournalEntries remote failed', name: _tag, error: e);
     }
@@ -506,10 +544,7 @@ class DatabaseService {
         documentId: rowId,
       );
     } on AppwriteException catch (e) {
-      developer.log(
-        'deleteJournalEntry remote failed: ${e.message}',
-        name: _tag,
-      );
+      developer.log('deleteJournalEntry remote failed: ${e.message}', name: _tag);
     } catch (e) {
       developer.log('deleteJournalEntry remote failed', name: _tag, error: e);
     }
@@ -561,10 +596,7 @@ class DatabaseService {
         await LocalDataService().saveStreak(userId, streak);
         return LocalRow($id: userId, data: streak);
       }
-      developer.log(
-        'getOrCreateStreak remote failed: ${e.message}',
-        name: _tag,
-      );
+      developer.log('getOrCreateStreak remote failed: ${e.message}', name: _tag);
     } catch (e) {
       developer.log('getOrCreateStreak remote failed', name: _tag, error: e);
     }
@@ -676,10 +708,7 @@ class DatabaseService {
         ],
       );
     } on AppwriteException catch (e) {
-      developer.log(
-        'saveRecoveryScore remote failed: ${e.message}',
-        name: _tag,
-      );
+      developer.log('saveRecoveryScore remote failed: ${e.message}', name: _tag);
     } catch (e) {
       developer.log('saveRecoveryScore remote failed', name: _tag, error: e);
     }
@@ -706,28 +735,18 @@ class DatabaseService {
         ],
       );
       if (result.documents.isNotEmpty) {
-        return (result.documents.first.data['score'] as num?)?.toDouble() ??
-            100.0;
+        return (result.documents.first.data['score'] as num?)?.toDouble() ?? 100.0;
       }
     } on AppwriteException catch (e) {
-      developer.log(
-        'getLatestRecoveryScore remote failed: ${e.message}',
-        name: _tag,
-      );
+      developer.log('getLatestRecoveryScore remote failed: ${e.message}', name: _tag);
     } catch (e) {
-      developer.log(
-        'getLatestRecoveryScore remote failed',
-        name: _tag,
-        error: e,
-      );
+      developer.log('getLatestRecoveryScore remote failed', name: _tag, error: e);
     }
 
     // Fallback to local
     final history = LocalDataService().getRecoveryHistory(userId);
     if (history.isEmpty) return 100.0;
-    history.sort(
-      (a, b) => (a['date'] as String).compareTo(b['date'] as String),
-    );
+    history.sort((a, b) => (a['date'] as String).compareTo(b['date'] as String));
     return (history.last['score'] as num?)?.toDouble() ?? 100.0;
   }
 
@@ -751,9 +770,7 @@ class DatabaseService {
       'username': username,
       'avatar': avatar,
       'imageFileId': imageFileId,
-      'imagePath': imageFileId != null
-          ? StorageService().getPostImageUrl(imageFileId)
-          : null,
+      'imagePath': imageFileId != null ? StorageService().getPostImageUrl(imageFileId) : null,
       'caption': caption,
       'moodTag': moodTag,
       'postType': postType,
@@ -795,7 +812,10 @@ class DatabaseService {
     return LocalRow($id: docId, data: row);
   }
 
-  Future<LocalRowList> getPosts({int limit = 20, int offset = 0}) async {
+  Future<LocalRowList> getPosts({
+    int limit = 20,
+    int offset = 0,
+  }) async {
     await LocalDataService().init();
 
     // Try Appwrite — returns ALL users' posts
@@ -812,13 +832,11 @@ class DatabaseService {
 
       if (result.documents.isNotEmpty) {
         final remotePosts = result.documents
-            .map(
-              (doc) => <String, dynamic>{
-                ...doc.data,
-                'id': doc.$id,
-                'comments': <Map<String, dynamic>>[],
-              },
-            )
+            .map((doc) => <String, dynamic>{
+                  ...doc.data,
+                  'id': doc.$id,
+                  'comments': <Map<String, dynamic>>[],
+                })
             .toList();
 
         // Update local cache
@@ -829,10 +847,8 @@ class DatabaseService {
             ...remotePosts,
             ...localPosts.where((e) => !remoteIds.contains(e['id'])),
           ];
-          merged.sort(
-            (a, b) =>
-                (b['timestamp'] as String).compareTo(a['timestamp'] as String),
-          );
+          merged.sort((a, b) =>
+              (b['timestamp'] as String).compareTo(a['timestamp'] as String));
           await LocalDataService().saveCommunityPosts(merged);
         }
 
@@ -850,9 +866,8 @@ class DatabaseService {
 
     // Fallback to local
     final posts = LocalDataService().getCommunityPosts();
-    posts.sort(
-      (a, b) => (b['timestamp'] as String).compareTo(a['timestamp'] as String),
-    );
+    posts.sort((a, b) =>
+        (b['timestamp'] as String).compareTo(a['timestamp'] as String));
     final sliced = posts.skip(offset).take(limit).toList();
     return LocalRowList(
       rows: sliced
@@ -894,7 +909,10 @@ class DatabaseService {
         databaseId: _dbId,
         collectionId: AppwriteConstants.postsCollection,
         documentId: postId,
-        data: {'likedBy': likedBy, 'likesCount': likes},
+        data: {
+          'likedBy': likedBy,
+          'likesCount': likes,
+        },
       );
     } on AppwriteException catch (e) {
       developer.log('togglePostLike remote failed: ${e.message}', name: _tag);
@@ -982,12 +1000,10 @@ class DatabaseService {
       if (result.documents.isNotEmpty) {
         return LocalRowList(
           rows: result.documents
-              .map(
-                (doc) => LocalRow(
-                  $id: doc.$id,
-                  data: <String, dynamic>{...doc.data, 'id': doc.$id},
-                ),
-              )
+              .map((doc) => LocalRow(
+                    $id: doc.$id,
+                    data: <String, dynamic>{...doc.data, 'id': doc.$id},
+                  ))
               .toList(),
         );
       }
@@ -1008,9 +1024,8 @@ class DatabaseService {
         .whereType<Map>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
-    comments.sort(
-      (a, b) => (a['timestamp'] as String).compareTo(b['timestamp'] as String),
-    );
+    comments.sort((a, b) =>
+        (a['timestamp'] as String).compareTo(b['timestamp'] as String));
     return LocalRowList(
       rows: comments
           .map((e) => LocalRow($id: e['id'] as String, data: e))
@@ -1039,30 +1054,12 @@ class DatabaseService {
       'timestamp': DateTime.now().toIso8601String(),
     };
 
-    String docId = _newId('sleep');
-
-    // Write to Appwrite
-    try {
-      final doc = await _db.createDocument(
-        databaseId: _dbId,
-        collectionId: AppwriteConstants.sleepEntriesCollection,
-        documentId: ID.unique(),
-        data: data,
-        permissions: [
-          Permission.read(Role.user(userId)),
-          Permission.write(Role.user(userId)),
-        ],
-      );
-      docId = doc.$id;
-    } on AppwriteException catch (e) {
-      developer.log('saveSleepLog remote failed: ${e.message}', name: _tag);
-    } catch (e) {
-      developer.log('saveSleepLog remote failed', name: _tag, error: e);
-    }
+    // Write to Appwrite (not a defined collection in constants, store locally)
+    // Sleep logs stored locally for now — extend when collection is added
 
     final logs = LocalDataService().getSleepLogs(userId);
     logs.removeWhere((l) => (l['date'] as String?) == todayKey);
-    data['id'] = docId;
+    data['id'] = _newId('sleep');
     logs.add(data);
     logs.sort((a, b) => (a['date'] as String).compareTo(b['date'] as String));
     await LocalDataService().saveSleepLogs(userId, logs);
@@ -1074,8 +1071,6 @@ class DatabaseService {
         'dreamType': dreamType,
       },
     );
-    // Sync wellness analytics
-    WellnessAnalyticsService().syncDailyWellnessLog(userId);
   }
 
   Future<List<Map<String, dynamic>>> getSleepLogs(
@@ -1083,64 +1078,25 @@ class DatabaseService {
     int days = 7,
   }) async {
     await _ensureUserId(userId);
-
-    // Try to fetch from Appwrite and merge with local
-    try {
-      final now = DateTime.now();
-      final cutoff = now.subtract(Duration(days: days + 1));
-      final result = await _db.listDocuments(
-        databaseId: _dbId,
-        collectionId: AppwriteConstants.sleepEntriesCollection,
-        queries: [
-          Query.equal('userId', userId),
-          Query.greaterThan('timestamp', cutoff.toIso8601String()),
-          Query.orderDesc('timestamp'),
-          Query.limit(500),
-        ],
-      );
-
-      if (result.documents.isNotEmpty) {
-        final remoteEntries = result.documents
-            .map((doc) => <String, dynamic>{...doc.data, 'id': doc.$id})
-            .toList();
-        final localEntries = LocalDataService().getSleepLogs(userId);
-        final remoteIds = remoteEntries.map((e) => e['id']).toSet();
-        final remoteDates = remoteEntries.map((e) => e['date']).toSet();
-        final merged = <Map<String, dynamic>>[
-          ...remoteEntries,
-          ...localEntries.where((e) =>
-              !remoteIds.contains(e['id']) && !remoteDates.contains(e['date'])),
-        ];
-        merged.sort(
-          (a, b) => (a['date'] as String).compareTo(b['date'] as String),
-        );
-        await LocalDataService().saveSleepLogs(userId, merged);
-      }
-    } on AppwriteException catch (e) {
-      developer.log('getSleepLogs remote failed: ${e.message}', name: _tag);
-    } catch (e) {
-      developer.log('getSleepLogs remote failed', name: _tag, error: e);
-    }
-
     final logs = LocalDataService().getSleepLogs(userId);
     final map = <String, Map<String, dynamic>>{};
     for (final l in logs) {
       map[l['date'] as String] = l;
     }
     final now = DateTime.now();
-    final resultList = <Map<String, dynamic>>[];
+    final result = <Map<String, dynamic>>[];
     for (int i = days - 1; i >= 0; i--) {
       final day = _startOfDay(now.subtract(Duration(days: i)));
       final key = _dayKey(day);
       final entry = map[key];
-      resultList.add(<String, dynamic>{
+      result.add(<String, dynamic>{
         'date': key,
         'hours': (entry?['hours'] as num?)?.toDouble() ?? 0.0,
         'dreamType': entry?['dreamType'],
         'dreamDescription': entry?['dreamDescription'],
       });
     }
-    return resultList;
+    return result;
   }
 
   // ──────────────────────────────────────────────
@@ -1153,42 +1109,12 @@ class DatabaseService {
     required bool ambientEnabled,
   }) async {
     await _ensureUserId(userId);
-
-    final data = <String, dynamic>{
-      'userId': userId,
-      'durationSeconds': durationSeconds,
-      'exerciseType': '4-4-6',
-      'ambientEnabled': ambientEnabled,
-      'timestamp': DateTime.now().toIso8601String(),
-    };
-
-    String docId = _newId('breath');
-
-    // Write to Appwrite
-    try {
-      final doc = await _db.createDocument(
-        databaseId: _dbId,
-        collectionId: AppwriteConstants.breathingSessionsCollection,
-        documentId: ID.unique(),
-        data: data,
-        permissions: [
-          Permission.read(Role.user(userId)),
-          Permission.write(Role.user(userId)),
-        ],
-      );
-      docId = doc.$id;
-    } on AppwriteException catch (e) {
-      developer.log('saveBreathingSession remote failed: ${e.message}', name: _tag);
-    } catch (e) {
-      developer.log('saveBreathingSession remote failed', name: _tag, error: e);
-    }
-
     final logs = LocalDataService().getBreathingLogs(userId);
     logs.insert(0, <String, dynamic>{
-      'id': docId,
+      'id': _newId('breath'),
       'durationSeconds': durationSeconds,
       'ambientEnabled': ambientEnabled,
-      'timestamp': data['timestamp'],
+      'timestamp': DateTime.now().toIso8601String(),
     });
     if (logs.length > 500) {
       logs.removeRange(500, logs.length);
@@ -1201,145 +1127,11 @@ class DatabaseService {
         'durationSeconds': durationSeconds,
       },
     );
-    // Sync wellness analytics
-    WellnessAnalyticsService().syncDailyWellnessLog(userId);
   }
 
   // ──────────────────────────────────────────────
   // MUSIC LISTENS
   // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // SYNC LOCAL DATA TO REMOTE
-  // ──────────────────────────────────────────────
-
-  Future<void> syncLocalDataToRemote(String userId) async {
-    await _ensureUserId(userId);
-    developer.log('Starting local-to-remote sync for $userId', name: _tag);
-
-    // Sync sleep logs
-    try {
-      final sleepLogs = LocalDataService().getSleepLogs(userId);
-      final localOnly = sleepLogs.where(
-        (l) => (l['id'] as String? ?? '').startsWith('sleep_'),
-      ).toList();
-      for (final entry in localOnly) {
-        try {
-          final data = <String, dynamic>{
-            'userId': userId,
-            'hours': entry['hours'],
-            'date': entry['date'],
-            'dreamType': entry['dreamType'],
-            'dreamDescription': entry['dreamDescription'],
-            'timestamp': entry['timestamp'],
-          };
-          final doc = await _db.createDocument(
-            databaseId: _dbId,
-            collectionId: AppwriteConstants.sleepEntriesCollection,
-            documentId: ID.unique(),
-            data: data,
-            permissions: [
-              Permission.read(Role.user(userId)),
-              Permission.write(Role.user(userId)),
-            ],
-          );
-          entry['id'] = doc.$id;
-        } on AppwriteException catch (e) {
-          developer.log('Sync sleep entry failed: ${e.message}', name: _tag);
-        } catch (e) {
-          developer.log('Sync sleep entry failed', name: _tag, error: e);
-        }
-      }
-      if (localOnly.isNotEmpty) {
-        await LocalDataService().saveSleepLogs(userId, sleepLogs);
-        developer.log('Synced ${localOnly.length} sleep logs', name: _tag);
-      }
-    } catch (e) {
-      developer.log('Sleep sync failed', name: _tag, error: e);
-    }
-
-    // Sync breathing sessions
-    try {
-      final breathLogs = LocalDataService().getBreathingLogs(userId);
-      final localOnly = breathLogs.where(
-        (l) => (l['id'] as String? ?? '').startsWith('breath_'),
-      ).toList();
-      for (final entry in localOnly) {
-        try {
-          final data = <String, dynamic>{
-            'userId': userId,
-            'durationSeconds': entry['durationSeconds'],
-            'exerciseType': entry['exerciseType'] ?? '4-4-6',
-            'ambientEnabled': entry['ambientEnabled'],
-            'timestamp': entry['timestamp'],
-          };
-          final doc = await _db.createDocument(
-            databaseId: _dbId,
-            collectionId: AppwriteConstants.breathingSessionsCollection,
-            documentId: ID.unique(),
-            data: data,
-            permissions: [
-              Permission.read(Role.user(userId)),
-              Permission.write(Role.user(userId)),
-            ],
-          );
-          entry['id'] = doc.$id;
-        } on AppwriteException catch (e) {
-          developer.log('Sync breathing entry failed: ${e.message}', name: _tag);
-        } catch (e) {
-          developer.log('Sync breathing entry failed', name: _tag, error: e);
-        }
-      }
-      if (localOnly.isNotEmpty) {
-        await LocalDataService().saveBreathingLogs(userId, breathLogs);
-        developer.log('Synced ${localOnly.length} breathing sessions', name: _tag);
-      }
-    } catch (e) {
-      developer.log('Breathing sync failed', name: _tag, error: e);
-    }
-
-    // Sync mood entries
-    try {
-      final moodEntries = LocalDataService().getMoodEntries(userId);
-      final localOnly = moodEntries.where(
-        (l) => (l['id'] as String? ?? '').startsWith('mood_'),
-      ).toList();
-      for (final entry in localOnly) {
-        try {
-          final data = <String, dynamic>{
-            'userId': userId,
-            'mood': entry['mood'],
-            'emoji': entry['emoji'],
-            'note': entry['note'],
-            'timestamp': entry['timestamp'],
-          };
-          final doc = await _db.createDocument(
-            databaseId: _dbId,
-            collectionId: AppwriteConstants.moodEntriesCollection,
-            documentId: ID.unique(),
-            data: data,
-            permissions: [
-              Permission.read(Role.user(userId)),
-              Permission.write(Role.user(userId)),
-            ],
-          );
-          entry['id'] = doc.$id;
-        } on AppwriteException catch (e) {
-          developer.log('Sync mood entry failed: ${e.message}', name: _tag);
-        } catch (e) {
-          developer.log('Sync mood entry failed', name: _tag, error: e);
-        }
-      }
-      if (localOnly.isNotEmpty) {
-        await LocalDataService().saveMoodEntries(userId, moodEntries);
-        developer.log('Synced ${localOnly.length} mood entries', name: _tag);
-      }
-    } catch (e) {
-      developer.log('Mood sync failed', name: _tag, error: e);
-    }
-
-    developer.log('Local-to-remote sync complete', name: _tag);
-  }
 
   Future<void> saveListenedSong({
     required String userId,
@@ -1371,116 +1163,5 @@ class DatabaseService {
         'playlist': playlist,
       },
     );
-  }
-
-  // ──────────────────────────────────────────────
-  // GRATITUDE ENTRIES
-  // ──────────────────────────────────────────────
-
-  Future<LocalRow> saveGratitudeEntry({
-    required String userId,
-    required String content,
-    String? category,
-  }) async {
-    await _ensureUserId(userId);
-    final row = <String, dynamic>{
-      'userId': userId,
-      'content': content,
-      'category': category ?? 'Grateful for',
-      'timestamp': DateTime.now().toIso8601String(),
-    };
-
-    String docId = _newId('gratitude');
-
-    // Write to Appwrite
-    try {
-      final doc = await _db.createDocument(
-        databaseId: _dbId,
-        collectionId: AppwriteConstants.gratitudeEntriesCollection,
-        documentId: ID.unique(),
-        data: row,
-        permissions: [
-          Permission.read(Role.user(userId)),
-          Permission.write(Role.user(userId)),
-        ],
-      );
-      docId = doc.$id;
-    } on AppwriteException catch (e) {
-      developer.log(
-        'saveGratitudeEntry remote failed: ${e.message}',
-        name: _tag,
-      );
-    } catch (e) {
-      developer.log('saveGratitudeEntry remote failed', name: _tag, error: e);
-    }
-
-    // Cache locally
-    row['id'] = docId;
-    final entries = LocalDataService().getGenericList('gratitude_$userId');
-    entries.insert(0, row);
-    await LocalDataService().saveGenericList('gratitude_$userId', entries);
-    await LocalDataService().addAnalytics(
-      'gratitude_saved',
-      payload: <String, dynamic>{'userId': userId, 'category': category},
-    );
-    return LocalRow($id: docId, data: row);
-  }
-
-  Future<List<Map<String, dynamic>>> getGratitudeEntries(
-    String userId, {
-    int days = 7,
-  }) async {
-    await _ensureUserId(userId);
-
-    // Try Appwrite
-    try {
-      final cutoff =
-          DateTime.now().subtract(Duration(days: days)).toIso8601String();
-      final result = await _db.listDocuments(
-        databaseId: _dbId,
-        collectionId: AppwriteConstants.gratitudeEntriesCollection,
-        queries: [
-          Query.equal('userId', userId),
-          Query.greaterThan('timestamp', cutoff),
-          Query.orderDesc('timestamp'),
-          Query.limit(200),
-        ],
-      );
-
-      if (result.documents.isNotEmpty) {
-        final remoteEntries = result.documents
-            .map((doc) => <String, dynamic>{...doc.data, 'id': doc.$id})
-            .toList();
-        // Merge into local
-        final localEntries =
-            LocalDataService().getGenericList('gratitude_$userId');
-        final remoteIds = remoteEntries.map((e) => e['id']).toSet();
-        final merged = <Map<String, dynamic>>[
-          ...remoteEntries,
-          ...localEntries.where((e) => !remoteIds.contains(e['id'])),
-        ];
-        merged.sort(
-          (a, b) =>
-              (b['timestamp'] as String).compareTo(a['timestamp'] as String),
-        );
-        await LocalDataService().saveGenericList('gratitude_$userId', merged);
-        return merged;
-      }
-    } on AppwriteException catch (e) {
-      developer.log(
-        'getGratitudeEntries remote failed: ${e.message}',
-        name: _tag,
-      );
-    } catch (e) {
-      developer.log('getGratitudeEntries remote failed', name: _tag, error: e);
-    }
-
-    // Fallback to local
-    final entries = LocalDataService().getGenericList('gratitude_$userId');
-    final cutoff = DateTime.now().subtract(Duration(days: days));
-    return entries.where((e) {
-      final ts = DateTime.tryParse(e['timestamp'] as String? ?? '');
-      return ts != null && ts.isAfter(cutoff);
-    }).toList();
   }
 }

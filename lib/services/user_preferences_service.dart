@@ -28,6 +28,10 @@ class UserPreferencesService {
   List<String> musicLanguages = <String>[];
   Map<String, dynamic>? avatarConfigMap;
   
+  // Streak tracking
+  int streakDays = 0;
+  String? lastActiveDate; // ISO 8601 date string (YYYY-MM-DD)
+  
   // New fields for backend integration
   String? employmentStatus; // 'student', 'employee', 'retired'
   String? shiftPreference; // 'day', 'night'
@@ -174,6 +178,8 @@ class UserPreferencesService {
     avatarSeed = (data['avatarSeed'] as String?) ?? avatarSeed;
     avatarStyle = (data['avatarStyle'] as String?) ?? avatarStyle;
     avatarData = data['avatarData'] as String?;
+    streakDays = (data['streakDays'] as int?) ?? 0;
+    lastActiveDate = data['lastActiveDate'] as String?;
     final rawAvatar = data['avatarConfig'];
     if (rawAvatar is Map<String, dynamic>) {
       avatarConfigMap = Map<String, dynamic>.from(rawAvatar);
@@ -204,6 +210,9 @@ class UserPreferencesService {
     'avatarData': avatarData,
     'avatarUrl': getAvatarUrl(),
     'avatarConfig': avatarConfigMap,
+    // Streak tracking
+    'streakDays': streakDays,
+    'lastActiveDate': lastActiveDate,
     // New fields
     'employmentStatus': employmentStatus,
     'shiftPreference': shiftPreference,
@@ -213,4 +222,56 @@ class UserPreferencesService {
     'bmi': bmi,
     'bmiStatus': bmiStatus,
   };
+
+  /// Update streak when user logs into app
+  Future<void> updateStreak() async {
+    final today = DateTime.now().toIso8601String().split('T')[0]; // YYYY-MM-DD
+    
+    if (lastActiveDate == null) {
+      // First time user
+      streakDays = 1;
+      lastActiveDate = today;
+    } else if (lastActiveDate == today) {
+      // Already checked in today, no change
+      return;
+    } else {
+      final lastDate = DateTime.parse(lastActiveDate!);
+      final todayDate = DateTime.parse(today);
+      final daysDiff = todayDate.difference(lastDate).inDays;
+      
+      if (daysDiff == 1) {
+        // Consecutive day - increment streak
+        streakDays++;
+        lastActiveDate = today;
+      } else if (daysDiff >= 2) {
+        // Missed a day or more - break streak
+        streakDays = 1;
+        lastActiveDate = today;
+      }
+    }
+    
+    await saveToLocal();
+  }
+
+  /// Check if user should be reminded (1 day inactive)
+  bool shouldSendReminder() {
+    if (lastActiveDate == null) return false;
+    
+    final lastDate = DateTime.parse(lastActiveDate!);
+    final today = DateTime.now();
+    final daysDiff = today.difference(lastDate).inDays;
+    
+    return daysDiff == 1;
+  }
+
+  /// Check if streak should be broken (2+ days inactive)
+  bool shouldBreakStreak() {
+    if (lastActiveDate == null) return false;
+    
+    final lastDate = DateTime.parse(lastActiveDate!);
+    final today = DateTime.now();
+    final daysDiff = today.difference(lastDate).inDays;
+    
+    return daysDiff >= 2;
+  }
 }

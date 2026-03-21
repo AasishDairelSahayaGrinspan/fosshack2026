@@ -1,0 +1,53 @@
+
+>   Future<LocalRow> saveGratitudeEntry({
+      required String userId,
+      required String content,
+      String? category,
+    }) async {
+      await _ensureUserId(userId);
+      final row = <String, dynamic>{
+        'userId': userId,
+        'content': content,
+        'category': category ?? 'Grateful for',
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+  
+      String docId = _newId('gratitude');
+  
+      // Write to Appwrite
+      try {
+        final doc = await _db.createDocument(
+          databaseId: _dbId,
+          collectionId: AppwriteConstants.gratitudeEntriesCollection,
+          documentId: ID.unique(),
+          data: row,
+          permissions: [
+            Permission.read(Role.user(userId)),
+            Permission.write(Role.user(userId)),
+          ],
+        );
+        docId = doc.$id;
+      } on AppwriteException catch (e) {
+        developer.log(
+          'saveGratitudeEntry remote failed: ${e.message}',
+          name: _tag,
+        );
+      } catch (e) {
+        developer.log('saveGratitudeEntry remote failed', name: _tag, error: e);
+      }
+  
+      // Cache locally
+      row['id'] = docId;
+      final entries = LocalDataService().getGenericList('gratitude_$userId');
+      entries.insert(0, row);
+      await LocalDataService().saveGenericList('gratitude_$userId', entries);
+      await LocalDataService().addAnalytics(
+        'gratitude_saved',
+        payload: <String, dynamic>{'userId': userId, 'category': category},
+      );
+      return LocalRow($id: docId, data: row);
+    }
+  
+    Future<List<Map<String, dynamic>>> getGratitudeEntries(
+      String userId, {
+

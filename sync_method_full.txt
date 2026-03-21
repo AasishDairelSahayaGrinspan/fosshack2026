@@ -1,0 +1,150 @@
+    await _ensureUserId(userId);
+    developer.log('Starting local-to-remote sync for $userId', name: _tag);
+
+    // Sync sleep logs
+    try {
+      final sleepLogs = LocalDataService().getSleepLogs(userId);
+      final localOnly = sleepLogs.where(
+        (l) => (l['id'] as String? ?? '').startsWith('sleep_'),
+      ).toList();
+      for (final entry in localOnly) {
+        try {
+          final data = <String, dynamic>{
+            'userId': userId,
+            'hours': entry['hours'],
+            'date': entry['date'],
+            'dreamType': entry['dreamType'],
+            'dreamDescription': entry['dreamDescription'],
+            'timestamp': entry['timestamp'],
+          };
+          final doc = await _db.createDocument(
+            databaseId: _dbId,
+            collectionId: AppwriteConstants.sleepEntriesCollection,
+            documentId: ID.unique(),
+            data: data,
+            permissions: [
+              Permission.read(Role.user(userId)),
+              Permission.write(Role.user(userId)),
+            ],
+          );
+          entry['id'] = doc.$id;
+        } on AppwriteException catch (e) {
+          developer.log('Sync sleep entry failed: ${e.message}', name: _tag);
+        } catch (e) {
+          developer.log('Sync sleep entry failed', name: _tag, error: e);
+        }
+      }
+      if (localOnly.isNotEmpty) {
+        await LocalDataService().saveSleepLogs(userId, sleepLogs);
+        developer.log('Synced ${localOnly.length} sleep logs', name: _tag);
+      }
+    } catch (e) {
+      developer.log('Sleep sync failed', name: _tag, error: e);
+    }
+
+    // Sync breathing sessions
+    try {
+      final breathLogs = LocalDataService().getBreathingLogs(userId);
+      final localOnly = breathLogs.where(
+        (l) => (l['id'] as String? ?? '').startsWith('breath_'),
+      ).toList();
+      for (final entry in localOnly) {
+        try {
+          final data = <String, dynamic>{
+            'userId': userId,
+            'durationSeconds': entry['durationSeconds'],
+            'exerciseType': entry['exerciseType'] ?? '4-4-6',
+            'ambientEnabled': entry['ambientEnabled'],
+            'timestamp': entry['timestamp'],
+          };
+          final doc = await _db.createDocument(
+            databaseId: _dbId,
+            collectionId: AppwriteConstants.breathingSessionsCollection,
+            documentId: ID.unique(),
+            data: data,
+            permissions: [
+              Permission.read(Role.user(userId)),
+              Permission.write(Role.user(userId)),
+            ],
+          );
+          entry['id'] = doc.$id;
+        } on AppwriteException catch (e) {
+          developer.log('Sync breathing entry failed: ${e.message}', name: _tag);
+        } catch (e) {
+          developer.log('Sync breathing entry failed', name: _tag, error: e);
+        }
+      }
+      if (localOnly.isNotEmpty) {
+        await LocalDataService().saveBreathingLogs(userId, breathLogs);
+        developer.log('Synced ${localOnly.length} breathing sessions', name: _tag);
+      }
+    } catch (e) {
+      developer.log('Breathing sync failed', name: _tag, error: e);
+    }
+
+    // Sync mood entries
+    try {
+      final moodEntries = LocalDataService().getMoodEntries(userId);
+      final localOnly = moodEntries.where(
+        (l) => (l['id'] as String? ?? '').startsWith('mood_'),
+      ).toList();
+      for (final entry in localOnly) {
+        try {
+          final data = <String, dynamic>{
+            'userId': userId,
+            'mood': entry['mood'],
+            'emoji': entry['emoji'],
+            'note': entry['note'],
+            'timestamp': entry['timestamp'],
+          };
+          final doc = await _db.createDocument(
+            databaseId: _dbId,
+            collectionId: AppwriteConstants.moodEntriesCollection,
+            documentId: ID.unique(),
+            data: data,
+            permissions: [
+              Permission.read(Role.user(userId)),
+              Permission.write(Role.user(userId)),
+            ],
+          );
+          entry['id'] = doc.$id;
+        } on AppwriteException catch (e) {
+          developer.log('Sync mood entry failed: ${e.message}', name: _tag);
+        } catch (e) {
+          developer.log('Sync mood entry failed', name: _tag, error: e);
+        }
+      }
+      if (localOnly.isNotEmpty) {
+        await LocalDataService().saveMoodEntries(userId, moodEntries);
+        developer.log('Synced ${localOnly.length} mood entries', name: _tag);
+      }
+    } catch (e) {
+      developer.log('Mood sync failed', name: _tag, error: e);
+    }
+
+    developer.log('Local-to-remote sync complete', name: _tag);
+  }
+
+  Future<void> saveListenedSong({
+    required String userId,
+    required String title,
+    required String artist,
+    required String playlist,
+    String? mood,
+  }) async {
+    await _ensureUserId(userId);
+    final listens = LocalDataService().getListenedSongs(userId);
+    listens.insert(0, <String, dynamic>{
+      'id': _newId('listen'),
+      'title': title,
+      'artist': artist,
+      'playlist': playlist,
+      'mood': mood,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+    if (listens.length > 500) {
+      listens.removeRange(500, listens.length);
+    }
+    await LocalDataService().saveListenedSongs(userId, listens);
+    await LocalDataService().addAnalytics(
+      'song_listened',

@@ -1,0 +1,34 @@
+Running Gradle task 'assembleRelease'...                        
+lib/screens/splash_screen.dart:42:27: Error: The method 'syncLocalDataToRemote' isn't defined for the type 'DatabaseService'.
+ - 'DatabaseService' is from 'package:unravel/services/database_service.dart' ('lib/services/database_service.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'syncLocalDataToRemote'.
+        DatabaseService().syncLocalDataToRemote(user.$id);
+                          ^^^^^^^^^^^^^^^^^^^^^
+lib/screens/gratitude_screen.dart:55:35: Error: The method 'getGratitudeEntries' isn't defined for the type 'DatabaseService'.
+ - 'DatabaseService' is from 'package:unravel/services/database_service.dart' ('lib/services/database_service.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'getGratitudeEntries'.
+          await DatabaseService().getGratitudeEntries(user.$id, days: 7);
+                                  ^^^^^^^^^^^^^^^^^^^
+lib/screens/gratitude_screen.dart:67:31: Error: The method 'saveGratitudeEntry' isn't defined for the type 'DatabaseService'.
+ - 'DatabaseService' is from 'package:unravel/services/database_service.dart' ('lib/services/database_service.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'saveGratitudeEntry'.
+      await DatabaseService().saveGratitudeEntry(
+                              ^^^^^^^^^^^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildRelease'.
+> Process 'command 'C:\Users\eswr0\Downloads\flutter_windows_3.38.4-stable\flutter\bin\flutter.bat'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 19s
+Running Gradle task 'assembleRelease'...                           80.0s
+Gradle task assembleRelease failed with exit code 1

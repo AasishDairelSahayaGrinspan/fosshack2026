@@ -9,8 +9,8 @@ class OAuthConfig {
   static const String _devDomain = 'http://localhost:5000';
 
   // ─── Production Configuration ───
-  // Replace with your actual production domain
-  static const String _prodDomain = 'https://yourdomain.com';
+  // Replace with your actual production domain when deploying
+  static const String _prodDomain = 'https://unravel.app'; // TODO: Update with actual domain
 
   // ─── Mobile Configuration ───
   static const String mobileCallbackScheme = 'appwrite-callback-unravel-app';

@@ -8,7 +8,15 @@ import '../services/database_service.dart';
 import '../services/auth_service.dart';
 
 /// Grounding exercise types
-enum GroundingExercise { breathing446, boxBreathing, grounding54321, bodyScan }
+enum GroundingExercise { 
+  breathing446, 
+  boxBreathing, 
+  breathing478,
+  deepBellyBreathing,
+  alternateNostril,
+  grounding54321, 
+  bodyScan 
+}
 
 /// Breathing / Grounding Toolkit Screen
 /// Supports 4-4-6 breathing, box breathing, 5-4-3-2-1 grounding, and body scan.
@@ -43,13 +51,19 @@ class _BreathingScreenState extends State<BreathingScreen>
   AudioPlayer? _audioPlayer;
 
   // --- Breathing timings ---
-  // 4-4-6: 14s total
+  // 4-4-6: 14s total, 4-7-8: 19s total, Box: 16s total
   Duration get _cycleDuration {
     switch (_selectedExercise) {
       case GroundingExercise.breathing446:
         return const Duration(seconds: 14);
       case GroundingExercise.boxBreathing:
         return const Duration(seconds: 16);
+      case GroundingExercise.breathing478:
+        return const Duration(seconds: 19); // 4s inhale + 7s hold + 8s exhale
+      case GroundingExercise.deepBellyBreathing:
+        return const Duration(seconds: 12); // 5s inhale + 7s exhale
+      case GroundingExercise.alternateNostril:
+        return const Duration(seconds: 14); // 4s each side + transition
       default:
         return const Duration(seconds: 14);
     }
@@ -61,6 +75,12 @@ class _BreathingScreenState extends State<BreathingScreen>
         return 4 / 14;
       case GroundingExercise.boxBreathing:
         return 4 / 16;
+      case GroundingExercise.breathing478:
+        return 4 / 19;
+      case GroundingExercise.deepBellyBreathing:
+        return 5 / 12;
+      case GroundingExercise.alternateNostril:
+        return 4 / 14;
       default:
         return 4 / 14;
     }
@@ -72,6 +92,12 @@ class _BreathingScreenState extends State<BreathingScreen>
         return 8 / 14;
       case GroundingExercise.boxBreathing:
         return 8 / 16; // inhale 4 + hold 4
+      case GroundingExercise.breathing478:
+        return 11 / 19; // inhale 4 + hold 7
+      case GroundingExercise.deepBellyBreathing:
+        return 5 / 12; // No hold, goes straight to exhale
+      case GroundingExercise.alternateNostril:
+        return 8 / 14;
       default:
         return 8 / 14;
     }
@@ -81,6 +107,12 @@ class _BreathingScreenState extends State<BreathingScreen>
     switch (_selectedExercise) {
       case GroundingExercise.boxBreathing:
         return 12 / 16; // inhale 4 + hold 4 + exhale 4
+      case GroundingExercise.breathing478:
+        return 1.0; // Full cycle completes with exhale
+      case GroundingExercise.deepBellyBreathing:
+        return 1.0;
+      case GroundingExercise.alternateNostril:
+        return 1.0;
       default:
         return 1.0;
     }
@@ -153,6 +185,9 @@ class _BreathingScreenState extends State<BreathingScreen>
   static const Map<GroundingExercise, String> _exerciseLabels = {
     GroundingExercise.breathing446: '4-4-6 Breathing',
     GroundingExercise.boxBreathing: 'Box Breathing',
+    GroundingExercise.breathing478: '4-7-8 Breathing',
+    GroundingExercise.deepBellyBreathing: 'Deep Belly',
+    GroundingExercise.alternateNostril: 'Alternate Nostril',
     GroundingExercise.grounding54321: '5-4-3-2-1',
     GroundingExercise.bodyScan: 'Body Scan',
   };
@@ -324,6 +359,9 @@ class _BreathingScreenState extends State<BreathingScreen>
     switch (_selectedExercise) {
       case GroundingExercise.breathing446:
       case GroundingExercise.boxBreathing:
+      case GroundingExercise.breathing478:
+      case GroundingExercise.deepBellyBreathing:
+      case GroundingExercise.alternateNostril:
         _breathController.duration = _cycleDuration;
         setState(() {
           _phaseText = 'Inhale';

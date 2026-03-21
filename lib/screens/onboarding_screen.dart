@@ -82,8 +82,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   String _suggestedEmploymentStatus(int age) {
-    if (age < 25) return 'Student';
-    if (age <= 65) return 'IT Employee';
+    if (age <= 22) return 'Student';
+    if (age <= 60) return 'IT Employee';
     return 'Retired';
   }
 
@@ -908,37 +908,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
 
           const SizedBox(height: 16),
-
-          // Suggested employment status
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.softIndigo.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-              border: Border.all(
-                color: AppColors.softIndigo.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  size: 18,
-                  color: AppColors.softIndigo,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Next we\'ll confirm if you\'re a ${_suggestedEmploymentStatus(_selectedAge)}',
-                    style: AppTypography.caption(
-                      color: AppColors.softIndigo,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

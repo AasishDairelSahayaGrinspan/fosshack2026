@@ -1036,6 +1036,7 @@ class _AvatarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _AvatarPainter oldDelegate) {
-    return oldDelegate.config.toJsonString() != config.toJsonString();
+    // Direct object comparison for instant updates instead of expensive JSON serialization
+    return oldDelegate.config != config;
   }
 }

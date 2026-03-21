@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
@@ -519,27 +520,23 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
 
   Widget _buildPostImage(String imagePath) {
     if (imagePath.startsWith('http')) {
-      return Image.network(
-        imagePath,
+      return CachedNetworkImage(
+        imageUrl: imagePath,
         width: double.infinity,
         height: 240,
         fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return SizedBox(
-            width: double.infinity,
-            height: 240,
-            child: Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
+        placeholder: (context, url) => Container(
+          width: double.infinity,
+          height: 240,
+          color: AppColors.card(context),
+          child: Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.softIndigo),
             ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) => _buildImagePlaceholder(),
+          ),
+        ),
+        errorWidget: (context, url, error) => _buildImagePlaceholder(),
       );
     }
 

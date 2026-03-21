@@ -169,7 +169,9 @@ class _JournalScreenState extends State<JournalScreen>
         _textController.clear();
         _selectedMoodTag = -1;
         _selectedPrompt = -1;
+        // Load both lists immediately to ensure count is accurate
         await _loadEntries();
+        await _loadHistory();
       } catch (e, st) {
         developer.log(
           'Failed to save journal entry',
@@ -184,7 +186,6 @@ class _JournalScreenState extends State<JournalScreen>
       if (mounted) {
         setState(() => _saved = false);
         _textController.clear();
-        _loadHistory();
       }
     });
   }

@@ -30,6 +30,8 @@ import 'insights_screen.dart';
 import 'podcast_screen.dart';
 import 'gratitude_screen.dart';
 import 'safety_net_screen.dart';
+import 'mindful_walk_screen.dart';
+import 'sleep_wind_down_screen.dart';
 
 /// Unravel Home Screen - the emotional dashboard.
 class HomeScreen extends StatefulWidget {
@@ -558,14 +560,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             icon: Icons.nightlight_outlined,
                             label: 'Sleep Wind-Down',
                             color: AppColors.warmCoral,
-                            onTap: () => _navigate(context, const PodcastScreen()),
+                            onTap: () => _navigate(context, const SleepWindDownScreen()),
                           ),
                           _buildGuidedSessionCard(
                             context,
                             icon: Icons.directions_walk_rounded,
                             label: 'Mindful Walk',
                             color: AppColors.orangeE2814d,
-                            onTap: () => _navigate(context, const PodcastScreen()),
+                            onTap: () => _navigate(context, const MindfulWalkScreen()),
                           ),
                           _buildGuidedSessionCard(
                             context,

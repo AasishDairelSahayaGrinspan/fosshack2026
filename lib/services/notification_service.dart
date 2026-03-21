@@ -916,6 +916,44 @@ class NotificationService {
       // This can be handled by the app navigation service
     }
   }
+
+  /// Send a streak reminder after 1 day of inactivity
+  Future<void> sendStreakReminderNotification() async {
+    const androidDetails = AndroidNotificationDetails(
+      _remindersChannel,
+      'Unravel Reminders',
+      channelDescription: 'Daily check-in reminders',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const notificationDetails = NotificationDetails(android: androidDetails);
+    
+    await _plugin.show(
+      _streakReminderId + 1,
+      'Don\'t lose your streak! 🔥',
+      'We haven\'t seen you today. Check in to keep your wellness journey going.',
+      notificationDetails,
+    );
+  }
+
+  /// Send a streak break notification after 2 days of inactivity
+  Future<void> sendStreakBrokenNotification() async {
+    const androidDetails = AndroidNotificationDetails(
+      _remindersChannel,
+      'Unravel Reminders',
+      channelDescription: 'Daily check-in reminders',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const notificationDetails = NotificationDetails(android: androidDetails);
+    
+    await _plugin.show(
+      _streakReminderId + 2,
+      'We miss you! 💙',
+      'Your streak was reset, but it\'s never too late to start fresh. Come back and check in!',
+      notificationDetails,
+    );
+  }
 }
 
 extension on DateTime {

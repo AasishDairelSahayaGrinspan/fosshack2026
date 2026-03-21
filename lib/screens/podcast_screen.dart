@@ -284,11 +284,15 @@ class _PodcastScreenState extends State<PodcastScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
                           IconButton(
-                            onPressed: () {
-                              if (_player.playing) {
-                                _player.pause();
-                              } else {
-                                _player.play();
+                            onPressed: () async {
+                              try {
+                                if (_player.playing) {
+                                  await _player.pause();
+                                } else {
+                                  await _player.play();
+                                }
+                              } catch (e) {
+                                developer.log('Play/pause failed', name: 'PodcastScreen', error: e);
                               }
                             },
                             icon: Icon(
@@ -304,8 +308,17 @@ class _PodcastScreenState extends State<PodcastScreen> {
                           const SizedBox(width: 12),
                           IconButton(
                             onPressed: () async {
-                              await _player.stop();
-                              setState(() => _activeIndex = null);
+                              try {
+                                await _player.stop();
+                                if (mounted) {
+                                  setState(() => _activeIndex = null);
+                                }
+                              } catch (e) {
+                                developer.log('Stop failed', name: 'PodcastScreen', error: e);
+                                if (mounted) {
+                                  setState(() => _activeIndex = null);
+                                }
+                              }
                             },
                             icon: const Icon(
                               Icons.stop_circle_outlined,
@@ -331,8 +344,12 @@ class _PodcastScreenState extends State<PodcastScreen> {
                           max: progressMax,
                           activeColor: AppColors.softIndigo,
                           inactiveColor: AppColors.dividerColor(context),
-                          onChanged: (value) {
-                            _player.seek(Duration(milliseconds: value.toInt()));
+                          onChanged: (value) async {
+                            try {
+                              await _player.seek(Duration(milliseconds: value.toInt()));
+                            } catch (e) {
+                              developer.log('Seek failed', name: 'PodcastScreen', error: e);
+                            }
                           },
                         ),
                       ),

@@ -3,12 +3,12 @@ import 'dart:math';
 
 import 'package:appwrite/appwrite.dart';
 
-import 'appwrite_constants.dart';
-import 'appwrite_service.dart';
-import 'auth_service.dart';
-import 'local_data_service.dart';
-import 'storage_service.dart';
-import 'wellness_analytics_service.dart';
+import 'lib/services/appwrite_constants.dart';
+import 'lib/services/appwrite_service.dart';
+import 'lib/services/auth_service.dart';
+import 'lib/services/local_data_service.dart';
+import 'lib/services/storage_service.dart';
+import 'lib/services/wellness_analytics_service.dart';
 
 class LocalRow {
   final String $id;

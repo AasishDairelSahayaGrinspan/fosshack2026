@@ -48,7 +48,7 @@ class NotificationService {
       macOS: darwinSettings,
     );
     await _plugin.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: (details) {},
     );
 
@@ -98,10 +98,10 @@ class NotificationService {
       priority: Priority.high,
     );
     await _plugin.show(
-      _greetingId,
-      'Unravel is on',
-      'Thanks for turning on notifications. We will gently track with you.',
-      const NotificationDetails(android: androidDetails),
+      id: _greetingId,
+      title: 'Unravel is on',
+      body: 'Thanks for turning on notifications. We will gently track with you.',
+      notificationDetails: const NotificationDetails(android: androidDetails),
     );
   }
 
@@ -152,23 +152,23 @@ class NotificationService {
 
   /// Cancel a specific reminder.
   Future<void> cancelMorningMoodReminder() async {
-    await _plugin.cancel(_morningMoodId);
+    await _plugin.cancel(id: _morningMoodId);
   }
 
   Future<void> cancelEveningJournalReminder() async {
-    await _plugin.cancel(_eveningJournalId);
+    await _plugin.cancel(id: _eveningJournalId);
   }
 
   Future<void> cancelStreakReminder() async {
-    await _plugin.cancel(_streakReminderId);
+    await _plugin.cancel(id: _streakReminderId);
   }
 
   /// Cancel all scheduled reminders.
   Future<void> cancelAllReminders() async {
-    await _plugin.cancel(_morningMoodId);
-    await _plugin.cancel(_eveningJournalId);
-    await _plugin.cancel(_streakReminderId);
-    await _plugin.cancel(_middayNudgeId);
+    await _plugin.cancel(id: _morningMoodId);
+    await _plugin.cancel(id: _eveningJournalId);
+    await _plugin.cancel(id: _streakReminderId);
+    await _plugin.cancel(id: _middayNudgeId);
   }
 
   /// Schedule all default reminders at once.
@@ -241,7 +241,7 @@ class NotificationService {
         minute: 0,
       );
     } else {
-      await _plugin.cancel(_middayNudgeId);
+      await _plugin.cancel(id: _middayNudgeId);
     }
   }
 
@@ -303,14 +303,12 @@ class NotificationService {
     );
 
     await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      _nextInstanceOfTime(hour, minute),
-      const NotificationDetails(android: androidDetails),
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: _nextInstanceOfTime(hour, minute),
+      notificationDetails: const NotificationDetails(android: androidDetails),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
@@ -405,7 +403,7 @@ class NotificationService {
     try {
       // Cancel any previously scheduled engagement notifications (IDs 2000–2099).
       for (int i = 2000; i < 2000 + _scheduleHours.length; i++) {
-        await _plugin.cancel(i);
+        await _plugin.cancel(id: i);
       }
 
       final now = tz.TZDateTime.now(tz.local);
@@ -445,15 +443,12 @@ class NotificationService {
         final msg = shuffled[i % shuffled.length];
 
         await _plugin.zonedSchedule(
-          2000 + i,
-          msg['title']!,
-          msg['body']!,
-          scheduledTime,
-          details,
+          id: 2000 + i,
+          title: msg['title']!,
+          body: msg['body']!,
+          scheduledDate: scheduledTime,
+          notificationDetails: details,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-          matchDateTimeComponents: null, // One-shot, not repeating.
         );
       }
 
@@ -471,7 +466,7 @@ class NotificationService {
   /// Cancels all engagement notifications.
   Future<void> cancelEngagementNotifications() async {
     for (int i = 2000; i < 2000 + _scheduleHours.length; i++) {
-      await _plugin.cancel(i);
+      await _plugin.cancel(id: i);
     }
   }
 
@@ -486,7 +481,7 @@ class NotificationService {
   /// Inactivity reminder — fires 48h from now. Reset each app launch.
   Future<void> scheduleInactivityReminder() async {
     try {
-      await _plugin.cancel(4000);
+      await _plugin.cancel(id: 4000);
       final scheduledTime = tz.TZDateTime.now(
         tz.local,
       ).add(const Duration(hours: 48));
@@ -500,14 +495,12 @@ class NotificationService {
         autoCancel: true,
       );
       await _plugin.zonedSchedule(
-        4000,
-        'We haven\'t seen you in a while',
-        'Your quiet place is still here. Come back when you\'re ready.',
-        scheduledTime,
-        const NotificationDetails(android: androidDetails),
+        id: 4000,
+        title: 'We haven\'t seen you in a while',
+        body: 'Your quiet place is still here. Come back when you\'re ready.',
+        scheduledDate: scheduledTime,
+        notificationDetails: const NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
       );
       developer.log(
         'Scheduled inactivity reminder at $scheduledTime',
@@ -524,13 +517,13 @@ class NotificationService {
   }
 
   Future<void> cancelInactivityReminder() async {
-    await _plugin.cancel(4000);
+    await _plugin.cancel(id: 4000);
   }
 
   /// Sleep reminder — daily repeating at given hour (default 22:00).
   Future<void> scheduleSleepReminder({int hour = 22, int minute = 0}) async {
     try {
-      await _plugin.cancel(4001);
+      await _plugin.cancel(id: 4001);
       final now = tz.TZDateTime.now(tz.local);
       var scheduledTime = tz.TZDateTime(
         tz.local,
@@ -552,14 +545,12 @@ class NotificationService {
         autoCancel: true,
       );
       await _plugin.zonedSchedule(
-        4001,
-        'Time to wind down',
-        'Your mind deserves rest tonight. Log your sleep in Unravel.',
-        scheduledTime,
-        const NotificationDetails(android: androidDetails),
+        id: 4001,
+        title: 'Time to wind down',
+        body: 'Your mind deserves rest tonight. Log your sleep in Unravel.',
+        scheduledDate: scheduledTime,
+        notificationDetails: const NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
       developer.log(
@@ -577,7 +568,7 @@ class NotificationService {
   }
 
   Future<void> cancelSleepReminder() async {
-    await _plugin.cancel(4001);
+    await _plugin.cancel(id: 4001);
   }
 
   /// Breathing reminder — daily repeating at given hour (default 14:00).
@@ -586,7 +577,7 @@ class NotificationService {
     int minute = 0,
   }) async {
     try {
-      await _plugin.cancel(4002);
+      await _plugin.cancel(id: 4002);
       final now = tz.TZDateTime.now(tz.local);
       var scheduledTime = tz.TZDateTime(
         tz.local,
@@ -608,14 +599,12 @@ class NotificationService {
         autoCancel: true,
       );
       await _plugin.zonedSchedule(
-        4002,
-        'Take a slow breath',
-        'Take a slow breath with Unravel. Just 2 minutes can shift your whole day.',
-        scheduledTime,
-        const NotificationDetails(android: androidDetails),
+        id: 4002,
+        title: 'Take a slow breath',
+        body: 'Take a slow breath with Unravel. Just 2 minutes can shift your whole day.',
+        scheduledDate: scheduledTime,
+        notificationDetails: const NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
       developer.log(
@@ -633,13 +622,13 @@ class NotificationService {
   }
 
   Future<void> cancelBreathingReminder() async {
-    await _plugin.cancel(4002);
+    await _plugin.cancel(id: 4002);
   }
 
   /// Streak encouragement — fires next day at 8am if streak >= 3.
   Future<void> scheduleStreakEncouragement(int streakDays) async {
     try {
-      await _plugin.cancel(4003);
+      await _plugin.cancel(id: 4003);
       if (streakDays < 3) return;
 
       final now = tz.TZDateTime.now(tz.local);
@@ -677,14 +666,12 @@ class NotificationService {
         autoCancel: true,
       );
       await _plugin.zonedSchedule(
-        4003,
-        msg['title']!,
-        msg['body']!,
-        scheduledTime,
-        const NotificationDetails(android: androidDetails),
+        id: 4003,
+        title: msg['title']!,
+        body: msg['body']!,
+        scheduledDate: scheduledTime,
+        notificationDetails: const NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
       );
       developer.log(
         'Scheduled streak encouragement ($streakDays days) at $scheduledTime',
@@ -701,7 +688,7 @@ class NotificationService {
   }
 
   Future<void> cancelStreakEncouragement() async {
-    await _plugin.cancel(4003);
+    await _plugin.cancel(id: 4003);
   }
 
   /// Walking check-in notification.
@@ -715,10 +702,10 @@ class NotificationService {
       autoCancel: true,
     );
     await _plugin.show(
-      5000,
-      'You\'re on the move!',
-      'Great walk! Keep going — your body and mind will thank you.',
-      const NotificationDetails(android: androidDetails),
+      id: 5000,
+      title: 'You\'re on the move!',
+      body: 'Great walk! Keep going — your body and mind will thank you.',
+      notificationDetails: const NotificationDetails(android: androidDetails),
     );
   }
 
@@ -733,10 +720,10 @@ class NotificationService {
       autoCancel: true,
     );
     await _plugin.show(
-      5001,
-      'Stay hydrated',
-      'Take a moment to drink some water. Your body needs it.',
-      const NotificationDetails(android: androidDetails),
+      id: 5001,
+      title: 'Stay hydrated',
+      body: 'Take a moment to drink some water. Your body needs it.',
+      notificationDetails: const NotificationDetails(android: androidDetails),
     );
   }
 
@@ -746,7 +733,7 @@ class NotificationService {
   Future<void> scheduleMoodFollowUp(double moodScore) async {
     try {
       // Cancel any previous mood follow-up.
-      await _plugin.cancel(3000);
+      await _plugin.cancel(id: 3000);
 
       final delay = const Duration(hours: 2);
       final scheduledTime = tz.TZDateTime.now(tz.local).add(delay);
@@ -817,14 +804,12 @@ class NotificationService {
       );
 
       await _plugin.zonedSchedule(
-        3000,
-        title,
-        body,
-        scheduledTime,
-        const NotificationDetails(android: androidDetails),
+        id: 3000,
+        title: title,
+        body: body,
+        scheduledDate: scheduledTime,
+        notificationDetails: const NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
       );
 
       developer.log(
@@ -885,10 +870,10 @@ class NotificationService {
       );
 
       await _plugin.show(
-        notificationId,
-        '$authorName posted in Community',
-        excerpt,
-        const NotificationDetails(android: androidDetails),
+        id: notificationId,
+        title: '$authorName posted in Community',
+        body: excerpt,
+        notificationDetails: const NotificationDetails(android: androidDetails),
         payload: 'community_post_$postId',
       );
 
@@ -915,6 +900,44 @@ class NotificationService {
       // Route to community post detail screen
       // This can be handled by the app navigation service
     }
+  }
+
+  /// Send a streak reminder after 1 day of inactivity
+  Future<void> sendStreakReminderNotification() async {
+    const androidDetails = AndroidNotificationDetails(
+      _remindersChannel,
+      'Unravel Reminders',
+      channelDescription: 'Daily check-in reminders',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const notificationDetails = NotificationDetails(android: androidDetails);
+
+    await _plugin.show(
+      id: _streakReminderId + 1,
+      title: 'Don\'t lose your streak! 🔥',
+      body: 'We haven\'t seen you today. Check in to keep your wellness journey going.',
+      notificationDetails: notificationDetails,
+    );
+  }
+
+  /// Send a streak break notification after 2 days of inactivity
+  Future<void> sendStreakBrokenNotification() async {
+    const androidDetails = AndroidNotificationDetails(
+      _remindersChannel,
+      'Unravel Reminders',
+      channelDescription: 'Daily check-in reminders',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const notificationDetails = NotificationDetails(android: androidDetails);
+
+    await _plugin.show(
+      id: _streakReminderId + 2,
+      title: 'We miss you! 💙',
+      body: 'Your streak was reset, but it\'s never too late to start fresh. Come back and check in!',
+      notificationDetails: notificationDetails,
+    );
   }
 }
 

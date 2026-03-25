@@ -7,7 +7,9 @@
       "Read(//c/Users/eswr0/AppData/Local/Pub/Cache/**)",
       "Read(//c/Users/eswr0/Downloads/**)",
       "Bash(python3 -c \"from PIL import Image; img=Image.open\\(r''C:\\\\Users\\\\eswr0\\\\Downloads\\\\unravel_logo_black_enhanced.png''\\); print\\(img.size\\)\")",
-      "Bash(npm list:*)"
+      "Bash(npm list:*)",
+      "Read(//c/Users/eswr0/AppData/**)",
+      "Read(//c/Users/eswr0/Desktop/Unravel/**)"
     ]
   },
   "outputStyle": "Explanatory"
